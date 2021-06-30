@@ -139,6 +139,21 @@ class UrbackupServer {
       }
     }
   }
+
+  /**
+   * Retrieves status.
+   * @returns json if successfull, Null otherwise.
+   */
+  async getStatus () {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('status');
+      return statusResponse;
+    }
+  }
 }
 
 const log = debug('app:log');
