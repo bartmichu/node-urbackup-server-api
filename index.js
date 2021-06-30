@@ -159,6 +159,26 @@ class UrbackupServer {
       }
     }
   }
+
+  /**
+   * Retrieves general settings.
+   * @returns json if successfull, Null otherwise.
+   */
+  async getGeneralSettings () {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('settings', { sa: 'general' });
+
+      if (statusResponse === null || typeof statusResponse?.settings === 'undefined') {
+        return null;
+      } else {
+        return statusResponse.settings;
+      }
+    }
+  }
 }
 
 const log = debug('app:log');
