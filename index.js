@@ -151,7 +151,12 @@ class UrbackupServer {
       return null;
     } else {
       const statusResponse = await this.#fetchJson('status');
-      return statusResponse;
+
+      if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+        return null;
+      } else {
+        return statusResponse.status;
+      }
     }
   }
 }
