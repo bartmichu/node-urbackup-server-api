@@ -54,8 +54,9 @@ class UrbackupServer {
         'Content-Type': 'application/json; charset=UTF-8'
       },
       body: new URLSearchParams(bodyParams)
-    }).catch(() => {
+    }).catch((error) => {
       log('Connection failed');
+      log(error.message);
     });
 
     if (response?.ok) {
@@ -181,6 +182,26 @@ class UrbackupServer {
         return null;
       } else {
         return statusResponse.settings;
+      }
+    }
+  }
+
+  /**
+   * Retrieves server's identity.
+   * @returns string if successfull, Null otherwise.
+   */
+  async getServerIdentity () {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('status');
+
+      if (statusResponse === null || typeof statusResponse?.server_identity === 'undefined') {
+        return null;
+      } else {
+        return statusResponse.server_identity.toString();
       }
     }
   }
