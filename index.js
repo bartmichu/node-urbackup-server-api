@@ -58,7 +58,12 @@ class UrbackupServer {
       log('Connection failed');
     });
 
-    return response?.ok ? response.json() : null;
+    if (response?.ok) {
+      return response.json();
+    } else {
+      log(response);
+      return null;
+    }
   }
 
   /**
