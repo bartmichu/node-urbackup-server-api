@@ -167,6 +167,33 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves status of specified client.
+   * @param {string} clientName - Client's name, case sensitive.
+   * @returns json if successfull, Null otherwise.
+   */
+  async getClientStatus (clientName) {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('status');
+
+      if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+        return null;
+      } else {
+        const clientStatus = statusResponse.status.find(client => client.name === clientName);
+        if (typeof clientStatus === 'undefined') {
+          log('Failed to find client status: no permission or client not found');
+          return null;
+        } else {
+          return clientStatus;
+        }
+      }
+    }
+  }
+
+  /**
    * Retrieves general settings.
    * @returns json if successfull, Null otherwise.
    */
@@ -270,6 +297,35 @@ class UrbackupServer {
           return clientUsage;
         }
       }
+    }
+  }
+
+  /**
+   * Retrieves current and last activities of all clients.
+   * By default this method lists only activities that are currently in progress.
+   * @param {object} param0
+   * @returns Object
+   */
+  async getActivities ({ includeCurrent = true, includeLast = false } = {}) {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const activities = {};
+    const statusResponse = await this.#fetchJson('progress');
+
+    if (statusResponse === null) {
+      return null;
+    } else {
+      if (includeCurrent) {
+        activities.current = statusResponse?.progress;
+      }
+      if (includeLast) {
+        activities.last = statusResponse?.lastacts;
+      }
+
+      return activities;
     }
   }
 }
