@@ -205,6 +205,73 @@ class UrbackupServer {
       }
     }
   }
+
+  /**
+   * Retrieves a list of users.
+   * @returns array if successfull, Null otherwise.
+   */
+  async getUsers () {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('settings', { sa: 'listusers' });
+
+      if (statusResponse === null || typeof statusResponse?.users === 'undefined') {
+        return null;
+      } else {
+        return statusResponse.users;
+      }
+    }
+  }
+
+  /**
+   * Retrieves storage usage grouped by client.
+   * @returns array if successfull, Null otherwise.
+   */
+  async getUsage () {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('usage');
+
+      if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+        return null;
+      } else {
+        return statusResponse.usage;
+      }
+    }
+  }
+
+  /**
+   * Retrieves storage usage of specified client.
+   * @param {string} clientName - Client's name, case sensitive.
+   * @returns json if successfull, Null otherwise.
+   */
+  async getClientUsage (clientName = '') {
+    const loginResponse = await this.#login();
+
+    if (loginResponse !== true) {
+      return null;
+    } else {
+      const statusResponse = await this.#fetchJson('usage');
+
+      if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+        return null;
+      } else {
+        const clientUsage = statusResponse.usage.find(client => client.name === clientName);
+        if (typeof clientUsage === 'undefined') {
+          log('Failed to find client usage: no permission or client not found');
+          return null;
+        } else {
+          return clientUsage;
+        }
+      }
+    }
+  }
 }
 
 const log = debug('app:log');
