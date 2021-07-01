@@ -202,12 +202,12 @@ class UrbackupServer {
       return null;
     }
 
-    const statusResponse = await this.#fetchJson('settings', { sa: 'general' });
+    const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
 
-    if (statusResponse === null || typeof statusResponse?.settings === 'undefined') {
+    if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
       return null;
     } else {
-      return statusResponse.settings;
+      return settingsResponse.settings;
     }
   }
 
@@ -240,12 +240,12 @@ class UrbackupServer {
       return null;
     }
 
-    const statusResponse = await this.#fetchJson('settings', { sa: 'listusers' });
+    const usersResponse = await this.#fetchJson('settings', { sa: 'listusers' });
 
-    if (statusResponse === null || typeof statusResponse?.users === 'undefined') {
+    if (usersResponse === null || typeof usersResponse?.users === 'undefined') {
       return null;
     } else {
-      return statusResponse.users;
+      return usersResponse.users;
     }
   }
 
@@ -259,12 +259,12 @@ class UrbackupServer {
       return null;
     }
 
-    const statusResponse = await this.#fetchJson('usage');
+    const usageResponse = await this.#fetchJson('usage');
 
-    if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+    if (usageResponse === null || typeof usageResponse?.usage === 'undefined') {
       return null;
     } else {
-      return statusResponse.usage;
+      return usageResponse.usage;
     }
   }
 
@@ -279,12 +279,12 @@ class UrbackupServer {
       return null;
     }
 
-    const statusResponse = await this.#fetchJson('usage');
+    const usageResponse = await this.#fetchJson('usage');
 
-    if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+    if (usageResponse === null || typeof usageResponse?.usage === 'undefined') {
       return null;
     } else {
-      const clientUsage = statusResponse.usage.find(client => client.name === clientName);
+      const clientUsage = usageResponse.usage.find(client => client.name === clientName);
       if (typeof clientUsage === 'undefined') {
         log('Failed to find client usage: no permission or client not found');
         return null;
@@ -307,16 +307,16 @@ class UrbackupServer {
     }
 
     const activities = {};
-    const statusResponse = await this.#fetchJson('progress');
+    const activitiesResponse = await this.#fetchJson('progress');
 
-    if (statusResponse === null) {
+    if (activitiesResponse === null) {
       return null;
     } else {
       if (includeCurrent) {
-        activities.current = statusResponse?.progress;
+        activities.current = activitiesResponse?.progress;
       }
       if (includeLast) {
-        activities.last = statusResponse?.lastacts;
+        activities.last = activitiesResponse?.lastacts;
       }
 
       return activities;
