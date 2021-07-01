@@ -152,17 +152,16 @@ class UrbackupServer {
    */
   async getStatus () {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('status');
+    }
 
-      if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
-        return null;
-      } else {
-        return statusResponse.status;
-      }
+    const statusResponse = await this.#fetchJson('status');
+
+    if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+      return null;
+    } else {
+      return statusResponse.status;
     }
   }
 
@@ -173,22 +172,21 @@ class UrbackupServer {
    */
   async getClientStatus (clientName) {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('status');
+    }
 
-      if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+    const statusResponse = await this.#fetchJson('status');
+
+    if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+      return null;
+    } else {
+      const clientStatus = statusResponse.status.find(client => client.name === clientName);
+      if (typeof clientStatus === 'undefined') {
+        log('Failed to find client status: no permission or client not found');
         return null;
       } else {
-        const clientStatus = statusResponse.status.find(client => client.name === clientName);
-        if (typeof clientStatus === 'undefined') {
-          log('Failed to find client status: no permission or client not found');
-          return null;
-        } else {
-          return clientStatus;
-        }
+        return clientStatus;
       }
     }
   }
@@ -199,17 +197,16 @@ class UrbackupServer {
    */
   async getGeneralSettings () {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('settings', { sa: 'general' });
+    }
 
-      if (statusResponse === null || typeof statusResponse?.settings === 'undefined') {
-        return null;
-      } else {
-        return statusResponse.settings;
-      }
+    const statusResponse = await this.#fetchJson('settings', { sa: 'general' });
+
+    if (statusResponse === null || typeof statusResponse?.settings === 'undefined') {
+      return null;
+    } else {
+      return statusResponse.settings;
     }
   }
 
@@ -219,17 +216,16 @@ class UrbackupServer {
    */
   async getServerIdentity () {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('status');
+    }
 
-      if (statusResponse === null || typeof statusResponse?.server_identity === 'undefined') {
-        return null;
-      } else {
-        return statusResponse.server_identity.toString();
-      }
+    const statusResponse = await this.#fetchJson('status');
+
+    if (statusResponse === null || typeof statusResponse?.server_identity === 'undefined') {
+      return null;
+    } else {
+      return statusResponse.server_identity.toString();
     }
   }
 
@@ -239,17 +235,16 @@ class UrbackupServer {
    */
   async getUsers () {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('settings', { sa: 'listusers' });
+    }
 
-      if (statusResponse === null || typeof statusResponse?.users === 'undefined') {
-        return null;
-      } else {
-        return statusResponse.users;
-      }
+    const statusResponse = await this.#fetchJson('settings', { sa: 'listusers' });
+
+    if (statusResponse === null || typeof statusResponse?.users === 'undefined') {
+      return null;
+    } else {
+      return statusResponse.users;
     }
   }
 
@@ -259,17 +254,16 @@ class UrbackupServer {
    */
   async getUsage () {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('usage');
+    }
 
-      if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
-        return null;
-      } else {
-        return statusResponse.usage;
-      }
+    const statusResponse = await this.#fetchJson('usage');
+
+    if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+      return null;
+    } else {
+      return statusResponse.usage;
     }
   }
 
@@ -280,22 +274,21 @@ class UrbackupServer {
    */
   async getClientUsage (clientName = '') {
     const loginResponse = await this.#login();
-
     if (loginResponse !== true) {
       return null;
-    } else {
-      const statusResponse = await this.#fetchJson('usage');
+    }
 
-      if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+    const statusResponse = await this.#fetchJson('usage');
+
+    if (statusResponse === null || typeof statusResponse?.usage === 'undefined') {
+      return null;
+    } else {
+      const clientUsage = statusResponse.usage.find(client => client.name === clientName);
+      if (typeof clientUsage === 'undefined') {
+        log('Failed to find client usage: no permission or client not found');
         return null;
       } else {
-        const clientUsage = statusResponse.usage.find(client => client.name === clientName);
-        if (typeof clientUsage === 'undefined') {
-          log('Failed to find client usage: no permission or client not found');
-          return null;
-        } else {
-          return clientUsage;
-        }
+        return clientUsage;
       }
     }
   }
