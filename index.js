@@ -36,7 +36,7 @@ class UrbackupServer {
 
   /**
    * Makes API call to the server.
-   * @param {String} [action] - Action.
+   * @param {String} action - Action.
    * @param {Object} [bodyParams] - Action parameters.
    * @returns A json response if successfull, Null otherwise.
    */
