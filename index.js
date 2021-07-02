@@ -324,6 +324,40 @@ class UrbackupServer {
       return activities;
     }
   }
+
+  /**
+   * Retrieves current and/or last activities of a specific client.
+   * By default this method lists only activities that are currently in progress.
+   * @param {Object} params - An object containing parameters.
+   * @param {String} params.clientName - Client's name, case sensitive.
+   * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included.
+   * @param {Boolean} [params.includeLast] - Whether or not last activities should be included.
+   * @returns If successfull, an object with activities.
+   */
+  async getClientActivities ({ clientName = '', includeCurrent = true, includeLast = false } = {}) {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const activities = {};
+    const activitiesResponse = await this.#fetchJson('progress');
+
+    if (activitiesResponse === null) {
+      return null;
+    } else {
+      if (includeCurrent) {
+        const currentActivities = activitiesResponse.progress.filter(activity => activity.name === clientName);
+        activities.current = currentActivities || [];
+      }
+      if (includeLast) {
+        const lastActivities = activitiesResponse.lastacts.filter(activity => activity.name === clientName);
+        activities.last = lastActivities || [];
+      }
+
+      return activities;
+    }
+  }
 }
 
 const log = debug('app:log');
