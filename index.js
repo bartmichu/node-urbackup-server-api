@@ -17,17 +17,18 @@ class UrbackupServer {
 
   /**
    * @constructor
-   * @param {String} url - Server's URL. Must include protocol, hostname and port (for example http://127.0.0.1:55414).
-   * @param {String} [username] - Username used to log in. Anonymous login is used if userneme is empty or undefined.
-   * @param {String} [password] - Password used to log in. Anonymous login is used if password is empty or undefined.
-   * @param {Boolean} [verbose] - Whether or not additional messages should be printed to the console.
+   * @param {Object} params - An object containing parameters.
+   * @param {String} params.url - Server's URL. Must include protocol, hostname and port (for example http://127.0.0.1:55414).
+   * @param {String} [params.username] - Username used to log in. Anonymous login is used if userneme is empty or undefined.
+   * @param {String} [params.password] - Password used to log in. Anonymous login is used if password is empty or undefined.
+   * @param {Boolean} [params.verboseMode] - Whether or not additional messages should be printed to the console.
    */
-  constructor (url = '', username = '', password = '', verbose = false) {
+  constructor ({ url = '', username = '', password = '', verboseMode = false } = {}) {
     this.#url = new URL(url);
     this.#url.pathname = 'x';
     this.#username = username;
     this.#password = password;
-    this.#verboseMode = verbose;
+    this.#verboseMode = verboseMode;
   }
 
   /**
