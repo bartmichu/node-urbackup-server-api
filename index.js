@@ -2,11 +2,13 @@ const debug = require('debug');
 const fetch = require('node-fetch');
 const { URL, URLSearchParams } = require('url');
 const crypto = require('crypto');
+const Semaphore = require('async-mutex').Semaphore;
 
 /**
  * Represents a UrBackup Server.
  */
 class UrbackupServer {
+  #semaphore = new Semaphore(1);
   #url;
   #username;
   #password;
@@ -101,49 +103,56 @@ class UrbackupServer {
    * @returns Boolean true if logged in successfully or was already logged in, boolean false otherwise.
    */
   async #login () {
-    if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
-      log('Already logged in');
-      return true;
-    }
-
-    if (this.#username.length === 0 || this.#password.length === 0) {
-      log('Trying anonymous login');
-      const anonymousLoginResponse = await this.#fetchJson('login');
-
-      if (anonymousLoginResponse?.success === true) {
-        log('Anonymous login succeeded');
-        this.#sessionId = anonymousLoginResponse.session;
-        this.#isLoggedIn = true;
+    const [value, release] = await this.#semaphore.acquire();
+    try {
+      if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
+        log('Already logged in');
         return true;
-      } else {
-        log('Anonymous login failed');
-        this.#clearLoginStatus();
-        return false;
       }
-    } else {
-      const saltResponse = await this.#fetchJson('salt', { username: this.#username });
 
-      if (saltResponse === null || typeof saltResponse?.salt === 'undefined') {
-        log('Unable to get salt, invalid username');
-        this.#clearLoginStatus();
-        return false;
-      } else {
-        this.#sessionId = saltResponse.ses;
-        const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
+      if (this.#username.length === 0 || this.#password.length === 0) {
+        log('Trying anonymous login');
+        const anonymousLoginResponse = await this.#fetchJson('login');
 
-        log('Trying user login');
-        const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
-
-        if (userLoginResponse?.success === true) {
-          log('User login succeeded');
+        if (anonymousLoginResponse?.success === true) {
+          log('Anonymous login succeeded');
+          this.#sessionId = anonymousLoginResponse.session;
           this.#isLoggedIn = true;
           return true;
         } else {
-          log('User login failed, invalid password');
+          log('Anonymous login failed');
           this.#clearLoginStatus();
           return false;
         }
+      } else {
+        const saltResponse = await this.#fetchJson('salt', { username: this.#username });
+
+        if (saltResponse === null || typeof saltResponse?.salt === 'undefined') {
+          log('Unable to get salt, invalid username');
+          this.#clearLoginStatus();
+          return false;
+        } else {
+          this.#sessionId = saltResponse.ses;
+          const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
+
+          log('Trying user login');
+          const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
+
+          if (userLoginResponse?.success === true) {
+            log('User login succeeded');
+            this.#isLoggedIn = true;
+            return true;
+          } else {
+            log('User login failed, invalid password');
+            this.#clearLoginStatus();
+            return false;
+          }
+        }
       }
+    } catch (error) {
+      console.debug(error);
+    } finally {
+      release();
     }
   }
 

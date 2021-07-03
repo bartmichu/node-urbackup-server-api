@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/bartmichu/node-urbackup-server-api#readme",
   "dependencies": {
+    "async-mutex": "^0.3.1",
     "debug": "^4.3.1",
     "node-fetch": "^2.6.1"
   },
