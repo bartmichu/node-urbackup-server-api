@@ -1,4 +1,3 @@
-const debug = require('debug');
 const fetch = require('node-fetch');
 const { URL, URLSearchParams } = require('url');
 const crypto = require('crypto');
@@ -57,14 +56,14 @@ class UrbackupServer {
       },
       body: new URLSearchParams(bodyParams)
     }).catch((error) => {
-      log('Connection failed');
-      log(error.message);
+      console.debug('Connection failed');
+      console.debug(error.message);
     });
 
     if (response?.ok) {
       return response.json();
     } else {
-      log(response);
+      console.debug(response);
       return null;
     }
   }
@@ -106,21 +105,21 @@ class UrbackupServer {
     const [value, release] = await this.#semaphore.acquire();
     try {
       if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
-        log('Already logged in');
+        console.debug('Already logged in');
         return true;
       }
 
       if (this.#username.length === 0 || this.#password.length === 0) {
-        log('Trying anonymous login');
+        console.debug('Trying anonymous login');
         const anonymousLoginResponse = await this.#fetchJson('login');
 
         if (anonymousLoginResponse?.success === true) {
-          log('Anonymous login succeeded');
+          console.debug('Anonymous login succeeded');
           this.#sessionId = anonymousLoginResponse.session;
           this.#isLoggedIn = true;
           return true;
         } else {
-          log('Anonymous login failed');
+          console.debug('Anonymous login failed');
           this.#clearLoginStatus();
           return false;
         }
@@ -128,22 +127,22 @@ class UrbackupServer {
         const saltResponse = await this.#fetchJson('salt', { username: this.#username });
 
         if (saltResponse === null || typeof saltResponse?.salt === 'undefined') {
-          log('Unable to get salt, invalid username');
+          console.debug('Unable to get salt, invalid username');
           this.#clearLoginStatus();
           return false;
         } else {
           this.#sessionId = saltResponse.ses;
           const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
 
-          log('Trying user login');
+          console.debug('Trying user login');
           const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
 
           if (userLoginResponse?.success === true) {
-            log('User login succeeded');
+            console.debug('User login succeeded');
             this.#isLoggedIn = true;
             return true;
           } else {
-            log('User login failed, invalid password');
+            console.debug('User login failed, invalid password');
             this.#clearLoginStatus();
             return false;
           }
@@ -193,7 +192,7 @@ class UrbackupServer {
     } else {
       const clientStatus = statusResponse.status.find(client => client.name === clientName);
       if (typeof clientStatus === 'undefined') {
-        log('Failed to find client status: no permission or client not found');
+        console.debug('Failed to find client status: no permission or client not found');
         return null;
       } else {
         return clientStatus;
@@ -295,7 +294,7 @@ class UrbackupServer {
     } else {
       const clientUsage = usageResponse.usage.find(client => client.name === clientName);
       if (typeof clientUsage === 'undefined') {
-        log('Failed to find client usage: no permission or client not found');
+        console.debug('Failed to find client usage: no permission or client not found');
         return null;
       } else {
         return clientUsage;
@@ -368,8 +367,5 @@ class UrbackupServer {
     }
   }
 }
-
-const log = debug('app:log');
-log.log = console.log.bind(console);
 
 module.exports.UrbackupServer = UrbackupServer;
