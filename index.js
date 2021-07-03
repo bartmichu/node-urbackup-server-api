@@ -11,6 +11,7 @@ class UrbackupServer {
   #url;
   #username;
   #password;
+  #verboseMode;
   #sessionId = '';
   #isLoggedIn = false;
 
@@ -19,12 +20,24 @@ class UrbackupServer {
    * @param {String} url - Server's URL. Must include protocol, hostname and port (for example http://127.0.0.1:55414).
    * @param {String} [username] - Username used to log in. Anonymous login is used if userneme is empty or undefined.
    * @param {String} [password] - Password used to log in. Anonymous login is used if password is empty or undefined.
+   * @param {Boolean} [verbose] - Whether or not additional messages should be printed to the console.
    */
-  constructor (url = '', username = '', password = '') {
+  constructor (url = '', username = '', password = '', verbose = false) {
     this.#url = new URL(url);
     this.#url.pathname = 'x';
     this.#username = username;
     this.#password = password;
+    this.#verboseMode = verbose;
+  }
+
+  /**
+   * Prints messages to the console in verbose mode.
+   * @param {String} message - Message printed to the console.
+   */
+  #printMessage (message) {
+    if (this.#verboseMode === true) {
+      console.debug(message.toString());
+    }
   }
 
   /**
@@ -56,14 +69,14 @@ class UrbackupServer {
       },
       body: new URLSearchParams(bodyParams)
     }).catch((error) => {
-      console.debug('Connection failed');
-      console.debug(error.message);
+      this.#printMessage('Connection failed');
+      this.#printMessage(error.message);
     });
 
     if (response?.ok) {
       return response.json();
     } else {
-      console.debug(response);
+      this.#printMessage(response);
       return null;
     }
   }
@@ -105,21 +118,21 @@ class UrbackupServer {
     const [value, release] = await this.#semaphore.acquire();
     try {
       if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
-        console.debug('Already logged in');
+        this.#printMessage('Already logged in');
         return true;
       }
 
       if (this.#username.length === 0 || this.#password.length === 0) {
-        console.debug('Trying anonymous login');
+        this.#printMessage('Trying anonymous login');
         const anonymousLoginResponse = await this.#fetchJson('login');
 
         if (anonymousLoginResponse?.success === true) {
-          console.debug('Anonymous login succeeded');
+          this.#printMessage('Anonymous login succeeded');
           this.#sessionId = anonymousLoginResponse.session;
           this.#isLoggedIn = true;
           return true;
         } else {
-          console.debug('Anonymous login failed');
+          this.#printMessage('Anonymous login failed');
           this.#clearLoginStatus();
           return false;
         }
@@ -127,29 +140,29 @@ class UrbackupServer {
         const saltResponse = await this.#fetchJson('salt', { username: this.#username });
 
         if (saltResponse === null || typeof saltResponse?.salt === 'undefined') {
-          console.debug('Unable to get salt, invalid username');
+          this.#printMessage('Unable to get salt, invalid username');
           this.#clearLoginStatus();
           return false;
         } else {
           this.#sessionId = saltResponse.ses;
           const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
 
-          console.debug('Trying user login');
+          this.#printMessage('Trying user login');
           const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
 
           if (userLoginResponse?.success === true) {
-            console.debug('User login succeeded');
+            this.#printMessage('User login succeeded');
             this.#isLoggedIn = true;
             return true;
           } else {
-            console.debug('User login failed, invalid password');
+            this.#printMessage('User login failed, invalid password');
             this.#clearLoginStatus();
             return false;
           }
         }
       }
     } catch (error) {
-      console.debug(error);
+      this.#printMessage(error);
     } finally {
       release();
     }
@@ -192,7 +205,7 @@ class UrbackupServer {
     } else {
       const clientStatus = statusResponse.status.find(client => client.name === clientName);
       if (typeof clientStatus === 'undefined') {
-        console.debug('Failed to find client status: no permission or client not found');
+        this.#printMessage('Failed to find client status: no permission or client not found');
         return null;
       } else {
         return clientStatus;
@@ -294,7 +307,7 @@ class UrbackupServer {
     } else {
       const clientUsage = usageResponse.usage.find(client => client.name === clientName);
       if (typeof clientUsage === 'undefined') {
-        console.debug('Failed to find client usage: no permission or client not found');
+        this.#printMessage('Failed to find client usage: no permission or client not found');
         return null;
       } else {
         return clientUsage;
