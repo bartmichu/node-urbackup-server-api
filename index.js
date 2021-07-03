@@ -234,6 +234,32 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves settings for a specific client.
+   * @param {String} clientName - Client name, case sensitive.
+   * @returns If successfull, an object with client's settings. Null otherwise.
+   */
+  async getClientSettings (clientName = '') {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const clientStatus = await this.getClientStatus(clientName);
+
+    if (clientStatus === null || typeof clientStatus?.id === 'undefined') {
+      return null;
+    } else {
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: clientStatus.id });
+
+      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
+        return null;
+      } else {
+        return settingsResponse.settings;
+      }
+    }
+  }
+
+  /**
    * Retrieves server identity.
    * @returns If successfull, a string with server identity. Null otherwise.
    */
