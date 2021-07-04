@@ -298,6 +298,25 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves groups.
+   * @returns If successfull, an array of objects representing groups. Null otherwise.
+   */
+  async getGroups () {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settingsResponse = await this.#fetchJson('settings');
+
+    if (settingsResponse === null || typeof settingsResponse?.navitems?.groups === 'undefined') {
+      return null;
+    } else {
+      return settingsResponse.navitems.groups;
+    }
+  }
+
+  /**
    * Retrieves storage usage for all clients.
    * @returns If successfull, and array of objects with storage usage info. Null otherwise.
    */
