@@ -170,10 +170,14 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves backup status for all clients.
-   * @returns If successfull, an array of objects representing client statuses. Null otherwise.
+   * Retrieves backup status.
+   * Client name can be passed as an argument in which case only that one client's status is returned.
+   * If client name is undefined then this method returns status for each client separately.
+   * @param {Object} params - An object containing parameters.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined.
+   * @returns When successfull, an array of objects with status info. Empty array when no matching clients found. Null when API call was unsuccessfull.
    */
-  async getStatus () {
+  async getStatus ({ clientName } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -184,32 +188,16 @@ class UrbackupServer {
     if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
       return null;
     } else {
-      return statusResponse.status;
-    }
-  }
-
-  /**
-   * Retrieves backup status for a specific client.
-   * @param {String} clientName - Client name, case sensitive.
-   * @returns If successfull, an object representing client status. Null otherwise.
-   */
-  async getClientStatus (clientName = '') {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const statusResponse = await this.#fetchJson('status');
-
-    if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
-      return null;
-    } else {
-      const clientStatus = statusResponse.status.find(client => client.name === clientName);
-      if (typeof clientStatus === 'undefined') {
-        this.#printMessage('Failed to find client status: no permission or client not found');
-        return null;
+      if (typeof clientName === 'undefined') {
+        return statusResponse.status;
       } else {
-        return clientStatus;
+        const clientStatus = statusResponse.status.find(client => client.name === clientName);
+        if (typeof clientStatus === 'undefined') {
+          this.#printMessage('Failed to find client status: no permission or client not found');
+          return [];
+        } else {
+          return [clientStatus];
+        }
       }
     }
   }
@@ -235,22 +223,26 @@ class UrbackupServer {
 
   /**
    * Retrieves settings for a specific client.
-   * @param {String} clientName - Client name, case sensitive.
-   * @returns If successfull, an object with client's settings. Null otherwise.
+   * @param {Object} params - An object containing parameters.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to empty string.
+   * @returns When successfull, an object with client's settings. Null when no matching client found or when API call was unsuccessfull.
    */
-  async getClientSettings (clientName = '') {
+  async getClientSettings ({ clientName = '' } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
     }
 
-    const clientStatus = await this.getClientStatus(clientName);
+    if (clientName === '') {
+      return null;
+    }
 
-    if (clientStatus === null || typeof clientStatus?.id === 'undefined') {
+    const clientStatus = await this.getStatus({ clientName: clientName });
+
+    if (clientStatus === null || typeof clientStatus[0]?.id === 'undefined') {
       return null;
     } else {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: clientStatus.id });
-
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: clientStatus[0].id });
       if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
         return null;
       } else {
@@ -340,10 +332,14 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves storage usage for all clients.
-   * @returns If successfull, and array of objects with storage usage info. Null otherwise.
+   * Retrieves storage usage.
+   * Client name can be passed as an argument in which case only that one client's usage is returned.
+   * If client name is undefined then this method returns storage usage for each client separately.
+   * @param {Object} params - An object containing parameters.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined.
+   * @returns When successfull, an array of objects with storage usage info. Empty array when no matching clients found. Null when API call was unsuccessfull.
    */
-  async getUsage () {
+  async getUsage ({ clientName } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -354,45 +350,30 @@ class UrbackupServer {
     if (usageResponse === null || typeof usageResponse?.usage === 'undefined') {
       return null;
     } else {
-      return usageResponse.usage;
-    }
-  }
-
-  /**
-   * Retrieves storage usage for a specific client.
-   * @param {String} clientName - Client name, case sensitive.
-   * @returns If successfull, object with storage usage info. Null otherwise.
-   */
-  async getClientUsage (clientName = '') {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const usageResponse = await this.#fetchJson('usage');
-
-    if (usageResponse === null || typeof usageResponse?.usage === 'undefined') {
-      return null;
-    } else {
-      const clientUsage = usageResponse.usage.find(client => client.name === clientName);
-      if (typeof clientUsage === 'undefined') {
-        this.#printMessage('Failed to find client usage: no permission or client not found');
-        return null;
+      if (typeof clientName === 'undefined') {
+        return usageResponse.usage;
       } else {
+        const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
+        if (clientUsage.length === 0) {
+          this.#printMessage('Failed to find client usage: no permission or client not found');
+        }
         return clientUsage;
       }
     }
   }
 
   /**
-   * Retrieves current and/or last activities of all clients.
+   * Retrieves current and/or last activities.
+   * Client name can be passed as an argument in which case only that one client's actions are returned.
+   * If client name is undefined then this method returns actions for each client separately.
    * By default this method lists only activities that are currently in progress.
    * @param {Object} params - An object containing parameters.
-   * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included.
-   * @param {Boolean} [params.includeLast] - Whether or not last activities should be included.
-   * @returns If successfull, an object with activities.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined.
+   * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included. Defaults to true.
+   * @param {Boolean} [params.includeLast] - Whether or not last activities should be included. Defaults to false.
+   * @returns When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull.
    */
-  async getActivities ({ includeCurrent = true, includeLast = false } = {}) {
+  async getActivities ({ clientName, includeCurrent = true, includeLast = false } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -404,45 +385,17 @@ class UrbackupServer {
     if (activitiesResponse === null) {
       return null;
     } else {
-      if (includeCurrent) {
-        activities.current = activitiesResponse?.progress;
+      if (includeCurrent === true) {
+        if (typeof activitiesResponse?.progress === 'undefined') {
+          return null;
+        }
+        activities.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
       }
-      if (includeLast) {
-        activities.last = activitiesResponse?.lastacts;
-      }
-
-      return activities;
-    }
-  }
-
-  /**
-   * Retrieves current and/or last activities of a specific client.
-   * By default this method lists only activities that are currently in progress.
-   * @param {Object} params - An object containing parameters.
-   * @param {String} params.clientName - Client's name, case sensitive.
-   * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included.
-   * @param {Boolean} [params.includeLast] - Whether or not last activities should be included.
-   * @returns If successfull, an object with activities.
-   */
-  async getClientActivities ({ clientName = '', includeCurrent = true, includeLast = false } = {}) {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const activities = {};
-    const activitiesResponse = await this.#fetchJson('progress');
-
-    if (activitiesResponse === null) {
-      return null;
-    } else {
-      if (includeCurrent) {
-        const currentActivities = activitiesResponse.progress.filter(activity => activity.name === clientName);
-        activities.current = currentActivities || [];
-      }
-      if (includeLast) {
-        const lastActivities = activitiesResponse.lastacts.filter(activity => activity.name === clientName);
-        activities.last = lastActivities || [];
+      if (includeLast === true) {
+        if (typeof activitiesResponse?.lastacts === 'undefined') {
+          return null;
+        }
+        activities.last = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
       }
 
       return activities;
