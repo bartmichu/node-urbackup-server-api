@@ -271,6 +271,28 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves authentication key for a specified client.
+   *
+   * @param {Object} params - An object containing parameters.
+   * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @returns When successfull, a string with client's authentication key. Null when no matching clients found or API call was unsuccessfull.
+   */
+  async getClientAuthkey ({ clientName } = {}) {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settingsResponse = await this.getClientSettings({ clientName: clientName });
+
+    if (settingsResponse === null) {
+      return null;
+    } else {
+      return settingsResponse === null ? '' : (settingsResponse?.internet_authkey.toString() || null);
+    }
+  }
+
+  /**
    * Retrieves users.
    * @returns If successfull, an array of objects representing users. Null otherwise.
    */
