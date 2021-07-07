@@ -342,31 +342,6 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves clients belonging to specific group.
-   * By default, UrBackup clients are added to a group with empty name.
-   *
-   * @param {Object} params - An object containing parameters.
-   * @param {String} [params.groupName] - Group name, case sensitive. Defaults to empty string which means default group.
-   * @returns When successfull, an array of objects representing clients. Array can be empty when group doesn't exist or when it doesn't have any clients. Null is returned when API call was unsuccessfull or returned unexpected data.
-   */
-  async getGroupClients ({ groupName = '' } = {}) {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settingsResponse = await this.#fetchJson('settings');
-
-    if (settingsResponse === null || typeof settingsResponse?.navitems?.clients === 'undefined') {
-      return null;
-    } else {
-      const groupClients = settingsResponse.navitems.clients.filter((client) => client.groupname === groupName);
-
-      return groupClients;
-    }
-  }
-
-  /**
    * Retrieves storage usage.
    * Client name can be passed as an argument in which case only that one client's usage is returned.
    * If client name is undefined then this method returns storage usage for each client separately.
