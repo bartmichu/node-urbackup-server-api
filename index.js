@@ -237,11 +237,13 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves settings for a specific client.
+   * Retrieves client settings.
+   * Client name can be passed as an argument in which case only that one client's settings are returned.
+   * By default, it matches all clients.
    *
-   * @param {Object} params - An object containing parameters.
-   * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @returns {Object | null} When successfull, an object with client's settings. Null when no matching client found and when API call was unsuccessfull or returned unexpected data.
+   * @param {Object} [params] - An object containing parameters.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined which matches all clients.
+   * @returns {Array | null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientSettings ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -249,21 +251,27 @@ class UrbackupServer {
       return null;
     }
 
-    if (typeof clientName === 'undefined') {
-      return null;
-    }
+    const settings = [];
+    let clients = await this.getClients({ includeRemoved: true });
 
-    const clientStatus = await this.getStatus({ clientName: clientName, includeRemoved: true });
-
-    if (clientStatus === null || typeof clientStatus[0]?.id === 'undefined') {
+    if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
       return null;
     } else {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: clientStatus[0].id });
-      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
-        return null;
-      } else {
-        return settingsResponse.settings;
+      if (typeof clientName !== 'undefined') {
+        clients = clients.filter(client => client.name === clientName);
       }
+
+      for (const client of clients) {
+        const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
+
+        if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
+          return null;
+        } else {
+          settings.push(settingsResponse.settings);
+        }
+      }
+
+      return settings;
     }
   }
 
