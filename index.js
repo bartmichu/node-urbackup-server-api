@@ -175,14 +175,15 @@ class UrbackupServer {
 
   /**
    * Retrieves backup status.
+   * By default, it matches all clients and includes clients marked for removal.
    * Client name can be passed as an argument in which case only that one client's status is returned.
-   * If client name is undefined then this method returns status for each client separately.
    *
    * @param {Object} [params] - An object containing parameters.
-   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined.
-   * @returns When successfull, an array of objects with status info. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {Boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Array | null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
-  async getStatus ({ clientName } = {}) {
+  async getStatus ({ clientName, includeRemoved = true } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -194,14 +195,22 @@ class UrbackupServer {
       return null;
     } else {
       if (typeof clientName === 'undefined') {
-        return statusResponse.status;
+        if (includeRemoved === false) {
+          return statusResponse.status.filter(client => client.delete_pending !== '1');
+        } else {
+          return statusResponse.status;
+        }
       } else {
         const clientStatus = statusResponse.status.find(client => client.name === clientName);
         if (typeof clientStatus === 'undefined') {
           this.#printMessage('Failed to find client: no permission or client not found');
           return [];
         } else {
-          return [clientStatus];
+          if (includeRemoved === false && clientStatus.delete_pending === '1') {
+            return [];
+          } else {
+            return [clientStatus];
+          }
         }
       }
     }
@@ -244,7 +253,7 @@ class UrbackupServer {
       return null;
     }
 
-    const clientStatus = await this.getStatus({ clientName: clientName });
+    const clientStatus = await this.getStatus({ clientName: clientName, includeRemoved: true });
 
     if (clientStatus === null || typeof clientStatus[0]?.id === 'undefined') {
       return null;
