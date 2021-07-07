@@ -219,7 +219,7 @@ class UrbackupServer {
   /**
    * Retrieves general settings.
    *
-   * @returns When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Object | null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getGeneralSettings () {
     const loginResponse = await this.#login();
@@ -241,7 +241,7 @@ class UrbackupServer {
    *
    * @param {Object} params - An object containing parameters.
    * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @returns When successfull, an object with client's settings. Null when no matching client found and when API call was unsuccessfull or returned unexpected data.
+   * @returns {Object | null} When successfull, an object with client's settings. Null when no matching client found and when API call was unsuccessfull or returned unexpected data.
    */
   async getClientSettings ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -270,7 +270,7 @@ class UrbackupServer {
   /**
    * Retrieves server identity.
    *
-   * @returns When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {String | null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getServerIdentity () {
     const loginResponse = await this.#login();
@@ -292,7 +292,7 @@ class UrbackupServer {
    *
    * @param {Object} params - An object containing parameters.
    * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @returns When successfull, a string with client's authentication key. Null when no matching clients found or API call was unsuccessfull.
+   * @returns {String | null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientAuthkey ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -302,17 +302,13 @@ class UrbackupServer {
 
     const settingsResponse = await this.getClientSettings({ clientName: clientName });
 
-    if (settingsResponse === null) {
-      return null;
-    } else {
-      return settingsResponse === null ? '' : (settingsResponse?.internet_authkey.toString() || null);
-    }
+    return settingsResponse === null ? '' : (settingsResponse?.internet_authkey.toString() || null);
   }
 
   /**
-   * Retrieves users.
+   * Retrieves a list of users.
    *
-   * @returns When successfull, an array of objects representing users. Empty array when no matching clients found. Null when API call was unsuccessfull.
+   * @returns {Array | null} When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getUsers () {
     const loginResponse = await this.#login();
@@ -330,10 +326,10 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves groups.
-   * By default, UrBackup clients are added to a group with empty name.
+   * Retrieves a list of groups.
+   * By default, UrBackup clients are added to a group named with empty string.
    *
-   * @returns When successfull, an array of objects representing groups. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array | null} When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getGroups () {
     const loginResponse = await this.#login();
@@ -390,10 +386,11 @@ class UrbackupServer {
    * Retrieves storage usage.
    * Client name can be passed as an argument in which case only that one client's usage is returned.
    * If client name is undefined then this method returns storage usage for each client separately.
+   * By default this method lists usage for all clients.
    *
    * @param {Object} [params] - An object containing parameters.
-   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined.
-   * @returns When successfull, an array of objects with storage usage info. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @returns { Array | null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getUsage ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -419,16 +416,16 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves current and/or last activities.
+   * Retrieves a list of current and/or last activities.
    * Client name can be passed as an argument in which case only that one client's actions are returned.
    * If client name is undefined then this method returns actions for each client separately.
    * By default this method lists only activities that are currently in progress.
    *
    * @param {Object} [params] - An object containing parameters.
-   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
    * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included. Defaults to true.
    * @param {Boolean} [params.includeLast] - Whether or not last activities should be included. Defaults to false.
-   * @returns When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns { Array | null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getActivities ({ clientName, includeCurrent = true, includeLast = false } = {}) {
     const loginResponse = await this.#login();
