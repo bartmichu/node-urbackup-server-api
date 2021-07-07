@@ -342,6 +342,42 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of clients.
+   * By default, it matches clients from all groups and includes clients marked for removal.
+   *
+   * @param {Object} [params] - An object containing parameters.
+   * @param {String} [params.groupName] - Group name, case sensitive. Defaults to undefined, which includes all groups.
+   * @param {Boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Array | null} When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
+   */
+  async getClients ({ groupName, includeRemoved = true } = {}) {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const statusResponse = await this.#fetchJson('status');
+
+    if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+      return null;
+    } else {
+      const clients = [];
+
+      for (const client of statusResponse.status) {
+        if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
+          continue;
+        }
+        if (includeRemoved === false && client.delete_pending === '1') {
+          continue;
+        }
+        clients.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
+      }
+
+      return clients;
+    }
+  }
+
+  /**
    * Retrieves storage usage.
    * Client name can be passed as an argument in which case only that one client's usage is returned.
    * If client name is undefined then this method returns storage usage for each client separately.
