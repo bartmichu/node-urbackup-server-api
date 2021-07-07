@@ -351,7 +351,7 @@ class UrbackupServer {
    * By default, it matches clients from all groups and includes clients marked for removal.
    *
    * @param {Object} [params] - An object containing parameters.
-   * @param {String} [params.groupName] - Group name, case sensitive. Defaults to undefined, which includes all groups.
+   * @param {String} [params.groupName] - Group name, case sensitive. Defaults to undefined, which matches all groups.
    * @param {Boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array | null} When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
    */
