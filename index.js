@@ -51,6 +51,36 @@ class UrbackupServer {
   }
 
   /**
+   * Replaces bytes value with MB, GB, etc for matching keys in every object.
+   *
+   * @param {Array} objects - An array of objects to iterate.
+   * @param {Array} keysToConvert - An array of matching keys.
+   * @returns {Array} An array of objects.
+   */
+  #makeBytesReadable (objects = [], keysToConvert = []) {
+    const formatBytes = function (bytes, decimals = 2) {
+      if (bytes === 0) return '0 Bytes';
+
+      const kilo = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+      const i = Math.floor(Math.log(bytes) / Math.log(kilo));
+
+      return parseFloat((bytes / Math.pow(kilo, i)).toFixed(decimals < 0 ? 0 : decimals)) + ' ' + sizes[i];
+    };
+
+    for (const element of objects) {
+      for (const [key, value] of Object.entries(element)) {
+        if (keysToConvert.includes(key)) {
+          element[key] = formatBytes(value);
+        }
+      }
+    }
+
+    return objects;
+  }
+
+  /**
    * Makes API call to the server.
    *
    * @param {String} action - Action.
@@ -398,9 +428,10 @@ class UrbackupServer {
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {Boolean} [humanReadable] - Whether or not bytes value should be converted to MB, GB, etc. Defaults to false.
    * @returns { Array | null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
-  async getUsage ({ clientName } = {}) {
+  async getUsage ({ clientName, humanReadable = false } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -412,13 +443,13 @@ class UrbackupServer {
       return null;
     } else {
       if (typeof clientName === 'undefined') {
-        return usageResponse.usage;
+        return humanReadable === false ? usageResponse.usage : this.#makeBytesReadable(usageResponse.usage, ['files', 'images', 'used']);
       } else {
         const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
         if (clientUsage.length === 0) {
           this.#printMessage('Failed to find client usage: no permission or client not found');
         }
-        return clientUsage;
+        return humanReadable === false ? clientUsage : this.#makeBytesReadable(clientUsage, ['files', 'images', 'used']);
       }
     }
   }
