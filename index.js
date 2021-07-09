@@ -38,7 +38,7 @@ class UrbackupServer {
    */
   #printMessage (message) {
     if (this.#verboseMode === true) {
-      console.debug(message.toString());
+      console.debug(message?.toString());
     }
   }
 
