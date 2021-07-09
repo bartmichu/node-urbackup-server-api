@@ -338,9 +338,18 @@ class UrbackupServer {
       return null;
     }
 
-    const settingsResponse = await this.getClientSettings({ clientName: clientName });
+    if (typeof clientName === 'undefined') {
+      return '';
+    }
 
-    return settingsResponse === null ? '' : (settingsResponse?.internet_authkey.toString() || null);
+    const settingsResponse = await this.getClientSettings({ clientName: clientName });
+    console.log(settingsResponse);
+
+    if (settingsResponse === null) {
+      return null;
+    } else {
+      return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
+    }
   }
 
   /**
