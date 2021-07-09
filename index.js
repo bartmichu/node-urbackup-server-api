@@ -19,9 +19,9 @@ class UrbackupServer {
    * @constructor
    * @param {Object} params - An object containing parameters.
    * @param {String} params.url - Server's URL. Must include protocol, hostname and port (for example http://127.0.0.1:55414).
-   * @param {String} [params.username] - Username used to log in. Anonymous login is used if userneme is empty or undefined.
-   * @param {String} [params.password] - Password used to log in. Anonymous login is used if password is empty or undefined.
-   * @param {Boolean} [params.verboseMode] - Whether or not additional messages should be printed to the console.
+   * @param {String} [params.username] - Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined.
+   * @param {String} [params.password] - Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined.
+   * @param {Boolean} [params.verboseMode] - Whether or not additional messages should be printed to the console. Defaults to false.
    */
   constructor ({ url = '', username = '', password = '', verboseMode = false } = {}) {
     this.#url = new URL(url);
@@ -59,7 +59,9 @@ class UrbackupServer {
    */
   #makeBytesReadable (objects = [], keysToConvert = []) {
     const formatBytes = function (bytes, decimals = 2) {
-      if (bytes === 0) return '0 Bytes';
+      if (bytes === 0) {
+        return '0 Bytes';
+      }
 
       const kilo = 1024;
       const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
@@ -106,7 +108,7 @@ class UrbackupServer {
       this.#printMessage(error.message);
     });
 
-    if (response?.ok) {
+    if (response?.ok === true) {
       return response.json();
     } else {
       this.#printMessage(response);
@@ -125,8 +127,8 @@ class UrbackupServer {
   async #hashPassword (salt = '', rounds = 10000, randomKey = '') {
     function pbkdf2Async (password) {
       return new Promise((resolve, reject) => {
-        crypto.pbkdf2(password, salt, rounds, 32, 'sha256', (err, key) => {
-          return err ? reject(err) : resolve(key);
+        crypto.pbkdf2(password, salt, rounds, 32, 'sha256', (error, key) => {
+          return error ? reject(error) : resolve(key);
         });
       });
     }
@@ -343,7 +345,6 @@ class UrbackupServer {
     }
 
     const settingsResponse = await this.getClientSettings({ clientName: clientName });
-    console.log(settingsResponse);
 
     if (settingsResponse === null) {
       return null;
@@ -419,9 +420,11 @@ class UrbackupServer {
         if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
           continue;
         }
+
         if (includeRemoved === false && client.delete_pending === '1') {
           continue;
         }
+
         clients.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
       }
 
@@ -455,9 +458,11 @@ class UrbackupServer {
         return humanReadable === false ? usageResponse.usage : this.#makeBytesReadable(usageResponse.usage, ['files', 'images', 'used']);
       } else {
         const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
+
         if (clientUsage.length === 0) {
           this.#printMessage('Failed to find client usage: no permission or client not found');
         }
+
         return humanReadable === false ? clientUsage : this.#makeBytesReadable(clientUsage, ['files', 'images', 'used']);
       }
     }
@@ -491,12 +496,14 @@ class UrbackupServer {
         if (typeof activitiesResponse?.progress === 'undefined') {
           return null;
         }
+
         activities.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
       }
       if (includeLast === true) {
         if (typeof activitiesResponse?.lastacts === 'undefined') {
           return null;
         }
+
         activities.last = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
       }
 
