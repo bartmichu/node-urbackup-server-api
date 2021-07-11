@@ -181,7 +181,7 @@ class UrbackupServer {
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
    * @param {Boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
-   * @returns {Array | null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array|null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getStatus ({ clientName, includeRemoved = true } = {}) {
     const loginResponse = await this.#login();
@@ -190,27 +190,26 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
-
     if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
       return null;
-    } else {
-      if (typeof clientName === 'undefined') {
-        if (includeRemoved === false) {
-          return statusResponse.status.filter(client => client.delete_pending !== '1');
-        } else {
-          return statusResponse.status;
-        }
+    }
+
+    if (typeof clientName === 'undefined') {
+      if (includeRemoved === false) {
+        return statusResponse.status.filter(client => client.delete_pending !== '1');
       } else {
-        const clientStatus = statusResponse.status.find(client => client.name === clientName);
-        if (typeof clientStatus === 'undefined') {
-          this.#printMessage('Failed to find client: no permission or client not found');
+        return statusResponse.status;
+      }
+    } else {
+      const clientStatus = statusResponse.status.find(client => client.name === clientName);
+      if (typeof clientStatus === 'undefined') {
+        this.#printMessage('Failed to find client: no permission or client not found');
+        return [];
+      } else {
+        if (includeRemoved === false && clientStatus.delete_pending === '1') {
           return [];
         } else {
-          if (includeRemoved === false && clientStatus.delete_pending === '1') {
-            return [];
-          } else {
-            return [clientStatus];
-          }
+          return [clientStatus];
         }
       }
     }
@@ -219,7 +218,7 @@ class UrbackupServer {
   /**
    * Retrieves general settings.
    *
-   * @returns {Object | null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Object|null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getGeneralSettings () {
     const loginResponse = await this.#login();
@@ -228,12 +227,11 @@ class UrbackupServer {
     }
 
     const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
-
     if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
       return null;
-    } else {
-      return settingsResponse.settings;
     }
+
+    return settingsResponse.settings;
   }
 
   /**
@@ -243,7 +241,7 @@ class UrbackupServer {
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined which matches all clients.
-   * @returns {Array | null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientSettings ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -256,29 +254,29 @@ class UrbackupServer {
 
     if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
       return null;
-    } else {
-      if (typeof clientName !== 'undefined') {
-        clients = clients.filter(client => client.name === clientName);
-      }
-
-      for (const client of clients) {
-        const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
-
-        if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
-          return null;
-        } else {
-          settings.push(settingsResponse.settings);
-        }
-      }
-
-      return settings;
     }
+
+    if (typeof clientName !== 'undefined') {
+      clients = clients.filter(client => client.name === clientName);
+    }
+
+    for (const client of clients) {
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
+
+      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
+        return null;
+      } else {
+        settings.push(settingsResponse.settings);
+      }
+    }
+
+    return settings;
   }
 
   /**
    * Retrieves server identity.
    *
-   * @returns {String | null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {String|null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getServerIdentity () {
     const loginResponse = await this.#login();
@@ -287,12 +285,11 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
-
     if (statusResponse === null || typeof statusResponse?.server_identity === 'undefined') {
       return null;
-    } else {
-      return statusResponse.server_identity.toString();
     }
+
+    return statusResponse.server_identity.toString();
   }
 
   /**
@@ -300,7 +297,7 @@ class UrbackupServer {
    *
    * @param {Object} params - An object containing parameters.
    * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @returns {String | null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {String|null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientAuthkey ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -313,18 +310,17 @@ class UrbackupServer {
     }
 
     const settingsResponse = await this.getClientSettings({ clientName: clientName });
-
     if (settingsResponse === null) {
       return null;
-    } else {
-      return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
     }
+
+    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
   }
 
   /**
    * Retrieves a list of users.
    *
-   * @returns {Array | null} When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array|null} When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getUsers () {
     const loginResponse = await this.#login();
@@ -333,19 +329,18 @@ class UrbackupServer {
     }
 
     const usersResponse = await this.#fetchJson('settings', { sa: 'listusers' });
-
     if (usersResponse === null || typeof usersResponse?.users === 'undefined') {
       return null;
-    } else {
-      return usersResponse.users;
     }
+
+    return usersResponse.users;
   }
 
   /**
    * Retrieves a list of groups.
    * By default, UrBackup clients are added to a group named with empty string.
    *
-   * @returns {Array | null} When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array|null} When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getGroups () {
     const loginResponse = await this.#login();
@@ -357,9 +352,9 @@ class UrbackupServer {
 
     if (settingsResponse === null || typeof settingsResponse?.navitems?.groups === 'undefined') {
       return null;
-    } else {
-      return settingsResponse.navitems.groups;
     }
+
+    return settingsResponse.navitems.groups;
   }
 
   /**
@@ -369,7 +364,7 @@ class UrbackupServer {
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.groupName] - Group name, case sensitive. Defaults to undefined, which matches all groups.
    * @param {Boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
-   * @returns {Array | null} When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
+   * @returns {Array|null} When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
    */
   async getClients ({ groupName, includeRemoved = true } = {}) {
     const loginResponse = await this.#login();
@@ -378,26 +373,25 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
-
     if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
       return null;
-    } else {
-      const clients = [];
+    }
 
-      for (const client of statusResponse.status) {
-        if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
-          continue;
-        }
+    const clients = [];
 
-        if (includeRemoved === false && client.delete_pending === '1') {
-          continue;
-        }
-
-        clients.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
+    for (const client of statusResponse.status) {
+      if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
+        continue;
       }
 
-      return clients;
+      if (includeRemoved === false && client.delete_pending === '1') {
+        continue;
+      }
+
+      clients.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
     }
+
+    return clients;
   }
 
   /**
@@ -408,7 +402,7 @@ class UrbackupServer {
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
-   * @returns { Array | null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array|null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getUsage ({ clientName } = {}) {
     const loginResponse = await this.#login();
@@ -417,21 +411,20 @@ class UrbackupServer {
     }
 
     const usageResponse = await this.#fetchJson('usage');
-
     if (usageResponse === null || typeof usageResponse?.usage === 'undefined') {
       return null;
+    }
+
+    if (typeof clientName === 'undefined') {
+      return usageResponse.usage;
     } else {
-      if (typeof clientName === 'undefined') {
-        return usageResponse.usage;
-      } else {
-        const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
+      const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
 
-        if (clientUsage.length === 0) {
-          this.#printMessage('Failed to find client usage: no permission or client not found');
-        }
-
-        return clientUsage;
+      if (clientUsage.length === 0) {
+        this.#printMessage('Failed to find client usage: no permission or client not found');
       }
+
+      return clientUsage;
     }
   }
 
@@ -445,7 +438,7 @@ class UrbackupServer {
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
    * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included. Defaults to true.
    * @param {Boolean} [params.includeLast] - Whether or not last activities should be included. Defaults to false.
-   * @returns { Array | null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Array|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getActivities ({ clientName, includeCurrent = true, includeLast = false } = {}) {
     const loginResponse = await this.#login();
@@ -453,29 +446,28 @@ class UrbackupServer {
       return null;
     }
 
-    const activities = {};
     const activitiesResponse = await this.#fetchJson('progress');
-
     if (activitiesResponse === null) {
       return null;
-    } else {
-      if (includeCurrent === true) {
-        if (typeof activitiesResponse?.progress === 'undefined') {
-          return null;
-        }
-
-        activities.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
-      }
-      if (includeLast === true) {
-        if (typeof activitiesResponse?.lastacts === 'undefined') {
-          return null;
-        }
-
-        activities.last = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
-      }
-
-      return activities;
     }
+
+    const activities = {};
+
+    if (includeCurrent === true) {
+      if (typeof activitiesResponse?.progress === 'undefined') {
+        return null;
+      }
+      activities.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
+    }
+
+    if (includeLast === true) {
+      if (typeof activitiesResponse?.lastacts === 'undefined') {
+        return null;
+      }
+      activities.last = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
+    }
+
+    return activities;
   }
 }
 
