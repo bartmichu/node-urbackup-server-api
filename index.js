@@ -469,6 +469,47 @@ class UrbackupServer {
 
     return activities;
   }
+
+  /**
+   * Retrieve live logs.
+   * Server logs are returned when client's name is not specified.
+   *
+   * @param {Object} [params] - An object containing parameters.
+   * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which means server logs will be requested.
+   * @returns {Array|null} When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async getLiveLog ({ clientName } = {}) {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    let clientId;
+
+    if (typeof clientName === 'undefined') {
+      clientId = 0;
+    } else {
+      const clientsResponse = await this.getClients({ includeRemoved: true });
+
+      if (clientsResponse === null) {
+        return null;
+      }
+
+      clientId = clientsResponse.find(client => client.name === clientName)?.id;
+    }
+
+    if (typeof clientId === 'undefined') {
+      return [];
+    } else {
+      const response = await this.#fetchJson('livelog', { clientid: clientId });
+
+      if (response === null || typeof response.logdata === 'undefined') {
+        return null;
+      }
+
+      return response.logdata;
+    }
+  }
 }
 
 module.exports.UrbackupServer = UrbackupServer;
