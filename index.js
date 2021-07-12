@@ -33,7 +33,8 @@ class UrbackupServer {
   }
 
   /**
-   * Prints messages to the console in verbose mode.
+   * This method is not meant to be used outside the class.
+   * Used internally to print messages to the console in verbose mode.
    *
    * @param {String} message - Message printed to the console.
    */
@@ -44,7 +45,8 @@ class UrbackupServer {
   }
 
   /**
-   * Clears session ID and logged-in flag.
+   * This method is not meant to be used outside the class.
+   * Used internally to clear session ID and logged-in flag.
    */
   #clearLoginStatus () {
     this.#sessionId = '';
@@ -52,7 +54,8 @@ class UrbackupServer {
   }
 
   /**
-   * Makes API call to the server.
+   * This method is not meant to be used outside the class.
+   * Used internally to make API call to the server.
    *
    * @param {String} action - Action.
    * @param {Object} [bodyParams] - Action parameters.
@@ -86,7 +89,8 @@ class UrbackupServer {
   }
 
   /**
-   * Hashes user password.
+   * This method is not meant to be used outside the class.
+   * Used internally to hash user password.
    *
    * @param {String} salt - PBKDF2 salt value as stored on the server.
    * @param {Number} rounds - PBKDF2 iterations number.
@@ -115,8 +119,9 @@ class UrbackupServer {
   }
 
   /**
-   * Logs in to the server.
-   * If username or password is undefined or empty then this method tries anonymous login.
+   * This method is not meant to be used outside the class.
+   * Used internally to log in to the server.
+   * If username or password is undefined or empty then anonymous login is tried.
    *
    * @returns {Boolean} Boolean true if logged in successfully or was already logged in, boolean false otherwise.
    */
@@ -176,8 +181,14 @@ class UrbackupServer {
 
   /**
    * Retrieves backup status.
-   * By default, it matches all clients and includes clients marked for removal.
+   * Matches all clients by default, including clients marked for removal.
    * Client name can be passed as an argument in which case only that one client's status is returned.
+   * @example <caption>get status for all clients</caption>
+   * server.getStatus().then(data => console.log(data));
+   * @example <caption>get status for all clients, but skip clients marked for removal</caption>
+   * server.getStatus({includeRemoved: false}).then(data => console.log(data));
+   * @example <caption>get status for a specific client only</caption>
+   * server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
@@ -218,6 +229,8 @@ class UrbackupServer {
 
   /**
    * Retrieves general settings.
+   * @example <caption>get general settings</caption>
+   * server.getGeneralSettings().then(data => console.log(data));
    *
    * @returns {Object|null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -237,8 +250,11 @@ class UrbackupServer {
 
   /**
    * Retrieves client settings.
-   * Client name can be passed as an argument in which case only that one client's settings are returned.
-   * By default, it matches all clients.
+   * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
+   * @example <caption>get settings for all clients</caption>
+   * server.getClientSettings().then(data => console.log(data));
+   * @example <caption>get settings for a specific client only</caption>
+   * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined which matches all clients.
@@ -276,6 +292,8 @@ class UrbackupServer {
 
   /**
    * Retrieves server identity.
+   * @example <caption>get server identity</caption>
+   * server.getServerIdentity().then(data => console.log(data));
    *
    * @returns {String|null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -295,6 +313,8 @@ class UrbackupServer {
 
   /**
    * Retrieves authentication key for a specified client.
+   * @example <caption>get authentication key for a specific client</caption>
+   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
    *
    * @param {Object} params - An object containing parameters.
    * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
@@ -320,6 +340,8 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of users.
+   * @example <caption>get all users</caption>
+   * server.getUsers().then(data => console.log(data));
    *
    * @returns {Array|null} When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -340,6 +362,8 @@ class UrbackupServer {
   /**
    * Retrieves a list of groups.
    * By default, UrBackup clients are added to a group named with empty string.
+   * @example <caption>get all groups</caption>
+   * server.getGroups().then(data => console.log(data));
    *
    * @returns {Array|null} When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -360,7 +384,13 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of clients.
-   * By default, it matches clients from all groups and includes clients marked for removal.
+   * Matches all clients by default, including clients marked for removal.
+   * @example <caption>get all clients</caption>
+   * server.getClients().then(data => console.log(data));
+   * @example <caption>get all clients, but skip clients marked for removal</caption>
+   * server.getClients({includeRemoved: false}).then(data => console.log(data));
+   * @example <caption>get all clients belonging to a specific group</caption>
+   * server.getClients({groupName: 'office'}).then(data => console.log(data));
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.groupName] - Group name, case sensitive. Defaults to undefined, which matches all groups.
@@ -397,9 +427,11 @@ class UrbackupServer {
 
   /**
    * Retrieves storage usage.
-   * Client name can be passed as an argument in which case only that one client's usage is returned.
-   * If client name is undefined then this method returns storage usage for each client separately.
-   * By default this method lists usage for all clients.
+   * Matches all clients by default, but ```clientName``` can be used to request usage for one particular client.
+   * @example <caption>get usage for all clients</caption>
+   * server.getUsage().then(data => console.log(data));
+   * @example <caption>get usage for a specific client only</caption>
+   * server.getUsage({clientName: 'laptop1'}).then(data => console.log(data));
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
@@ -430,18 +462,25 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves a list of current and/or last activities.
-   * Client name can be passed as an argument in which case only that one client's actions are returned.
-   * If client name is undefined then this method returns actions for each client separately.
-   * By default this method lists only activities that are currently in progress.
+   * Retrieves a list of current and/or past activities.
+   * Matches all clients by default, but ```clientName``` can be used to request activities for one particular client.
+   * By default this method returns only activities that are currently in progress ans skips last activities.
+   * @example <caption>get current (in progress) activities for all clients</caption>
+   * server.getActivities().then(data => console.log(data));
+   * @example <caption>get past activities for all clients</caption>
+   * server.getActivities({includeCurrent: false, includePast: true}).then(data => console.log(data));
+   * @example <caption>get current (in progress) activities for a specific client only</caption>
+   * server.getActivities({clientName: 'laptop1'}).then(data => console.log(data));
+   * @example <caption>get all activities for a specific client only</caption>
+   * server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
    * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included. Defaults to true.
-   * @param {Boolean} [params.includeLast] - Whether or not last activities should be included. Defaults to false.
+   * @param {Boolean} [params.includePast] - Whether or not past activities should be included. Defaults to false.
    * @returns {Array|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
    */
-  async getActivities ({ clientName, includeCurrent = true, includeLast = false } = {}) {
+  async getActivities ({ clientName, includeCurrent = true, includePast = false } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -461,11 +500,11 @@ class UrbackupServer {
       activities.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
     }
 
-    if (includeLast === true) {
+    if (includePast === true) {
       if (typeof activitiesResponse?.lastacts === 'undefined') {
         return null;
       }
-      activities.last = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
+      activities.past = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
     }
 
     return activities;
@@ -473,8 +512,14 @@ class UrbackupServer {
 
   /**
    * Retrieves live logs.
-   * Can be used to retrieve specific client's logs or server logs. Server logs are requested when ```clientName``` is undefined.
+   * Server logs are requested by default, but ```clientName``` can be used to request logs for one particular client.
    * Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
+   * @example <caption>get server logs</caption>
+   * server.getLiveLog().then(data => console.log(data));
+   * @example <caption>get logs for a specific client only</caption>
+   * server.getLiveLog({clientName: 'laptop1'}).then(data => console.log(data));
+   * @example <caption>get logs for a specific client only, but skip previously fetched logs</caption>
+   * server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => console.log(data));
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which means server logs will be requested.
