@@ -5,14 +5,16 @@ module.exports = {
     node: true
   },
   extends: [
-    'standard'
+    'standard',
+    'plugin:jsdoc/recommended'
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 12
   },
   plugins: [
-    '@typescript-eslint'
+    '@typescript-eslint',
+    'jsdoc'
   ],
   rules: {
     semi: ['warn', 'always']
