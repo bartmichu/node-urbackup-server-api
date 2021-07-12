@@ -511,6 +511,69 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of file and/or image backups for a specific client.
+   * @example <caption>get all backups for a specific client</caption>
+   * server.getBackups({clientName: 'laptop1'}).then(data => console.log(data));
+   * @example <caption>get image backups for a specific client</caption>
+   * server.getBackups({clientName: 'laptop1', includeFileBackups: false}).then(data => console.log(data));
+   * @example <caption>get file backups for a specific client</caption>
+   * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
+   *
+   * @param {Object} params - An object containing parameters.
+   * @param {String} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @param {Boolean} [params.includeFileBackups] - Whether or not file backups should be included. Defaults to true.
+   * @param {Boolean} [params.includeImageBackups] - Whether or not image backups should be included. Defaults to true.
+   * @returns {Object|null} When successfull, an object with backups info. Object with empty array when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async getBackups ({ clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+    let clientId;
+
+    if (typeof clientName === 'undefined') {
+      clientId = 0;
+    } else {
+      const clientsResponse = await this.getClients({ includeRemoved: true });
+
+      if (clientsResponse === null) {
+        return null;
+      }
+
+      clientId = clientsResponse.find(client => client.name === clientName)?.id;
+    }
+
+    if (typeof clientId === 'undefined' || clientId === 0) {
+      return [];
+    } else {
+      const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId });
+
+      if (backupsResponse === null) {
+        return null;
+      }
+
+      const backups = {};
+
+      if (includeFileBackups === true) {
+        if (typeof backupsResponse?.backups === 'undefined') {
+          return null;
+        }
+        backups.file = backupsResponse.backups;
+      }
+
+      if (includeImageBackups === true) {
+        if (typeof backupsResponse?.backup_images === 'undefined') {
+          return null;
+        }
+        backups.image = backupsResponse.backup_images;
+      }
+
+      return backups;
+    }
+  }
+
+  /**
    * Retrieves live logs.
    * Server logs are requested by default, but ```clientName``` can be used to request logs for one particular client.
    * Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
