@@ -14,6 +14,7 @@ class UrbackupServer {
   #verboseMode;
   #sessionId = '';
   #isLoggedIn = false;
+  #lastLogId = new Map();
 
   /**
    * @constructor
@@ -471,14 +472,16 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieve live logs.
-   * Server logs are returned when client's name is not specified.
+   * Retrieves live logs.
+   * Can be used to retrieve specific client's logs or server logs. Server logs are requested when ```clientName``` is undefined.
+   * Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
    *
    * @param {Object} [params] - An object containing parameters.
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which means server logs will be requested.
+   * @param {Boolean} [params.recentOnly] - Whether or not only recent (unfetched) entries should be requested. Defaults to false.
    * @returns {Array|null} When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.
    */
-  async getLiveLog ({ clientName } = {}) {
+  async getLiveLog ({ clientName, recentOnly = false } = {}) {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -501,13 +504,25 @@ class UrbackupServer {
     if (typeof clientId === 'undefined') {
       return [];
     } else {
-      const response = await this.#fetchJson('livelog', { clientid: clientId });
+      const [value, release] = await this.#semaphore.acquire();
+      try {
+        const logResponse = await this.#fetchJson('livelog', { clientid: clientId, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
 
-      if (response === null || typeof response.logdata === 'undefined') {
-        return null;
+        if (logResponse === null || typeof logResponse.logdata === 'undefined') {
+          return null;
+        }
+
+        const lastId = logResponse.logdata.slice(-1)[0]?.id;
+        if (typeof lastId !== 'undefined') {
+          this.#lastLogId.set(clientId, lastId);
+        }
+
+        return logResponse.logdata;
+      } catch (error) {
+        this.#printMessage(error);
+      } finally {
+        release();
       }
-
-      return response.logdata;
     }
   }
 }
