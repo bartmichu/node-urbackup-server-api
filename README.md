@@ -14,7 +14,7 @@ Represents a UrBackup Server.
 **Kind**: global class  
 
 * [UrbackupServer](#UrbackupServer)
-    * [new UrbackupServer(params)](#new_UrbackupServer_new)
+    * [new UrbackupServer([params])](#new_UrbackupServer_new)
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
     * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code> \| <code>null</code>
@@ -30,12 +30,12 @@ Represents a UrBackup Server.
 
 <a name="new_UrbackupServer_new"></a>
 
-### new UrbackupServer(params)
+### new UrbackupServer([params])
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.url | <code>string</code> | Server's URL. Must include protocol, hostname and port (for example http://127.0.0.1:55414). |
+| [params] | <code>Object</code> | An object containing parameters. |
+| [params.url] | <code>string</code> | Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414 |
 | [params.username] | <code>string</code> | Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
 | [params.password] | <code>string</code> | Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
 | [params.verboseMode] | <code>boolean</code> | Whether or not additional messages should be printed to the console. Defaults to false. |
