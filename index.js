@@ -478,7 +478,7 @@ class UrbackupServer {
    * @param {String} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
    * @param {Boolean} [params.includeCurrent] - Whether or not currently running activities should be included. Defaults to true.
    * @param {Boolean} [params.includePast] - Whether or not past activities should be included. Defaults to false.
-   * @returns {Array|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Object|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getActivities ({ clientName, includeCurrent = true, includePast = false } = {}) {
     const loginResponse = await this.#login();
