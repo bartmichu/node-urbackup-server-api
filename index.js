@@ -11,7 +11,6 @@ class UrbackupServer {
   #url;
   #username;
   #password;
-  #verboseMode;
   #sessionId = '';
   #isLoggedIn = false;
   #lastLogId = new Map();
@@ -22,26 +21,12 @@ class UrbackupServer {
    * @param {string} [params.url] - Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414
    * @param {string} [params.username] - Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined.
    * @param {string} [params.password] - Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined.
-   * @param {boolean} [params.verboseMode] - Whether or not additional messages should be printed to the console. Defaults to false.
    */
-  constructor ({ url = 'http://127.0.0.1:55414', username = '', password = '', verboseMode = false } = {}) {
+  constructor ({ url = 'http://127.0.0.1:55414', username = '', password = '' } = {}) {
     this.#url = new URL(url);
     this.#url.pathname = 'x';
     this.#username = username;
     this.#password = password;
-    this.#verboseMode = verboseMode;
-  }
-
-  /**
-   * This method is not meant to be used outside the class.
-   * Used internally to print messages to the console in verbose mode.
-   *
-   * @param {string} message - Message printed to the console.
-   */
-  #printMessage (message) {
-    if (this.#verboseMode === true) {
-      console.debug(message?.toString());
-    }
   }
 
   /**
@@ -75,17 +60,9 @@ class UrbackupServer {
         'Content-Type': 'application/json; charset=UTF-8'
       },
       body: new URLSearchParams(bodyParams)
-    }).catch((error) => {
-      this.#printMessage('Connection failed');
-      this.#printMessage(error.message);
     });
 
-    if (response?.ok === true) {
-      return response.json();
-    } else {
-      this.#printMessage(response);
-      return null;
-    }
+    return response?.ok === true ? response.json() : null;
   }
 
   /**
@@ -133,21 +110,17 @@ class UrbackupServer {
     const [value, release] = await this.#semaphore.acquire();
     try {
       if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
-        this.#printMessage('Already logged in');
         return true;
       }
 
       if (this.#username.length === 0 || this.#password.length === 0) {
-        this.#printMessage('Trying anonymous login');
         const anonymousLoginResponse = await this.#fetchJson('login');
 
         if (anonymousLoginResponse?.success === true) {
-          this.#printMessage('Anonymous login succeeded');
           this.#sessionId = anonymousLoginResponse.session;
           this.#isLoggedIn = true;
           return true;
         } else {
-          this.#printMessage('Anonymous login failed');
           this.#clearLoginStatus();
           return false;
         }
@@ -155,29 +128,24 @@ class UrbackupServer {
         const saltResponse = await this.#fetchJson('salt', { username: this.#username });
 
         if (saltResponse === null || typeof saltResponse?.salt === 'undefined') {
-          this.#printMessage('Unable to get salt, invalid username');
           this.#clearLoginStatus();
           return false;
         } else {
           this.#sessionId = saltResponse.ses;
           const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
 
-          this.#printMessage('Trying user login');
           const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
 
           if (userLoginResponse?.success === true) {
-            this.#printMessage('User login succeeded');
             this.#isLoggedIn = true;
             return true;
           } else {
-            this.#printMessage('User login failed, invalid password');
             this.#clearLoginStatus();
             return false;
           }
         }
       }
     } catch (error) {
-      this.#printMessage(error);
     } finally {
       release();
     }
@@ -220,9 +188,7 @@ class UrbackupServer {
       }
     } else {
       const clientStatus = statusResponse.status.find(client => client.name === clientName);
-      if (typeof clientStatus === 'undefined') {
-        this.#printMessage('Failed to find client: no permission or client not found');
-      } else {
+      if (typeof clientStatus !== 'undefined') {
         returnValue = (includeRemoved === false && clientStatus.delete_pending === '1') ? returnValue : [clientStatus];
       }
     }
@@ -526,17 +492,7 @@ class UrbackupServer {
       return null;
     }
 
-    if (typeof clientName === 'undefined') {
-      returnValue = usageResponse.usage;
-    } else {
-      const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
-
-      if (clientUsage.length === 0) {
-        this.#printMessage('Failed to find client usage: no permission or client not found');
-      }
-
-      returnValue = clientUsage;
-    }
+    returnValue = typeof clientName === 'undefined' ? usageResponse.usage : usageResponse.usage.filter(client => client.name === clientName);
 
     return returnValue;
   }
@@ -702,7 +658,6 @@ class UrbackupServer {
 
         returnValue = logResponse.logdata;
       } catch (error) {
-        this.#printMessage(error);
       } finally {
         release();
       }

@@ -40,7 +40,6 @@ Represents a UrBackup Server.
 | [params.url] | <code>string</code> | Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414 |
 | [params.username] | <code>string</code> | Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
 | [params.password] | <code>string</code> | Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
-| [params.verboseMode] | <code>boolean</code> | Whether or not additional messages should be printed to the console. Defaults to false. |
 
 <a name="UrbackupServer+getStatus"></a>
 
