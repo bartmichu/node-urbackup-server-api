@@ -200,6 +200,8 @@ class UrbackupServer {
    * @returns {Array|null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getStatus ({ clientName, includeRemoved = true } = {}) {
+    let returnValue = [];
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -220,15 +222,12 @@ class UrbackupServer {
       const clientStatus = statusResponse.status.find(client => client.name === clientName);
       if (typeof clientStatus === 'undefined') {
         this.#printMessage('Failed to find client: no permission or client not found');
-        return [];
       } else {
-        if (includeRemoved === false && clientStatus.delete_pending === '1') {
-          return [];
-        } else {
-          return [clientStatus];
-        }
+        returnValue = (includeRemoved === false && clientStatus.delete_pending === '1') ? returnValue : [clientStatus];
       }
     }
+
+    return returnValue;
   }
 
   /**
@@ -265,12 +264,13 @@ class UrbackupServer {
    * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientSettings ({ clientName } = {}) {
+    const returnValue = [];
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
     }
 
-    const settings = [];
     let clients = await this.getClients({ includeRemoved: true });
 
     if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
@@ -286,12 +286,12 @@ class UrbackupServer {
 
       if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
         return null;
-      } else {
-        settings.push(settingsResponse.settings);
       }
+
+      returnValue.push(settingsResponse.settings);
     }
 
-    return settings;
+    return returnValue;
   }
 
   /**
@@ -325,13 +325,13 @@ class UrbackupServer {
    * @returns {string | null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientAuthkey ({ clientName } = {}) {
+    if (typeof clientName === 'undefined') {
+      return '';
+    }
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
-    }
-
-    if (typeof clientName === 'undefined') {
-      return '';
     }
 
     const settingsResponse = await this.getClientSettings({ clientName: clientName });
@@ -378,7 +378,6 @@ class UrbackupServer {
     }
 
     const settingsResponse = await this.#fetchJson('settings');
-
     if (settingsResponse === null || typeof settingsResponse?.navitems?.groups === 'undefined') {
       return null;
     }
@@ -402,6 +401,8 @@ class UrbackupServer {
    * @returns {Array|null} When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
    */
   async getClients ({ groupName, includeRemoved = true } = {}) {
+    const returnValue = [];
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -412,8 +413,6 @@ class UrbackupServer {
       return null;
     }
 
-    const clients = [];
-
     for (const client of statusResponse.status) {
       if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
         continue;
@@ -423,10 +422,10 @@ class UrbackupServer {
         continue;
       }
 
-      clients.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
+      returnValue.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
     }
 
-    return clients;
+    return returnValue;
   }
 
   /**
@@ -442,6 +441,8 @@ class UrbackupServer {
    * @returns {Array|null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getUsage ({ clientName } = {}) {
+    let returnValue = [];
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -453,7 +454,7 @@ class UrbackupServer {
     }
 
     if (typeof clientName === 'undefined') {
-      return usageResponse.usage;
+      returnValue = usageResponse.usage;
     } else {
       const clientUsage = usageResponse.usage.filter(client => client.name === clientName);
 
@@ -461,8 +462,10 @@ class UrbackupServer {
         this.#printMessage('Failed to find client usage: no permission or client not found');
       }
 
-      return clientUsage;
+      returnValue = clientUsage;
     }
+
+    return returnValue;
   }
 
   /**
@@ -485,33 +488,31 @@ class UrbackupServer {
    * @returns {Object|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getActivities ({ clientName, includeCurrent = true, includePast = false } = {}) {
+    const returnValue = { current: [], past: [] };
+
+    if (includeCurrent === false && includePast === false) {
+      return returnValue;
+    }
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
     }
 
     const activitiesResponse = await this.#fetchJson('progress');
-    if (activitiesResponse === null) {
+    if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
       return null;
     }
 
-    const activities = {};
-
     if (includeCurrent === true) {
-      if (typeof activitiesResponse?.progress === 'undefined') {
-        return null;
-      }
-      activities.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
+      returnValue.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
     }
 
     if (includePast === true) {
-      if (typeof activitiesResponse?.lastacts === 'undefined') {
-        return null;
-      }
-      activities.past = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
+      returnValue.past = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
     }
 
-    return activities;
+    return returnValue;
   }
 
   /**
@@ -527,54 +528,51 @@ class UrbackupServer {
    * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
    * @param {boolean} [params.includeFileBackups] - Whether or not file backups should be included. Defaults to true.
    * @param {boolean} [params.includeImageBackups] - Whether or not image backups should be included. Defaults to true.
-   * @returns {Object|null} When successfull, an object with backups info. Object with empty array when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {Object|null} When successfull, an object with backups info. Object with empty arrays when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getBackups ({ clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
+    const returnValue = { file: [], image: [] };
+
+    if (typeof clientName === 'undefined' || (includeFileBackups === false && includeImageBackups === false)) {
+      return returnValue;
+    }
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
     }
-    let clientId;
 
-    if (typeof clientName === 'undefined') {
-      clientId = 0;
-    } else {
-      const clientsResponse = await this.getClients({ includeRemoved: true });
+    const clientsResponse = await this.getClients({ includeRemoved: true });
 
-      if (clientsResponse === null) {
-        return null;
-      }
-
-      clientId = clientsResponse.find(client => client.name === clientName)?.id;
+    if (clientsResponse === null) {
+      return null;
     }
 
-    if (typeof clientId === 'undefined' || clientId === 0) {
-      return [];
-    } else {
+    const clientId = clientsResponse.find(client => client.name === clientName)?.id;
+
+    if (typeof clientId !== 'undefined') {
       const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId });
 
       if (backupsResponse === null) {
         return null;
       }
 
-      const backups = {};
-
       if (includeFileBackups === true) {
         if (typeof backupsResponse?.backups === 'undefined') {
           return null;
         }
-        backups.file = backupsResponse.backups;
+        returnValue.file = backupsResponse.backups;
       }
 
       if (includeImageBackups === true) {
         if (typeof backupsResponse?.backup_images === 'undefined') {
           return null;
         }
-        backups.image = backupsResponse.backup_images;
+        returnValue.image = backupsResponse.backup_images;
       }
-
-      return backups;
     }
+
+    return returnValue;
   }
 
   /**
@@ -594,6 +592,8 @@ class UrbackupServer {
    * @returns {Array|null} When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getLiveLog ({ clientName, recentOnly = false } = {}) {
+    let returnValue = [];
+
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -613,9 +613,7 @@ class UrbackupServer {
       clientId = clientsResponse.find(client => client.name === clientName)?.id;
     }
 
-    if (typeof clientId === 'undefined') {
-      return [];
-    } else {
+    if (typeof clientId !== 'undefined') {
       const [value, release] = await this.#semaphore.acquire();
       try {
         const logResponse = await this.#fetchJson('livelog', { clientid: clientId, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
@@ -629,13 +627,15 @@ class UrbackupServer {
           this.#lastLogId.set(clientId, lastId);
         }
 
-        return logResponse.logdata;
+        returnValue = logResponse.logdata;
       } catch (error) {
         this.#printMessage(error);
       } finally {
         release();
       }
     }
+
+    return returnValue;
   }
 }
 
