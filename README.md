@@ -17,12 +17,14 @@ Represents a UrBackup Server.
     * [new UrbackupServer([params])](#new_UrbackupServer_new)
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
+    * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code> \| <code>null</code>
     * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>string</code> \| <code>null</code>
     * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
     * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Array</code> \| <code>null</code>
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code> \| <code>null</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
+    * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code> \| <code>null</code>
     * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Object</code> \| <code>null</code>
@@ -78,6 +80,25 @@ Retrieves general settings.
 **Example** *(get general settings)*  
 ```js
 server.getGeneralSettings().then(data => console.log(data));
+```
+<a name="UrbackupServer+setGeneralSetting"></a>
+
+### urbackupServer.setGeneralSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
+Changes one specific element of general settings.
+A list of settings can be obtained with ```getGeneralSettings``` method.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | An object containing parameters. |
+| params.key | <code>string</code> | Settings element to chenge. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. |
+
+**Example** *(Disable image backups)*  
+```js
+server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientSettings"></a>
 
@@ -179,6 +200,23 @@ server.getClients({includeRemoved: false}).then(data => console.log(data));
 ```js
 server.getClients({groupName: 'office'}).then(data => console.log(data));
 ```
+<a name="UrbackupServer+addClient"></a>
+
+### urbackupServer.addClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+Adds a new client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | An object containing parameters. |
+| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Add new client)*  
+```js
+server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
+```
 <a name="UrbackupServer+getUsage"></a>
 
 ### urbackupServer.getUsage([params]) ⇒ <code>Array</code> \| <code>null</code>
@@ -240,7 +278,7 @@ server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: 
 Retrieves a list of file and/or image backups for a specific client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with backups info. Object with empty array when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with backups info. Object with empty arrays when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.  
 
 | Param | Type | Description |
 | --- | --- | --- |
