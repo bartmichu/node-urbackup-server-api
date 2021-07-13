@@ -15,20 +15,20 @@ Represents a UrBackup Server.
 
 * [UrbackupServer](#UrbackupServer)
     * [new UrbackupServer([params])](#new_UrbackupServer_new)
-    * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
-    * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
-    * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code> \| <code>null</code>
     * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>string</code> \| <code>null</code>
-    * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
     * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Array</code> \| <code>null</code>
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code> \| <code>null</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
+    * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code> \| <code>null</code>
     * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Object</code> \| <code>null</code>
     * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Array</code> \| <code>null</code>
+    * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
+    * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code> \| <code>null</code>
 
 <a name="new_UrbackupServer_new"></a>
 
@@ -41,86 +41,6 @@ Represents a UrBackup Server.
 | [params.username] | <code>string</code> | Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
 | [params.password] | <code>string</code> | Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
 
-<a name="UrbackupServer+getStatus"></a>
-
-### urbackupServer.getStatus([params]) ⇒ <code>Array</code> \| <code>null</code>
-Retrieves backup status.
-Matches all clients by default, including clients marked for removal.
-Client name can be passed as an argument in which case only that one client's status is returned.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined, which matches all clients. |
-| [params.includeRemoved] | <code>boolean</code> | Whether or not clients pending deletion should be included. Defaults to true. |
-
-**Example** *(get status for all clients)*  
-```js
-server.getStatus().then(data => console.log(data));
-```
-**Example** *(get status for all clients, but skip clients marked for removal)*  
-```js
-server.getStatus({includeRemoved: false}).then(data => console.log(data));
-```
-**Example** *(get status for a specific client only)*  
-```js
-server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
-```
-<a name="UrbackupServer+getGeneralSettings"></a>
-
-### urbackupServer.getGeneralSettings() ⇒ <code>Object</code> \| <code>null</code>
-Retrieves general settings.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.  
-**Example** *(get general settings)*  
-```js
-server.getGeneralSettings().then(data => console.log(data));
-```
-<a name="UrbackupServer+setGeneralSetting"></a>
-
-### urbackupServer.setGeneralSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
-Changes one specific element of general settings.
-A list of settings can be obtained with ```getGeneralSettings``` method.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.key | <code>string</code> | Settings element to chenge. |
-| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. |
-
-**Example** *(Disable image backups)*  
-```js
-server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
-```
-<a name="UrbackupServer+getClientSettings"></a>
-
-### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code> \| <code>null</code>
-Retrieves client settings.
-Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined which matches all clients. |
-
-**Example** *(get settings for all clients)*  
-```js
-server.getClientSettings().then(data => console.log(data));
-```
-**Example** *(get settings for a specific client only)*  
-```js
-server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
-```
 <a name="UrbackupServer+getServerIdentity"></a>
 
 ### urbackupServer.getServerIdentity() ⇒ <code>string</code> \| <code>null</code>
@@ -131,23 +51,6 @@ Retrieves server identity.
 **Example** *(get server identity)*  
 ```js
 server.getServerIdentity().then(data => console.log(data));
-```
-<a name="UrbackupServer+getClientAuthkey"></a>
-
-### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code> \| <code>null</code>
-Retrieves authentication key for a specified client.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
-
-**Example** *(get authentication key for a specific client)*  
-```js
-server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getUsers"></a>
 
@@ -215,6 +118,51 @@ Adds a new client.
 **Example** *(Add new client)*  
 ```js
 server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getClientAuthkey"></a>
+
+### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code> \| <code>null</code>
+Retrieves authentication key for a specified client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | An object containing parameters. |
+| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(get authentication key for a specific client)*  
+```js
+server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getStatus"></a>
+
+### urbackupServer.getStatus([params]) ⇒ <code>Array</code> \| <code>null</code>
+Retrieves backup status.
+Matches all clients by default, including clients marked for removal.
+Client name can be passed as an argument in which case only that one client's status is returned.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>Object</code> | An object containing parameters. |
+| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params.includeRemoved] | <code>boolean</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(get status for all clients)*  
+```js
+server.getStatus().then(data => console.log(data));
+```
+**Example** *(get status for all clients, but skip clients marked for removal)*  
+```js
+server.getStatus({includeRemoved: false}).then(data => console.log(data));
+```
+**Example** *(get status for a specific client only)*  
+```js
+server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getUsage"></a>
 
@@ -325,4 +273,56 @@ server.getLiveLog({clientName: 'laptop1'}).then(data => console.log(data));
 **Example** *(get logs for a specific client only, but skip previously fetched logs)*  
 ```js
 server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getGeneralSettings"></a>
+
+### urbackupServer.getGeneralSettings() ⇒ <code>Object</code> \| <code>null</code>
+Retrieves general settings.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.  
+**Example** *(get general settings)*  
+```js
+server.getGeneralSettings().then(data => console.log(data));
+```
+<a name="UrbackupServer+setGeneralSetting"></a>
+
+### urbackupServer.setGeneralSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
+Changes one specific element of general settings.
+A list of settings can be obtained with ```getGeneralSettings``` method.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | An object containing parameters. |
+| params.key | <code>string</code> | Settings element to chenge. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. |
+
+**Example** *(Disable image backups)*  
+```js
+server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getClientSettings"></a>
+
+### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code> \| <code>null</code>
+Retrieves client settings.
+Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>Object</code> | An object containing parameters. |
+| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined which matches all clients. |
+
+**Example** *(get settings for all clients)*  
+```js
+server.getClientSettings().then(data => console.log(data));
+```
+**Example** *(get settings for a specific client only)*  
+```js
+server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
 ```

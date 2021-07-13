@@ -152,157 +152,6 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves backup status.
-   * Matches all clients by default, including clients marked for removal.
-   * Client name can be passed as an argument in which case only that one client's status is returned.
-   *
-   * @example <caption>get status for all clients</caption>
-   * server.getStatus().then(data => console.log(data));
-   * @example <caption>get status for all clients, but skip clients marked for removal</caption>
-   * server.getStatus({includeRemoved: false}).then(data => console.log(data));
-   * @example <caption>get status for a specific client only</caption>
-   * server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
-   * @param {boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
-   * @returns {Array|null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
-   */
-  async getStatus ({ clientName, includeRemoved = true } = {}) {
-    let returnValue = [];
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const statusResponse = await this.#fetchJson('status');
-    if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
-      return null;
-    }
-
-    if (typeof clientName === 'undefined') {
-      if (includeRemoved === false) {
-        return statusResponse.status.filter(client => client.delete_pending !== '1');
-      } else {
-        return statusResponse.status;
-      }
-    } else {
-      const clientStatus = statusResponse.status.find(client => client.name === clientName);
-      if (typeof clientStatus !== 'undefined') {
-        returnValue = (includeRemoved === false && clientStatus.delete_pending === '1') ? returnValue : [clientStatus];
-      }
-    }
-
-    return returnValue;
-  }
-
-  /**
-   * Retrieves general settings.
-   *
-   * @example <caption>get general settings</caption>
-   * server.getGeneralSettings().then(data => console.log(data));
-   * @returns {Object|null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
-   */
-  async getGeneralSettings () {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
-    if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
-      return null;
-    }
-
-    return settingsResponse.settings;
-  }
-
-  /**
-   * Changes one specific element of general settings.
-   * A list of settings can be obtained with ```getGeneralSettings``` method.
-   *
-   * @example <caption>Disable image backups</caption>
-   * server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.key - Settings element to chenge.
-   * @param {string|number|boolean} params.newValue - New value for settings element.
-   * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
-   */
-  async setGeneralSetting ({ key, newValue } = {}) {
-    let returnValue = false;
-
-    if (typeof key === 'undefined' || typeof newValue === 'undefined') {
-      return returnValue;
-    }
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settings = await this.getGeneralSettings();
-    if (settings === null) {
-      return null;
-    }
-
-    if (Object.keys(settings).includes(key)) {
-      settings[key] = newValue;
-      settings.sa = 'general_save';
-
-      const saveResponse = await this.#fetchJson('settings', settings);
-      if (saveResponse === null) {
-        return null;
-      }
-      returnValue = saveResponse.saved_ok === true;
-    }
-
-    return returnValue;
-  }
-
-  /**
-   * Retrieves client settings.
-   * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
-   *
-   * @example <caption>get settings for all clients</caption>
-   * server.getClientSettings().then(data => console.log(data));
-   * @example <caption>get settings for a specific client only</caption>
-   * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined which matches all clients.
-   * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
-   */
-  async getClientSettings ({ clientName } = {}) {
-    const returnValue = [];
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    let clients = await this.getClients({ includeRemoved: true });
-
-    if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
-      return null;
-    }
-
-    if (typeof clientName !== 'undefined') {
-      clients = clients.filter(client => client.name === clientName);
-    }
-
-    for (const client of clients) {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
-
-      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
-        return null;
-      }
-
-      returnValue.push(settingsResponse.settings);
-    }
-
-    return returnValue;
-  }
-
-  /**
    * Retrieves server identity.
    *
    * @example <caption>get server identity</caption>
@@ -321,33 +170,6 @@ class UrbackupServer {
     }
 
     return statusResponse.server_identity.toString();
-  }
-
-  /**
-   * Retrieves authentication key for a specified client.
-   *
-   * @example <caption>get authentication key for a specific client</caption>
-   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @returns {string | null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
-   */
-  async getClientAuthkey ({ clientName } = {}) {
-    if (typeof clientName === 'undefined') {
-      return '';
-    }
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settingsResponse = await this.getClientSettings({ clientName: clientName });
-    if (settingsResponse === null) {
-      return null;
-    }
-
-    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
   }
 
   /**
@@ -463,6 +285,78 @@ class UrbackupServer {
     }
 
     returnValue = addResponse.added_new_client === true;
+
+    return returnValue;
+  }
+
+  /**
+   * Retrieves authentication key for a specified client.
+   *
+   * @example <caption>get authentication key for a specific client</caption>
+   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+   * @param {Object} params - An object containing parameters.
+   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @returns {string | null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async getClientAuthkey ({ clientName } = {}) {
+    if (typeof clientName === 'undefined') {
+      return '';
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settingsResponse = await this.getClientSettings({ clientName: clientName });
+    if (settingsResponse === null) {
+      return null;
+    }
+
+    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
+  }
+
+  /**
+   * Retrieves backup status.
+   * Matches all clients by default, including clients marked for removal.
+   * Client name can be passed as an argument in which case only that one client's status is returned.
+   *
+   * @example <caption>get status for all clients</caption>
+   * server.getStatus().then(data => console.log(data));
+   * @example <caption>get status for all clients, but skip clients marked for removal</caption>
+   * server.getStatus({includeRemoved: false}).then(data => console.log(data));
+   * @example <caption>get status for a specific client only</caption>
+   * server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
+   * @param {Object} [params] - An object containing parameters.
+   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Array|null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async getStatus ({ clientName, includeRemoved = true } = {}) {
+    let returnValue = [];
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const statusResponse = await this.#fetchJson('status');
+    if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+      return null;
+    }
+
+    if (typeof clientName === 'undefined') {
+      if (includeRemoved === false) {
+        return statusResponse.status.filter(client => client.delete_pending !== '1');
+      } else {
+        return statusResponse.status;
+      }
+    } else {
+      const clientStatus = statusResponse.status.find(client => client.name === clientName);
+      if (typeof clientStatus !== 'undefined') {
+        returnValue = (includeRemoved === false && clientStatus.delete_pending === '1') ? returnValue : [clientStatus];
+      }
+    }
 
     return returnValue;
   }
@@ -661,6 +555,112 @@ class UrbackupServer {
       } finally {
         release();
       }
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Retrieves general settings.
+   *
+   * @example <caption>get general settings</caption>
+   * server.getGeneralSettings().then(data => console.log(data));
+   * @returns {Object|null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async getGeneralSettings () {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
+    if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
+      return null;
+    }
+
+    return settingsResponse.settings;
+  }
+
+  /**
+   * Changes one specific element of general settings.
+   * A list of settings can be obtained with ```getGeneralSettings``` method.
+   *
+   * @example <caption>Disable image backups</caption>
+   * server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
+   * @param {Object} params - An object containing parameters.
+   * @param {string} params.key - Settings element to chenge.
+   * @param {string|number|boolean} params.newValue - New value for settings element.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async setGeneralSetting ({ key, newValue } = {}) {
+    let returnValue = false;
+
+    if (typeof key === 'undefined' || typeof newValue === 'undefined') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settings = await this.getGeneralSettings();
+    if (settings === null) {
+      return null;
+    }
+
+    if (Object.keys(settings).includes(key)) {
+      settings[key] = newValue;
+      settings.sa = 'general_save';
+
+      const saveResponse = await this.#fetchJson('settings', settings);
+      if (saveResponse === null) {
+        return null;
+      }
+      returnValue = saveResponse.saved_ok === true;
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Retrieves client settings.
+   * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
+   *
+   * @example <caption>get settings for all clients</caption>
+   * server.getClientSettings().then(data => console.log(data));
+   * @example <caption>get settings for a specific client only</caption>
+   * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
+   * @param {Object} [params] - An object containing parameters.
+   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined which matches all clients.
+   * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async getClientSettings ({ clientName } = {}) {
+    const returnValue = [];
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    let clients = await this.getClients({ includeRemoved: true });
+
+    if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
+      return null;
+    }
+
+    if (typeof clientName !== 'undefined') {
+      clients = clients.filter(client => client.name === clientName);
+    }
+
+    for (const client of clients) {
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
+
+      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
+        return null;
+      }
+
+      returnValue.push(settingsResponse.settings);
     }
 
     return returnValue;
