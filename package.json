@@ -11,7 +11,7 @@
     "url": "git+https://github.com/bartmichu/node-urbackup-server-api.git"
   },
   "author": "Michał Bartkowiak",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/bartmichu/node-urbackup-server-api/issues"
   },
