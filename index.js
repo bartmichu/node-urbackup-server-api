@@ -252,6 +252,48 @@ class UrbackupServer {
   }
 
   /**
+   * Changes one specific element of general settings.
+   * A list of settings can be obtained with ```getGeneralSettings``` method.
+   *
+   * @example <caption>Disable image backups</caption>
+   * server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
+   * @param {Object} params - An object containing parameters.
+   * @param {string} params.key - Settings element to chenge.
+   * @param {string|number|boolean} params.newValue - New value for settings element.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async setGeneralSetting ({ key, newValue } = {}) {
+    let returnValue = false;
+
+    if (typeof key === 'undefined' || typeof newValue === 'undefined') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settings = await this.getGeneralSettings();
+    if (settings === null) {
+      return null;
+    }
+
+    if (Object.keys(settings).includes(key)) {
+      settings[key] = newValue;
+      settings.sa = 'general_save';
+
+      const saveResponse = await this.#fetchJson('settings', settings);
+      if (saveResponse === null) {
+        return null;
+      }
+      returnValue = saveResponse.saved_ok === true;
+    }
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves client settings.
    * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
    *
@@ -424,6 +466,37 @@ class UrbackupServer {
 
       returnValue.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
     }
+
+    return returnValue;
+  }
+
+  /**
+   * Adds a new client.
+   *
+   * @example <caption>Add new client</caption>
+   * server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
+   * @param {Object} params - An object containing parameters.
+   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean| null} When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async addClient ({ clientName } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || clientName === '') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const addResponse = await this.#fetchJson('add_client', { clientname: clientName });
+    if (addResponse === null) {
+      return null;
+    }
+
+    returnValue = addResponse.added_new_client === true;
 
     return returnValue;
   }
