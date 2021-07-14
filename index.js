@@ -290,6 +290,58 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of extra clients.
+   *
+   * @example <caption>get extra clients</caption>
+   * server.getExtraClients().then(data => console.log(data));
+   * @returns {Array|null} When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
+   */
+  async getExtraClients () {
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const statusResponse = await this.#fetchJson('status');
+    if (statusResponse === null || typeof statusResponse?.extra_clients === 'undefined') {
+      return null;
+    }
+
+    return statusResponse.extra_clients;
+  }
+
+  /**
+   * Adds a new extra client.
+   *
+   * @example <caption>Add new extra client</caption>
+   * server.addExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
+   * @param {Object} params - An object containing parameters.
+   * @param {string} params.address - Client's IP address or hostname, case sensitive. Defaults to undefined.
+   * @returns {boolean| null} When successfull, boolean true. Boolean false when adding was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async addExtraClient ({ address } = {}) {
+    let returnValue = false;
+
+    if (typeof address === 'undefined') {
+      return returnValue;
+    };
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const statusResponse = await this.#fetchJson('status', { hostname: address });
+    if (statusResponse === null || typeof statusResponse?.extra_clients === 'undefined') {
+      return null;
+    }
+
+    returnValue = statusResponse.extra_clients.some(extraClient => extraClient.hostname === address);
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves authentication key for a specified client.
    *
    * @example <caption>get authentication key for a specific client</caption>
@@ -661,6 +713,53 @@ class UrbackupServer {
       }
 
       returnValue.push(settingsResponse.settings);
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Changes one specific element of client settings.
+   * A list of settings can be obtained with ```getClientSettings``` method.
+   *
+   * @example <caption>set directories to backup to be optional by default</caption>
+   * server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+   * @param {Object} params - An object containing parameters.
+   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @param {string} params.key - Settings element to change. Defaults to undefined.
+   * @param {string|number|boolean} params.newValue - New value for settings element. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async setClientSetting ({ clientName, key, newValue } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || typeof key === 'undefined' || typeof newValue === 'undefined') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settings = await this.getClientSettings({ clientName: clientName });
+
+    if (settings === null) {
+      return null;
+    }
+
+    if (settings.length > 0 && Object.keys(settings[0]).includes(key)) {
+      settings[0][key] = newValue;
+      settings[0].overwrite = true;
+      settings[0].sa = 'clientsettings_save';
+      settings[0].t_clientid = settings[0].clientid;
+
+      const saveResponse = await this.#fetchJson('settings', settings[0]);
+      if (saveResponse === null) {
+        return null;
+      }
+
+      returnValue = saveResponse.saved_ok === true;
     }
 
     return returnValue;
