@@ -322,7 +322,7 @@ class UrbackupServer {
   async addExtraClient ({ address } = {}) {
     let returnValue = false;
 
-    if (typeof address === 'undefined') {
+    if (typeof address === 'undefined' || address === '') {
       return returnValue;
     };
 
