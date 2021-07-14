@@ -20,6 +20,8 @@ Represents a UrBackup Server.
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code> \| <code>null</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.getExtraClients()](#UrbackupServer+getExtraClients) ⇒ <code>Array</code> \| <code>null</code>
+    * [.addExtraClient(params)](#UrbackupServer+addExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
@@ -29,6 +31,7 @@ Represents a UrBackup Server.
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
     * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code> \| <code>null</code>
+    * [.setClientSetting(params)](#UrbackupServer+setClientSetting) ⇒ <code>boolean</code> \| <code>null</code>
 
 <a name="new_UrbackupServer_new"></a>
 
@@ -118,6 +121,34 @@ Adds a new client.
 **Example** *(Add new client)*  
 ```js
 server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getExtraClients"></a>
+
+### urbackupServer.getExtraClients() ⇒ <code>Array</code> \| <code>null</code>
+Retrieves a list of extra clients.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.  
+**Example** *(get extra clients)*  
+```js
+server.getExtraClients().then(data => console.log(data));
+```
+<a name="UrbackupServer+addExtraClient"></a>
+
+### urbackupServer.addExtraClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+Adds a new extra client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when adding was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | An object containing parameters. |
+| params.address | <code>string</code> | Client's IP address or hostname, case sensitive. Defaults to undefined. |
+
+**Example** *(Add new extra client)*  
+```js
+server.addExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientAuthkey"></a>
 
@@ -297,12 +328,12 @@ A list of settings can be obtained with ```getGeneralSettings``` method.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | An object containing parameters. |
-| params.key | <code>string</code> | Settings element to chenge. |
-| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. |
+| params.key | <code>string</code> | Settings element to change. Defaults to undefined. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. Defaults to undefined. |
 
 **Example** *(Disable image backups)*  
 ```js
-server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
+server.setGeneralSetting({key: 'no_images', newValue: true}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientSettings"></a>
 
@@ -325,4 +356,24 @@ server.getClientSettings().then(data => console.log(data));
 **Example** *(get settings for a specific client only)*  
 ```js
 server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+setClientSetting"></a>
+
+### urbackupServer.setClientSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
+Changes one specific element of client settings.
+A list of settings can be obtained with ```getClientSettings``` method.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | An object containing parameters. |
+| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
+| params.key | <code>string</code> | Settings element to change. Defaults to undefined. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. Defaults to undefined. |
+
+**Example** *(set directories to backup to be optional by default)*  
+```js
+server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
 ```
