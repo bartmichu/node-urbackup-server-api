@@ -586,10 +586,10 @@ class UrbackupServer {
    * A list of settings can be obtained with ```getGeneralSettings``` method.
    *
    * @example <caption>Disable image backups</caption>
-   * server.setGeneralSetting({key:'no_images', newValue: true}).then(data => console.log(data));
+   * server.setGeneralSetting({key: 'no_images', newValue: true}).then(data => console.log(data));
    * @param {Object} params - An object containing parameters.
-   * @param {string} params.key - Settings element to chenge.
-   * @param {string|number|boolean} params.newValue - New value for settings element.
+   * @param {string} params.key - Settings element to change. Defaults to undefined.
+   * @param {string|number|boolean} params.newValue - New value for settings element. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
    */
   async setGeneralSetting ({ key, newValue } = {}) {
