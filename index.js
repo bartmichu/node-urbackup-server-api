@@ -342,6 +342,47 @@ class UrbackupServer {
   }
 
   /**
+   * Removes specific extra client.
+   *
+   * @example <caption>Remove extra client</caption>
+   * server.removeExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.address - (Required) Client's IP address or hostname, case sensitive. Defaults to undefined.
+   * @returns {boolean| null} When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async removeExtraClient ({ address } = {}) {
+    let returnValue = false;
+
+    if (typeof address === 'undefined' || address === '') {
+      return returnValue;
+    };
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const extraClients = await this.getExtraClients(0);
+    if (extraClients === null) {
+      return null;
+    }
+
+    const matchingClient = extraClients.find(extraClient => extraClient.hostname === address);
+    if (typeof matchingClient !== 'undefined') {
+      const statusResponse = await this.#fetchJson('status', { hostname: matchingClient.id, remove: true });
+      if (statusResponse === null || typeof statusResponse?.extra_clients === 'undefined') {
+        return null;
+      }
+
+      if (typeof statusResponse.extra_clients.find(extraClient => extraClient.hostname === address) === 'undefined') {
+        returnValue = true;
+      }
+    }
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves authentication key for a specified client.
    *
    * @example <caption>Get authentication key for a specific client</caption>

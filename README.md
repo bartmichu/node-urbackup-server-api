@@ -22,6 +22,7 @@ Represents a UrBackup Server.
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getExtraClients()](#UrbackupServer+getExtraClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addExtraClient(params)](#UrbackupServer+addExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.removeExtraClient(params)](#UrbackupServer+removeExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
@@ -149,6 +150,23 @@ Adds a new extra client.
 **Example** *(Add new extra client)*  
 ```js
 server.addExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+removeExtraClient"></a>
+
+### urbackupServer.removeExtraClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+Removes specific extra client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.address | <code>string</code> | (Required) Client's IP address or hostname, case sensitive. Defaults to undefined. |
+
+**Example** *(Remove extra client)*  
+```js
+server.removeExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientAuthkey"></a>
 
