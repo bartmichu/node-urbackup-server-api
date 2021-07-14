@@ -17,10 +17,10 @@ class UrbackupServer {
 
   /**
    * @class
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.url] - Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414
-   * @param {string} [params.username] - Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined.
-   * @param {string} [params.password] - Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.url] - (Optional) Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414.
+   * @param {string} [params.username] - (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined.
+   * @param {string} [params.password] - (Optional) Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined.
    */
   constructor ({ url = 'http://127.0.0.1:55414', username = '', password = '' } = {}) {
     this.#url = new URL(url);
@@ -154,7 +154,7 @@ class UrbackupServer {
   /**
    * Retrieves server identity.
    *
-   * @example <caption>get server identity</caption>
+   * @example <caption>Get server identity</caption>
    * server.getServerIdentity().then(data => console.log(data));
    * @returns {string | null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -175,7 +175,7 @@ class UrbackupServer {
   /**
    * Retrieves a list of users.
    *
-   * @example <caption>get all users</caption>
+   * @example <caption>Get all users</caption>
    * server.getUsers().then(data => console.log(data));
    * @returns {Array|null} When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -197,7 +197,7 @@ class UrbackupServer {
    * Retrieves a list of groups.
    * By default, UrBackup clients are added to a group named with empty string.
    *
-   * @example <caption>get all groups</caption>
+   * @example <caption>Get all groups</caption>
    * server.getGroups().then(data => console.log(data));
    * @returns {Array|null} When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -219,15 +219,15 @@ class UrbackupServer {
    * Retrieves a list of clients.
    * Matches all clients by default, including clients marked for removal.
    *
-   * @example <caption>get all clients</caption>
+   * @example <caption>Get all clients</caption>
    * server.getClients().then(data => console.log(data));
-   * @example <caption>get all clients, but skip clients marked for removal</caption>
+   * @example <caption>Get all clients, but skip clients marked for removal</caption>
    * server.getClients({includeRemoved: false}).then(data => console.log(data));
-   * @example <caption>get all clients belonging to a specific group</caption>
+   * @example <caption>Get all clients belonging to a specific group</caption>
    * server.getClients({groupName: 'office'}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.groupName] - Group name, case sensitive. Defaults to undefined, which matches all groups.
-   * @param {boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.groupName] - (Optional) Group name, case sensitive. Defaults to undefined, which matches all groups.
+   * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array|null} When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
    */
   async getClients ({ groupName, includeRemoved = true } = {}) {
@@ -263,8 +263,8 @@ class UrbackupServer {
    *
    * @example <caption>Add new client</caption>
    * server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
    * @returns {boolean| null} When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists. Null when API call was unsuccessfull or returned unexpected data.
    */
   async addClient ({ clientName } = {}) {
@@ -292,7 +292,7 @@ class UrbackupServer {
   /**
    * Retrieves a list of extra clients.
    *
-   * @example <caption>get extra clients</caption>
+   * @example <caption>Get extra clients</caption>
    * server.getExtraClients().then(data => console.log(data));
    * @returns {Array|null} When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
    */
@@ -315,8 +315,8 @@ class UrbackupServer {
    *
    * @example <caption>Add new extra client</caption>
    * server.addExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.address - Client's IP address or hostname, case sensitive. Defaults to undefined.
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.address - (Required) Client's IP address or hostname, case sensitive. Defaults to undefined.
    * @returns {boolean| null} When successfull, boolean true. Boolean false when adding was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    */
   async addExtraClient ({ address } = {}) {
@@ -344,10 +344,10 @@ class UrbackupServer {
   /**
    * Retrieves authentication key for a specified client.
    *
-   * @example <caption>get authentication key for a specific client</caption>
+   * @example <caption>Get authentication key for a specific client</caption>
    * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
    * @returns {string | null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientAuthkey ({ clientName } = {}) {
@@ -373,15 +373,15 @@ class UrbackupServer {
    * Matches all clients by default, including clients marked for removal.
    * Client name can be passed as an argument in which case only that one client's status is returned.
    *
-   * @example <caption>get status for all clients</caption>
+   * @example <caption>Get status for all clients</caption>
    * server.getStatus().then(data => console.log(data));
-   * @example <caption>get status for all clients, but skip clients marked for removal</caption>
+   * @example <caption>Get status for all clients, but skip clients marked for removal</caption>
    * server.getStatus({includeRemoved: false}).then(data => console.log(data));
-   * @example <caption>get status for a specific client only</caption>
+   * @example <caption>Get status for a specific client only</caption>
    * server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
-   * @param {boolean} [params.includeRemoved] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array|null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getStatus ({ clientName, includeRemoved = true } = {}) {
@@ -417,12 +417,12 @@ class UrbackupServer {
    * Retrieves storage usage.
    * Matches all clients by default, but ```clientName``` can be used to request usage for one particular client.
    *
-   * @example <caption>get usage for all clients</caption>
+   * @example <caption>Get usage for all clients</caption>
    * server.getUsage().then(data => console.log(data));
-   * @example <caption>get usage for a specific client only</caption>
+   * @example <caption>Get usage for a specific client only</caption>
    * server.getUsage({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
    * @returns {Array|null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getUsage ({ clientName } = {}) {
@@ -448,18 +448,18 @@ class UrbackupServer {
    * Matches all clients by default, but ```clientName``` can be used to request activities for one particular client.
    * By default this method returns only activities that are currently in progress ans skips last activities.
    *
-   * @example <caption>get current (in progress) activities for all clients</caption>
+   * @example <caption>Get current (in progress) activities for all clients</caption>
    * server.getActivities().then(data => console.log(data));
-   * @example <caption>get past activities for all clients</caption>
+   * @example <caption>Get past activities for all clients</caption>
    * server.getActivities({includeCurrent: false, includePast: true}).then(data => console.log(data));
-   * @example <caption>get current (in progress) activities for a specific client only</caption>
+   * @example <caption>Get current (in progress) activities for a specific client only</caption>
    * server.getActivities({clientName: 'laptop1'}).then(data => console.log(data));
-   * @example <caption>get all activities for a specific client only</caption>
+   * @example <caption>Get all activities for a specific client only</caption>
    * server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which matches all clients.
-   * @param {boolean} [params.includeCurrent] - Whether or not currently running activities should be included. Defaults to true.
-   * @param {boolean} [params.includePast] - Whether or not past activities should be included. Defaults to false.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {boolean} [params.includeCurrent] - (Optional) Whether or not currently running activities should be included. Defaults to true.
+   * @param {boolean} [params.includePast] - (Optional) Whether or not past activities should be included. Defaults to false.
    * @returns {Object|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getActivities ({ clientName, includeCurrent = true, includePast = false } = {}) {
@@ -493,16 +493,16 @@ class UrbackupServer {
   /**
    * Retrieves a list of file and/or image backups for a specific client.
    *
-   * @example <caption>get all backups for a specific client</caption>
+   * @example <caption>Get all backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1'}).then(data => console.log(data));
-   * @example <caption>get image backups for a specific client</caption>
+   * @example <caption>Get image backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1', includeFileBackups: false}).then(data => console.log(data));
-   * @example <caption>get file backups for a specific client</caption>
+   * @example <caption>Get file backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @param {boolean} [params.includeFileBackups] - Whether or not file backups should be included. Defaults to true.
-   * @param {boolean} [params.includeImageBackups] - Whether or not image backups should be included. Defaults to true.
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {boolean} [params.includeFileBackups] - (Optional) Whether or not file backups should be included. Defaults to true.
+   * @param {boolean} [params.includeImageBackups] - (Optional) Whether or not image backups should be included. Defaults to true.
    * @returns {Object|null} When successfull, an object with backups info. Object with empty arrays when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getBackups ({ clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
@@ -555,15 +555,15 @@ class UrbackupServer {
    * Server logs are requested by default, but ```clientName``` can be used to request logs for one particular client.
    * Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
    *
-   * @example <caption>get server logs</caption>
+   * @example <caption>Get server logs</caption>
    * server.getLiveLog().then(data => console.log(data));
-   * @example <caption>get logs for a specific client only</caption>
+   * @example <caption>Get logs for a specific client only</caption>
    * server.getLiveLog({clientName: 'laptop1'}).then(data => console.log(data));
-   * @example <caption>get logs for a specific client only, but skip previously fetched logs</caption>
+   * @example <caption>Get logs for a specific client only, but skip previously fetched logs</caption>
    * server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined, which means server logs will be requested.
-   * @param {boolean} [params.recentOnly] - Whether or not only recent (unfetched) entries should be requested. Defaults to false.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which means server logs will be requested.
+   * @param {boolean} [params.recentOnly] - (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false.
    * @returns {Array|null} When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getLiveLog ({ clientName, recentOnly = false } = {}) {
@@ -615,7 +615,7 @@ class UrbackupServer {
   /**
    * Retrieves general settings.
    *
-   * @example <caption>get general settings</caption>
+   * @example <caption>Get general settings</caption>
    * server.getGeneralSettings().then(data => console.log(data));
    * @returns {Object|null} When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.
    */
@@ -639,9 +639,9 @@ class UrbackupServer {
    *
    * @example <caption>Disable image backups</caption>
    * server.setGeneralSetting({key: 'no_images', newValue: true}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.key - Settings element to change. Defaults to undefined.
-   * @param {string|number|boolean} params.newValue - New value for settings element. Defaults to undefined.
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
+   * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
    */
   async setGeneralSetting ({ key, newValue } = {}) {
@@ -679,12 +679,12 @@ class UrbackupServer {
    * Retrieves client settings.
    * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
    *
-   * @example <caption>get settings for all clients</caption>
+   * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
-   * @example <caption>get settings for a specific client only</caption>
+   * @example <caption>Get settings for a specific client only</caption>
    * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
-   * @param {Object} [params] - An object containing parameters.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Defaults to undefined which matches all clients.
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined which matches all clients.
    * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
    */
   async getClientSettings ({ clientName } = {}) {
@@ -722,12 +722,12 @@ class UrbackupServer {
    * Changes one specific element of client settings.
    * A list of settings can be obtained with ```getClientSettings``` method.
    *
-   * @example <caption>set directories to backup to be optional by default</caption>
+   * @example <caption>Set directories to backup to be optional by default</caption>
    * server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
-   * @param {Object} params - An object containing parameters.
-   * @param {string} params.clientName - Client's name, case sensitive. Defaults to undefined.
-   * @param {string} params.key - Settings element to change. Defaults to undefined.
-   * @param {string|number|boolean} params.newValue - New value for settings element. Defaults to undefined.
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
+   * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
    */
   async setClientSetting ({ clientName, key, newValue } = {}) {

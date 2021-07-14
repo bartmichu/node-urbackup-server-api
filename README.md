@@ -39,10 +39,10 @@ Represents a UrBackup Server.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.url] | <code>string</code> | Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414 |
-| [params.username] | <code>string</code> | Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
-| [params.password] | <code>string</code> | Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.url] | <code>string</code> | (Optional) Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414. |
+| [params.username] | <code>string</code> | (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
+| [params.password] | <code>string</code> | (Optional) Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
 
 <a name="UrbackupServer+getServerIdentity"></a>
 
@@ -51,7 +51,7 @@ Retrieves server identity.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.  
-**Example** *(get server identity)*  
+**Example** *(Get server identity)*  
 ```js
 server.getServerIdentity().then(data => console.log(data));
 ```
@@ -62,7 +62,7 @@ Retrieves a list of users.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.  
-**Example** *(get all users)*  
+**Example** *(Get all users)*  
 ```js
 server.getUsers().then(data => console.log(data));
 ```
@@ -74,7 +74,7 @@ By default, UrBackup clients are added to a group named with empty string.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.  
-**Example** *(get all groups)*  
+**Example** *(Get all groups)*  
 ```js
 server.getGroups().then(data => console.log(data));
 ```
@@ -89,19 +89,19 @@ Matches all clients by default, including clients marked for removal.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.groupName] | <code>string</code> | Group name, case sensitive. Defaults to undefined, which matches all groups. |
-| [params.includeRemoved] | <code>boolean</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.groupName] | <code>string</code> | (Optional) Group name, case sensitive. Defaults to undefined, which matches all groups. |
+| [params.includeRemoved] | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
-**Example** *(get all clients)*  
+**Example** *(Get all clients)*  
 ```js
 server.getClients().then(data => console.log(data));
 ```
-**Example** *(get all clients, but skip clients marked for removal)*  
+**Example** *(Get all clients, but skip clients marked for removal)*  
 ```js
 server.getClients({includeRemoved: false}).then(data => console.log(data));
 ```
-**Example** *(get all clients belonging to a specific group)*  
+**Example** *(Get all clients belonging to a specific group)*  
 ```js
 server.getClients({groupName: 'office'}).then(data => console.log(data));
 ```
@@ -115,8 +115,8 @@ Adds a new client.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
 
 **Example** *(Add new client)*  
 ```js
@@ -129,7 +129,7 @@ Retrieves a list of extra clients.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.  
-**Example** *(get extra clients)*  
+**Example** *(Get extra clients)*  
 ```js
 server.getExtraClients().then(data => console.log(data));
 ```
@@ -143,8 +143,8 @@ Adds a new extra client.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.address | <code>string</code> | Client's IP address or hostname, case sensitive. Defaults to undefined. |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.address | <code>string</code> | (Required) Client's IP address or hostname, case sensitive. Defaults to undefined. |
 
 **Example** *(Add new extra client)*  
 ```js
@@ -160,10 +160,10 @@ Retrieves authentication key for a specified client.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
 
-**Example** *(get authentication key for a specific client)*  
+**Example** *(Get authentication key for a specific client)*  
 ```js
 server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
 ```
@@ -179,19 +179,19 @@ Client name can be passed as an argument in which case only that one client's st
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined, which matches all clients. |
-| [params.includeRemoved] | <code>boolean</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params.includeRemoved] | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
-**Example** *(get status for all clients)*  
+**Example** *(Get status for all clients)*  
 ```js
 server.getStatus().then(data => console.log(data));
 ```
-**Example** *(get status for all clients, but skip clients marked for removal)*  
+**Example** *(Get status for all clients, but skip clients marked for removal)*  
 ```js
 server.getStatus({includeRemoved: false}).then(data => console.log(data));
 ```
-**Example** *(get status for a specific client only)*  
+**Example** *(Get status for a specific client only)*  
 ```js
 server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
 ```
@@ -206,14 +206,14 @@ Matches all clients by default, but ```clientName``` can be used to request usag
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients. |
 
-**Example** *(get usage for all clients)*  
+**Example** *(Get usage for all clients)*  
 ```js
 server.getUsage().then(data => console.log(data));
 ```
-**Example** *(get usage for a specific client only)*  
+**Example** *(Get usage for a specific client only)*  
 ```js
 server.getUsage({clientName: 'laptop1'}).then(data => console.log(data));
 ```
@@ -229,24 +229,24 @@ By default this method returns only activities that are currently in progress an
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined, which matches all clients. |
-| [params.includeCurrent] | <code>boolean</code> | Whether or not currently running activities should be included. Defaults to true. |
-| [params.includePast] | <code>boolean</code> | Whether or not past activities should be included. Defaults to false. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params.includeCurrent] | <code>boolean</code> | (Optional) Whether or not currently running activities should be included. Defaults to true. |
+| [params.includePast] | <code>boolean</code> | (Optional) Whether or not past activities should be included. Defaults to false. |
 
-**Example** *(get current (in progress) activities for all clients)*  
+**Example** *(Get current (in progress) activities for all clients)*  
 ```js
 server.getActivities().then(data => console.log(data));
 ```
-**Example** *(get past activities for all clients)*  
+**Example** *(Get past activities for all clients)*  
 ```js
 server.getActivities({includeCurrent: false, includePast: true}).then(data => console.log(data));
 ```
-**Example** *(get current (in progress) activities for a specific client only)*  
+**Example** *(Get current (in progress) activities for a specific client only)*  
 ```js
 server.getActivities({clientName: 'laptop1'}).then(data => console.log(data));
 ```
-**Example** *(get all activities for a specific client only)*  
+**Example** *(Get all activities for a specific client only)*  
 ```js
 server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
 ```
@@ -260,20 +260,20 @@ Retrieves a list of file and/or image backups for a specific client.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
-| [params.includeFileBackups] | <code>boolean</code> | Whether or not file backups should be included. Defaults to true. |
-| [params.includeImageBackups] | <code>boolean</code> | Whether or not image backups should be included. Defaults to true. |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| [params.includeFileBackups] | <code>boolean</code> | (Optional) Whether or not file backups should be included. Defaults to true. |
+| [params.includeImageBackups] | <code>boolean</code> | (Optional) Whether or not image backups should be included. Defaults to true. |
 
-**Example** *(get all backups for a specific client)*  
+**Example** *(Get all backups for a specific client)*  
 ```js
 server.getBackups({clientName: 'laptop1'}).then(data => console.log(data));
 ```
-**Example** *(get image backups for a specific client)*  
+**Example** *(Get image backups for a specific client)*  
 ```js
 server.getBackups({clientName: 'laptop1', includeFileBackups: false}).then(data => console.log(data));
 ```
-**Example** *(get file backups for a specific client)*  
+**Example** *(Get file backups for a specific client)*  
 ```js
 server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
 ```
@@ -289,19 +289,19 @@ Instance property is being used internally to keep track of log entries that wer
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined, which means server logs will be requested. |
-| [params.recentOnly] | <code>boolean</code> | Whether or not only recent (unfetched) entries should be requested. Defaults to false. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which means server logs will be requested. |
+| [params.recentOnly] | <code>boolean</code> | (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false. |
 
-**Example** *(get server logs)*  
+**Example** *(Get server logs)*  
 ```js
 server.getLiveLog().then(data => console.log(data));
 ```
-**Example** *(get logs for a specific client only)*  
+**Example** *(Get logs for a specific client only)*  
 ```js
 server.getLiveLog({clientName: 'laptop1'}).then(data => console.log(data));
 ```
-**Example** *(get logs for a specific client only, but skip previously fetched logs)*  
+**Example** *(Get logs for a specific client only, but skip previously fetched logs)*  
 ```js
 server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => console.log(data));
 ```
@@ -312,7 +312,7 @@ Retrieves general settings.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.  
-**Example** *(get general settings)*  
+**Example** *(Get general settings)*  
 ```js
 server.getGeneralSettings().then(data => console.log(data));
 ```
@@ -327,9 +327,9 @@ A list of settings can be obtained with ```getGeneralSettings``` method.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.key | <code>string</code> | Settings element to change. Defaults to undefined. |
-| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. Defaults to undefined. |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.key | <code>string</code> | (Required) Settings element to change. Defaults to undefined. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | (Required) New value for settings element. Defaults to undefined. |
 
 **Example** *(Disable image backups)*  
 ```js
@@ -346,14 +346,14 @@ Matches all clients by default, but ```clientName``` can be used to request sett
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>Object</code> | An object containing parameters. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Defaults to undefined which matches all clients. |
+| [params] | <code>Object</code> | (Optional) An object containing parameters. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined which matches all clients. |
 
-**Example** *(get settings for all clients)*  
+**Example** *(Get settings for all clients)*  
 ```js
 server.getClientSettings().then(data => console.log(data));
 ```
-**Example** *(get settings for a specific client only)*  
+**Example** *(Get settings for a specific client only)*  
 ```js
 server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
 ```
@@ -368,12 +368,12 @@ A list of settings can be obtained with ```getClientSettings``` method.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>Object</code> | An object containing parameters. |
-| params.clientName | <code>string</code> | Client's name, case sensitive. Defaults to undefined. |
-| params.key | <code>string</code> | Settings element to change. Defaults to undefined. |
-| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. Defaults to undefined. |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.key | <code>string</code> | (Required) Settings element to change. Defaults to undefined. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | (Required) New value for settings element. Defaults to undefined. |
 
-**Example** *(set directories to backup to be optional by default)*  
+**Example** *(Set directories to backup to be optional by default)*  
 ```js
 server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
 ```
