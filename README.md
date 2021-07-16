@@ -27,6 +27,7 @@ Represents a UrBackup Server.
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code> \| <code>null</code>
+    * [.stopActivity(params)](#UrbackupServer+stopActivity) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Object</code> \| <code>null</code>
     * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Array</code> \| <code>null</code>
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
@@ -267,6 +268,25 @@ server.getActivities({clientName: 'laptop1'}).then(data => console.log(data));
 **Example** *(Get all activities for a specific client only)*  
 ```js
 server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
+```
+<a name="UrbackupServer+stopActivity"></a>
+
+### urbackupServer.stopActivity(params) ⇒ <code>boolean</code> \| <code>null</code>
+Stops one activity.
+A list of current activities can be obtained with ```getActivities``` method.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.activityId | <code>number</code> | (Required) Activity ID. Defaults to undefined. |
+
+**Example** *(Stop activity)*  
+```js
+server.stopActivity({clientName: 'laptop1', activityId: 42}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getBackups"></a>
 

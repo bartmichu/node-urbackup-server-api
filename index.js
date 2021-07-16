@@ -532,6 +532,49 @@ class UrbackupServer {
   }
 
   /**
+   * Stops one activity.
+   * A list of current activities can be obtained with ```getActivities``` method.
+   *
+   * @example <caption>Stop activity</caption>
+   * server.stopActivity({clientName: 'laptop1', activityId: 42}).then(data => console.log(data));
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.activityId - (Required) Activity ID. Defaults to undefined.
+   * @returns {boolean| null} When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async stopActivity ({ clientName, activityId } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || clientName === '' || typeof activityId === 'undefined' || activityId === 0) {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const clientsResponse = await this.getClients({ includeRemoved: true });
+
+    if (clientsResponse === null) {
+      return null;
+    }
+
+    const clientId = clientsResponse.find(client => client.name === clientName)?.id;
+
+    if (typeof clientId !== 'undefined') {
+      const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId, stop_id: activityId });
+      if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
+        return null;
+      }
+
+      returnValue = true;
+    }
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves a list of file and/or image backups for a specific client.
    *
    * @example <caption>Get all backups for a specific client</caption>
