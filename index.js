@@ -152,6 +152,31 @@ class UrbackupServer {
   }
 
   /**
+   * This method is not meant to be used outside the class.
+   * Used internally to translate client name to client ID.
+   *
+   * @param {string} clientName - Client's name.
+   * @returns {number|null} When successfull, a number representing client's ID. 0 (zero) when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async #getClientId (clientName) {
+    let returnValue = 0;
+
+    if (typeof clientName === 'undefined' || clientName === '') {
+      return returnValue;
+    }
+
+    const clientsResponse = await this.getClients({ includeRemoved: true });
+    if (clientsResponse === null) {
+      return null;
+    }
+
+    const clientId = clientsResponse.find(client => client.name === clientName)?.id;
+    returnValue = typeof clientId === 'undefined' ? 0 : clientId;
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves server identity.
    *
    * @returns {string | null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
@@ -554,15 +579,12 @@ class UrbackupServer {
       return null;
     }
 
-    const clientsResponse = await this.getClients({ includeRemoved: true });
-
-    if (clientsResponse === null) {
+    const clientId = await this.#getClientId(clientName);
+    if (clientId === null) {
       return null;
     }
 
-    const clientId = clientsResponse.find(client => client.name === clientName)?.id;
-
-    if (typeof clientId !== 'undefined') {
+    if (clientId > 0) {
       const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId, stop_id: activityId });
       if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
         return null;
@@ -601,15 +623,12 @@ class UrbackupServer {
       return null;
     }
 
-    const clientsResponse = await this.getClients({ includeRemoved: true });
-
-    if (clientsResponse === null) {
+    const clientId = await this.#getClientId(clientName);
+    if (clientId === null) {
       return null;
     }
 
-    const clientId = clientsResponse.find(client => client.name === clientName)?.id;
-
-    if (typeof clientId !== 'undefined') {
+    if (clientId > 0) {
       const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId });
 
       if (backupsResponse === null) {
@@ -658,39 +677,31 @@ class UrbackupServer {
       return null;
     }
 
-    let clientId;
+    const clientId = await this.#getClientId(clientName);
+    if (clientId === null) {
+      return null;
+    } else if (clientId === 0 && typeof clientName !== 'undefined') {
+      // 0 is a valid value for livelog and should be used when clientName is undefined
+      return returnValue;
+    }
 
-    if (typeof clientName === 'undefined') {
-      clientId = 0;
-    } else {
-      const clientsResponse = await this.getClients({ includeRemoved: true });
+    const [value, release] = await this.#semaphore.acquire();
+    try {
+      const logResponse = await this.#fetchJson('livelog', { clientid: clientId, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
 
-      if (clientsResponse === null) {
+      if (logResponse === null || typeof logResponse.logdata === 'undefined') {
         return null;
       }
 
-      clientId = clientsResponse.find(client => client.name === clientName)?.id;
-    }
-
-    if (typeof clientId !== 'undefined') {
-      const [value, release] = await this.#semaphore.acquire();
-      try {
-        const logResponse = await this.#fetchJson('livelog', { clientid: clientId, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
-
-        if (logResponse === null || typeof logResponse.logdata === 'undefined') {
-          return null;
-        }
-
-        const lastId = logResponse.logdata.slice(-1)[0]?.id;
-        if (typeof lastId !== 'undefined') {
-          this.#lastLogId.set(clientId, lastId);
-        }
-
-        returnValue = logResponse.logdata;
-      } catch (error) {
-      } finally {
-        release();
+      const lastId = logResponse.logdata.slice(-1)[0]?.id;
+      if (typeof lastId !== 'undefined') {
+        this.#lastLogId.set(clientId, lastId);
       }
+
+      returnValue = logResponse.logdata;
+    } catch (error) {
+    } finally {
+      release();
     }
 
     return returnValue;
