@@ -357,6 +357,33 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves authentication key for a specified client.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {string|null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Get authentication key for a specific client</caption>
+   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+   */
+  async getClientAuthkey ({ clientName } = {}) {
+    if (typeof clientName === 'undefined') {
+      return '';
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settingsResponse = await this.getClientSettings({ clientName: clientName });
+    if (settingsResponse === null) {
+      return null;
+    }
+
+    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
+  }
+
+  /**
    * Retrieves a list of extra clients.
    *
    * @returns {Array|null} When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
@@ -447,33 +474,6 @@ class UrbackupServer {
     }
 
     return returnValue;
-  }
-
-  /**
-   * Retrieves authentication key for a specified client.
-   *
-   * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
-   * @returns {string|null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Get authentication key for a specific client</caption>
-   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
-   */
-  async getClientAuthkey ({ clientName } = {}) {
-    if (typeof clientName === 'undefined') {
-      return '';
-    }
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settingsResponse = await this.getClientSettings({ clientName: clientName });
-    if (settingsResponse === null) {
-      return null;
-    }
-
-    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
   }
 
   /**

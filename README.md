@@ -21,10 +21,10 @@ Represents a UrBackup Server.
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
     * [.getExtraClients()](#UrbackupServer+getExtraClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addExtraClient(params)](#UrbackupServer+addExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.removeExtraClient(params)](#UrbackupServer+removeExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code> \| <code>null</code>
@@ -142,6 +142,23 @@ Removes specific client.
 ```js
 server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
+<a name="UrbackupServer+getClientAuthkey"></a>
+
+### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code> \| <code>null</code>
+Retrieves authentication key for a specified client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Get authentication key for a specific client)*  
+```js
+server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+```
 <a name="UrbackupServer+getExtraClients"></a>
 
 ### urbackupServer.getExtraClients() ⇒ <code>Array</code> \| <code>null</code>
@@ -186,23 +203,6 @@ Removes specific extra client.
 **Example** *(Remove extra client)*  
 ```js
 server.removeExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
-```
-<a name="UrbackupServer+getClientAuthkey"></a>
-
-### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code> \| <code>null</code>
-Retrieves authentication key for a specified client.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
-
-**Example** *(Get authentication key for a specific client)*  
-```js
-server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getStatus"></a>
 
