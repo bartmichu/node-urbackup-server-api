@@ -315,6 +315,48 @@ class UrbackupServer {
   }
 
   /**
+   * Removes specific client.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Remove client</caption>
+   * server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
+   */
+  async removeClient ({ clientName } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || clientName === '') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const clients = await this.getClients();
+    if (clients === null) {
+      return null;
+    }
+
+    const matchingClient = clients.find(client => client.name === clientName);
+    if (typeof matchingClient !== 'undefined') {
+      const statusResponse = await this.#fetchJson('status', { remove_client: matchingClient.id });
+
+      if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+        return null;
+      }
+
+      if (statusResponse.status.find(client => client.name === clientName)?.delete_pending === '1') {
+        returnValue = true;
+      }
+    }
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves a list of extra clients.
    *
    * @returns {Array|null} When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.

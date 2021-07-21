@@ -20,6 +20,7 @@ Represents a UrBackup Server.
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code> \| <code>null</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getExtraClients()](#UrbackupServer+getExtraClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addExtraClient(params)](#UrbackupServer+addExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.removeExtraClient(params)](#UrbackupServer+removeExtraClient) ⇒ <code>boolean</code> \| <code>null</code>
@@ -123,6 +124,23 @@ Adds a new client.
 **Example** *(Add new client)*  
 ```js
 server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+removeClient"></a>
+
+### urbackupServer.removeClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+Removes specific client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Remove client)*  
+```js
+server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getExtraClients"></a>
 
