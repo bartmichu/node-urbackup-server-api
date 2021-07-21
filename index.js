@@ -288,7 +288,7 @@ class UrbackupServer {
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
-   * @returns {boolean| null} When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists. Null when API call was unsuccessfull or returned unexpected data.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Add new client</caption>
    * server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
@@ -429,7 +429,7 @@ class UrbackupServer {
       return null;
     }
 
-    const extraClients = await this.getExtraClients(0);
+    const extraClients = await this.getExtraClients();
     if (extraClients === null) {
       return null;
     }
