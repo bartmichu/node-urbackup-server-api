@@ -1,8 +1,36 @@
 # node-urbackup-server-api
 
 Node.js wrapper for UrBackup server web API.
+You can use it to interact with UrBackup server installed locally or over the network. It allows to view and modify settings, add or remove clients, get information about running tasks, clients status, backup jobs, start or stop backups and a lot more.
 
-It is still very much a work in progress - some functionality is missing, method signatures are likely to change.
+*This code is still very much a work in progress - some functionality is missing, method signatures are likely to change. I'm targeting Node >= 16 at the moment, but will probably transpile for older versions once the module is ready.*
+
+Installation:
+
+```shell
+npm install urbackup-server-api
+```
+
+Basic example to print a list of clients with failed file backups:
+
+```javascript
+const { UrbackupServer } = require('urbackup-server-api');
+
+// When troubleshooting TSL connections with self-signed certificates you may try to disable certificate validation. Keep in mind that it's strongly discouraged for production use.
+//process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'admin', password: 'secretpassword' });
+
+(async () => {
+  try {
+    const allClients = await server.getStatus();
+    console.log('Clients with failed file backups:');
+    allClients.filter(client => client.file_ok === false).forEach(client => console.log(client.name));
+  } catch (error) {
+    // Deal with it
+  }
+})();
+```
 
 ---
 
@@ -47,6 +75,18 @@ Represents a UrBackup Server.
 | [params.username] | <code>string</code> | (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
 | [params.password] | <code>string</code> | (Optional) Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
 
+**Example** *(Connect locally to the built-in server without password)*  
+```js
+const server = new UrbackupServer();
+```
+**Example** *(Connect locally with password)*  
+```js
+const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'admin', password: 'secretpassword'});
+```
+**Example** *(Connect over the network)*  
+```js
+const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'admin', password: 'secretpassword'});
+```
 <a name="UrbackupServer+getServerIdentity"></a>
 
 ### urbackupServer.getServerIdentity() ⇒ <code>string</code> \| <code>null</code>
