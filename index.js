@@ -321,7 +321,9 @@ class UrbackupServer {
   }
 
   /**
-   * Removes specific client.
+   * Marks the client for removal.
+   * Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemovingClient``` method.
+   * WARNING: removing clients will also delete all their backups.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
@@ -347,6 +349,7 @@ class UrbackupServer {
     }
 
     const matchingClient = clients.find(client => client.name === clientName);
+
     if (typeof matchingClient !== 'undefined') {
       const statusResponse = await this.#fetchJson('status', { remove_client: matchingClient.id });
 
