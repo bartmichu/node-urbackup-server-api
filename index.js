@@ -406,33 +406,6 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves authentication key for a specified client.
-   *
-   * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
-   * @returns {string|null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Get authentication key for a specific client</caption>
-   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
-   */
-  async getClientAuthkey ({ clientName } = {}) {
-    if (typeof clientName === 'undefined') {
-      return '';
-    }
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settingsResponse = await this.getClientSettings({ clientName: clientName });
-    if (settingsResponse === null) {
-      return null;
-    }
-
-    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
-  }
-
-  /**
    * Retrieves a list of client discovery hints, also known as extra clients.
    *
    * @returns {Array|null} When successfull, an array of objects representing client hints. Empty array when no matching client hints found. Null when API call was unsuccessfull ar returned unexpected data.
@@ -524,6 +497,123 @@ class UrbackupServer {
     }
 
     return returnValue;
+  }
+
+  /**
+   * Retrieves client settings.
+   * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
+   *
+   * @param {Object} [params] - (Optional) An object containing parameters.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined which matches all clients.
+   * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Get settings for all clients</caption>
+   * server.getClientSettings().then(data => console.log(data));
+   * @example <caption>Get settings for a specific client only</caption>
+   * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
+   */
+  async getClientSettings ({ clientName } = {}) {
+    const returnValue = [];
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    let clients = await this.getClients({ includeRemoved: true });
+
+    if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
+      return null;
+    }
+
+    if (typeof clientName !== 'undefined') {
+      clients = clients.filter(client => client.name === clientName);
+    }
+
+    for (const client of clients) {
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
+
+      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
+        return null;
+      }
+
+      returnValue.push(settingsResponse.settings);
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Changes one specific element of client settings.
+   * A list of settings can be obtained with ```getClientSettings``` method.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
+   * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Set directories to backup to be optional by default</caption>
+   * server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+   */
+  async setClientSetting ({ clientName, key, newValue } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || typeof key === 'undefined' || typeof newValue === 'undefined') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settings = await this.getClientSettings({ clientName: clientName });
+
+    if (settings === null) {
+      return null;
+    }
+
+    if (settings.length > 0 && Object.keys(settings[0]).includes(key)) {
+      settings[0][key] = newValue;
+      settings[0].overwrite = true;
+      settings[0].sa = 'clientsettings_save';
+      settings[0].t_clientid = settings[0].clientid;
+
+      const saveResponse = await this.#fetchJson('settings', settings[0]);
+      if (saveResponse === null) {
+        return null;
+      }
+
+      returnValue = saveResponse.saved_ok === true;
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Retrieves authentication key for a specified client.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {string|null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Get authentication key for a specific client</caption>
+   * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+   */
+  async getClientAuthkey ({ clientName } = {}) {
+    if (typeof clientName === 'undefined') {
+      return '';
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const settingsResponse = await this.getClientSettings({ clientName: clientName });
+    if (settingsResponse === null) {
+      return null;
+    }
+
+    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
   }
 
   /**
@@ -856,96 +946,6 @@ class UrbackupServer {
       if (saveResponse === null) {
         return null;
       }
-      returnValue = saveResponse.saved_ok === true;
-    }
-
-    return returnValue;
-  }
-
-  /**
-   * Retrieves client settings.
-   * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
-   *
-   * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined which matches all clients.
-   * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Get settings for all clients</caption>
-   * server.getClientSettings().then(data => console.log(data));
-   * @example <caption>Get settings for a specific client only</caption>
-   * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
-   */
-  async getClientSettings ({ clientName } = {}) {
-    const returnValue = [];
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    let clients = await this.getClients({ includeRemoved: true });
-
-    if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
-      return null;
-    }
-
-    if (typeof clientName !== 'undefined') {
-      clients = clients.filter(client => client.name === clientName);
-    }
-
-    for (const client of clients) {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
-
-      if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
-        return null;
-      }
-
-      returnValue.push(settingsResponse.settings);
-    }
-
-    return returnValue;
-  }
-
-  /**
-   * Changes one specific element of client settings.
-   * A list of settings can be obtained with ```getClientSettings``` method.
-   *
-   * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
-   * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
-   * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
-   * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Set directories to backup to be optional by default</caption>
-   * server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
-   */
-  async setClientSetting ({ clientName, key, newValue } = {}) {
-    let returnValue = false;
-
-    if (typeof clientName === 'undefined' || typeof key === 'undefined' || typeof newValue === 'undefined') {
-      return returnValue;
-    }
-
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
-      return null;
-    }
-
-    const settings = await this.getClientSettings({ clientName: clientName });
-
-    if (settings === null) {
-      return null;
-    }
-
-    if (settings.length > 0 && Object.keys(settings[0]).includes(key)) {
-      settings[0][key] = newValue;
-      settings[0].overwrite = true;
-      settings[0].sa = 'clientsettings_save';
-      settings[0].t_clientid = settings[0].clientid;
-
-      const saveResponse = await this.#fetchJson('settings', settings[0]);
-      if (saveResponse === null) {
-        return null;
-      }
-
       returnValue = saveResponse.saved_ok === true;
     }
 
