@@ -363,6 +363,49 @@ class UrbackupServer {
   }
 
   /**
+   * Unmarks the client as ready for removal.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Stop the server from removing a client</caption>
+   * server.cancelRemovingClient({clientName: 'laptop2'}).then(data => console.log(data));
+   */
+  async cancelRemovingClient ({ clientName } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || clientName === '') {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const clients = await this.getClients();
+    if (clients === null) {
+      return null;
+    }
+
+    const matchingClient = clients.find(client => (client.name === clientName && client.deletePending === '1'));
+
+    if (typeof matchingClient !== 'undefined') {
+      const statusResponse = await this.#fetchJson('status', { remove_client: matchingClient.id, stop_remove_client: true });
+
+      if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
+        return null;
+      }
+
+      if (statusResponse.status.find(client => client.name === clientName)?.delete_pending === '0') {
+        returnValue = true;
+      }
+    }
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves authentication key for a specified client.
    *
    * @param {Object} params - (Required) An object containing parameters.
