@@ -390,13 +390,13 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves a list of extra clients.
+   * Retrieves a list of client discovery hints, also known as extra clients.
    *
-   * @returns {Array|null} When successfull, an array of objects representing extra clients. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.
+   * @returns {Array|null} When successfull, an array of objects representing client hints. Empty array when no matching client hints found. Null when API call was unsuccessfull ar returned unexpected data.
    * @example <caption>Get extra clients</caption>
-   * server.getExtraClients().then(data => console.log(data));
+   * server.getClientHints().then(data => console.log(data));
    */
-  async getExtraClients () {
+  async getClientHints () {
     const loginResponse = await this.#login();
     if (loginResponse !== true) {
       return null;
@@ -411,15 +411,16 @@ class UrbackupServer {
   }
 
   /**
-   * Adds a new extra client.
+   * Adds a new client discovery hint, also known as extra client.
+   * Discovery hints are a way of improving client discovery in local area networks.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {string} params.address - (Required) Client's IP address or hostname, case sensitive. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when adding was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Add new extra client</caption>
-   * server.addExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
+   * server.addClientHint({address: '192.168.100.200'}).then(data => console.log(data));
    */
-  async addExtraClient ({ address } = {}) {
+  async addClientHint ({ address } = {}) {
     let returnValue = false;
 
     if (typeof address === 'undefined' || address === '') {
@@ -442,15 +443,15 @@ class UrbackupServer {
   }
 
   /**
-   * Removes specific extra client.
+   * Removes specific client discovery hint, also known as extra client.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {string} params.address - (Required) Client's IP address or hostname, case sensitive. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Remove extra client</caption>
-   * server.removeExtraClient({address: '192.168.100.200'}).then(data => console.log(data));
+   * server.removeClientHint({address: '192.168.100.200'}).then(data => console.log(data));
    */
-  async removeExtraClient ({ address } = {}) {
+  async removeClientHint ({ address } = {}) {
     let returnValue = false;
 
     if (typeof address === 'undefined' || address === '') {
@@ -462,7 +463,7 @@ class UrbackupServer {
       return null;
     }
 
-    const extraClients = await this.getExtraClients();
+    const extraClients = await this.getClientHints();
     if (extraClients === null) {
       return null;
     }
