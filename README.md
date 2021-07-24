@@ -2,7 +2,7 @@
 
 Node.js wrapper for [UrBackup](https://www.urbackup.org/) server web API.
 
-You can use it to interact with UrBackup server installed locally or over the network. It allows to view and modify settings, add or remove clients, get information about running tasks, clients status, backup jobs, start or stop backups and a lot more.
+You can use it to interact with UrBackup server installed locally or over the network. It allows you to view and modify settings, add or remove clients, get information about running tasks, clients status, backup jobs, start or stop backups and a lot more.
 
 *This code is still very much a work in progress - some functionality is missing, method signatures are likely to change. I'm targeting Node >= 16 at the moment, but will probably transpile for older versions once the module is ready.*
 
@@ -12,7 +12,7 @@ Installation:
 npm install urbackup-server-api
 ```
 
-Basic example to print a list of clients with failed file backups:
+Basic example to print names of clients with failed file backups:
 
 ```javascript
 const { UrbackupServer } = require('urbackup-server-api');
@@ -62,6 +62,10 @@ Represents a UrBackup Server.
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code> \| <code>null</code>
     * [.stopActivity(params)](#UrbackupServer+stopActivity) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Object</code> \| <code>null</code>
+    * [.startFullFileBackup(params)](#UrbackupServer+startFullFileBackup) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.startIncrementalFileBackup(params)](#UrbackupServer+startIncrementalFileBackup) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.startFullImageBackup(params)](#UrbackupServer+startFullImageBackup) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.startIncrementalImageBackup(params)](#UrbackupServer+startIncrementalImageBackup) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Array</code> \| <code>null</code>
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
     * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code> \| <code>null</code>
@@ -436,6 +440,74 @@ server.getBackups({clientName: 'laptop1', includeFileBackups: false}).then(data 
 **Example** *(Get file backups for a specific client)*  
 ```js
 server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
+```
+<a name="UrbackupServer+startFullFileBackup"></a>
+
+### urbackupServer.startFullFileBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+Starts full file backup.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Start backup)*  
+```js
+server.startFullFileBackup({clientName: 'laptop1').then(data => console.log(data));
+```
+<a name="UrbackupServer+startIncrementalFileBackup"></a>
+
+### urbackupServer.startIncrementalFileBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+Starts incremental file backup.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Start backup)*  
+```js
+server.startIncrementalFileBackup({clientName: 'laptop1').then(data => console.log(data));
+```
+<a name="UrbackupServer+startFullImageBackup"></a>
+
+### urbackupServer.startFullImageBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+Starts full image backup.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Start backup)*  
+```js
+server.startFullImageBackup({clientName: 'laptop1').then(data => console.log(data));
+```
+<a name="UrbackupServer+startIncrementalImageBackup"></a>
+
+### urbackupServer.startIncrementalImageBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+Starts incremental image backup.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+
+**Example** *(Start backup)*  
+```js
+server.startIncrementalImageBackup({clientName: 'laptop1').then(data => console.log(data));
 ```
 <a name="UrbackupServer+getLiveLog"></a>
 
