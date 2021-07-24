@@ -839,6 +839,100 @@ class UrbackupServer {
   }
 
   /**
+   * This method is not meant to be used outside the class.
+   * Used internally to start a backup.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {string} params.backupType - (Required) backup type, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async #startBackup ({ clientName, backupType } = {}) {
+    let returnValue = false;
+
+    if (typeof clientName === 'undefined' || clientName === '' || typeof backupType === 'undefined' || backupType === 0) {
+      return returnValue;
+    }
+
+    const loginResponse = await this.#login();
+    if (loginResponse !== true) {
+      return null;
+    }
+
+    const clientId = await this.#getClientId(clientName);
+    if (clientId === null) {
+      return null;
+    }
+
+    if (clientId > 0) {
+      const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId, start_type: backupType });
+      if (backupResponse === null || typeof backupResponse.result === 'undefined' || backupResponse.result.filter(element => Object.keys(element).includes('start_ok')).length !== 1) {
+        return null;
+      }
+
+      returnValue = !!backupResponse.result[0].start_ok;
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Starts full file backup.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Start backup</caption>
+   * server.startFullFileBackup({clientName: 'laptop1').then(data => console.log(data));
+   */
+  async startFullFileBackup ({ clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'full_file' });
+    return returnValue;
+  }
+
+  /**
+   * Starts incremental file backup.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Start backup</caption>
+   * server.startIncrementalFileBackup({clientName: 'laptop1').then(data => console.log(data));
+   */
+  async startIncrementalFileBackup ({ clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'incr_file' });
+    return returnValue;
+  }
+
+  /**
+   * Starts full image backup.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Start backup</caption>
+   * server.startFullImageBackup({clientName: 'laptop1').then(data => console.log(data));
+   */
+  async startFullImageBackup ({ clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'full_image' });
+    return returnValue;
+  }
+
+  /**
+   * Starts incremental image backup.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
+   * @example <caption>Start backup</caption>
+   * server.startIncrementalImageBackup({clientName: 'laptop1').then(data => console.log(data));
+   */
+  async startIncrementalImageBackup ({ clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'incr_image' });
+    return returnValue;
+  }
+
+  /**
    * Retrieves live logs.
    * Server logs are requested by default, but ```clientName``` can be used to request logs for one particular client.
    * Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
