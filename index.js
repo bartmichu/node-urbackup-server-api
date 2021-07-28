@@ -21,6 +21,7 @@ class UrbackupServer {
    * @param {string} [params.url] - (Optional) Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414.
    * @param {string} [params.username] - (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined.
    * @param {string} [params.password] - (Optional) Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined.
+   * @param {string} [params.serverName] - (optional) Informal server name. Defaults to empty string.
    * @example <caption>Connect locally to the built-in server without password</caption>
    * const server = new UrbackupServer();
    * @example <caption>Connect locally with password</caption>
@@ -28,7 +29,7 @@ class UrbackupServer {
    * @example <caption>Connect over the network</caption>
    * const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'admin', password: 'secretpassword'});
    */
-  constructor ({ url = 'http://127.0.0.1:55414', username = '', password = '' } = {}) {
+  constructor ({ url = 'http://127.0.0.1:55414', username = '', password = '', serverName = '' } = {}) {
     this.#url = new URL(url);
     this.#url.pathname = 'x';
     this.#username = username;

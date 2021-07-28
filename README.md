@@ -80,6 +80,7 @@ Represents a UrBackup Server.
 | [params.url] | <code>string</code> | (Optional) Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414. |
 | [params.username] | <code>string</code> | (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
 | [params.password] | <code>string</code> | (Optional) Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
+| [params.serverName] | <code>string</code> | (optional) Informal server name. Defaults to empty string. |
 
 **Example** *(Connect locally to the built-in server without password)*  
 ```js
