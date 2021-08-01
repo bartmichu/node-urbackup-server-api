@@ -849,9 +849,10 @@ class UrbackupServer {
    * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    */
   async #startBackup ({ clientName, backupType } = {}) {
+    const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
     let returnValue = false;
 
-    if (typeof clientName === 'undefined' || clientName === '' || typeof backupType === 'undefined' || backupType === 0) {
+    if (typeof clientName === 'undefined' || clientName === '' || !backupTypes.includes(backupType)) {
       return returnValue;
     }
 
