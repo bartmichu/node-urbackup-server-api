@@ -698,7 +698,7 @@ class UrbackupServer {
   /**
    * Retrieves a list of current and/or past activities.
    * Matches all clients by default, but ```clientName``` can be used to request activities for one particular client.
-   * By default this method returns only activities that are currently in progress ans skips last activities.
+   * By default this method returns only activities that are currently in progress and skips last activities.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
