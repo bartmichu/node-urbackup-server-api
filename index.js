@@ -323,7 +323,7 @@ class UrbackupServer {
 
   /**
    * Marks the client for removal.
-   * Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemovingClient``` method.
+   * Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemoveClient``` method.
    * WARNING: removing clients will also delete all their backups.
    *
    * @param {Object} params - (Required) An object containing parameters.
@@ -373,9 +373,9 @@ class UrbackupServer {
    * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Stop the server from removing a client</caption>
-   * server.cancelRemovingClient({clientName: 'laptop2'}).then(data => console.log(data));
+   * server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
-  async cancelRemovingClient ({ clientName } = {}) {
+  async cancelRemoveClient ({ clientName } = {}) {
     let returnValue = false;
 
     if (typeof clientName === 'undefined' || clientName === '') {
