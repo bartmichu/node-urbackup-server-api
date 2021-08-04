@@ -324,18 +324,22 @@ class UrbackupServer {
   /**
    * Marks the client for removal.
    * Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemoveClient``` method.
+   * Using client ID should be preferred to client name for repeated method calls.
    * WARNING: removing clients will also delete all their backups.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Remove client</caption>
+   * @example <caption>Remove client by ID</caption>
+   * server.removeClient({clientId: 1}).then(data => console.log(data));
+   * @example <caption>Remove client by name</caption>
    * server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
-  async removeClient ({ clientName } = {}) {
+  async removeClient ({ clientId, clientName } = {}) {
     let returnValue = false;
 
-    if (typeof clientName === 'undefined' || clientName === '') {
+    if ((typeof clientId !== 'undefined' && typeof clientName !== 'undefined') || clientId <= 0 || clientName === '') {
       return returnValue;
     }
 
@@ -344,21 +348,24 @@ class UrbackupServer {
       return null;
     }
 
-    const clients = await this.getClients();
-    if (clients === null) {
-      return null;
+    let id;
+    if (typeof clientId === 'undefined') {
+      id = await this.#getClientId(clientName);
+      if (id === null) {
+        return null;
+      }
+    } else {
+      id = clientId;
     }
 
-    const matchingClient = clients.find(client => client.name === clientName);
-
-    if (typeof matchingClient !== 'undefined') {
-      const statusResponse = await this.#fetchJson('status', { remove_client: matchingClient.id });
+    if (typeof id !== 'undefined' && id !== 0) {
+      const statusResponse = await this.#fetchJson('status', { remove_client: id });
 
       if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
         return null;
       }
 
-      if (statusResponse.status.find(client => client.name === clientName)?.delete_pending === '1') {
+      if (statusResponse.status.find(client => client.id === id)?.delete_pending === '1') {
         returnValue = true;
       }
     }
@@ -368,17 +375,21 @@ class UrbackupServer {
 
   /**
    * Unmarks the client as ready for removal.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Stop the server from removing a client</caption>
+   * @example <caption>Stop the server from removing a client by ID</caption>
+   * server.cancelRemoveClient({clientId: 1}).then(data => console.log(data));
+   * @example <caption>Stop the server from removing a client by name</caption>
    * server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
-  async cancelRemoveClient ({ clientName } = {}) {
+  async cancelRemoveClient ({ clientId, clientName } = {}) {
     let returnValue = false;
 
-    if (typeof clientName === 'undefined' || clientName === '') {
+    if ((typeof clientId !== 'undefined' && typeof clientName !== 'undefined') || clientId <= 0 || clientName === '') {
       return returnValue;
     }
 
@@ -387,21 +398,24 @@ class UrbackupServer {
       return null;
     }
 
-    const clients = await this.getClients();
-    if (clients === null) {
-      return null;
+    let id;
+    if (typeof clientId === 'undefined') {
+      id = await this.#getClientId(clientName);
+      if (id === null) {
+        return null;
+      }
+    } else {
+      id = clientId;
     }
 
-    const matchingClient = clients.find(client => (client.name === clientName && client.deletePending === '1'));
-
-    if (typeof matchingClient !== 'undefined') {
-      const statusResponse = await this.#fetchJson('status', { remove_client: matchingClient.id, stop_remove_client: true });
+    if (typeof id !== 'undefined' && id !== 0) {
+      const statusResponse = await this.#fetchJson('status', { remove_client: id, stop_remove_client: true });
 
       if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
         return null;
       }
 
-      if (statusResponse.status.find(client => client.name === clientName)?.delete_pending === '0') {
+      if (statusResponse.status.find(client => client.id === id)?.delete_pending === '0') {
         returnValue = true;
       }
     }
