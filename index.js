@@ -172,12 +172,12 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const clientsResponse = await this.getClients({ includeRemoved: true });
-    if (clientsResponse === null) {
+    const clients = await this.getClients({ includeRemoved: true });
+    if (clients === null) {
       return null;
     }
 
-    const clientId = clientsResponse.find(client => client.name === clientName)?.id;
+    const clientId = clients.find(client => client.name === clientName)?.id;
     returnValue = typeof clientId === 'undefined' ? 0 : clientId;
 
     return returnValue;
@@ -191,8 +191,8 @@ class UrbackupServer {
    * server.getServerIdentity().then(data => console.log(data));
    */
   async getServerIdentity () {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -212,8 +212,8 @@ class UrbackupServer {
    * server.getUsers().then(data => console.log(data));
    */
   async getUsers () {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -234,8 +234,8 @@ class UrbackupServer {
    * server.getGroups().then(data => console.log(data));
    */
   async getGroups () {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -265,8 +265,8 @@ class UrbackupServer {
   async getClients ({ groupName, includeRemoved = true } = {}) {
     const returnValue = [];
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -306,17 +306,17 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
-    const addResponse = await this.#fetchJson('add_client', { clientname: clientName });
-    if (addResponse === null) {
+    const addClientResponse = await this.#fetchJson('add_client', { clientname: clientName });
+    if (addClientResponse === null) {
       return null;
     }
 
-    returnValue = addResponse.added_new_client === true;
+    returnValue = addClientResponse.added_new_client === true;
 
     return returnValue;
   }
@@ -339,8 +339,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -382,8 +382,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -417,8 +417,8 @@ class UrbackupServer {
    * server.getClientHints().then(data => console.log(data));
    */
   async getClientHints () {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -447,8 +447,8 @@ class UrbackupServer {
       return returnValue;
     };
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -478,8 +478,8 @@ class UrbackupServer {
       return returnValue;
     };
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -518,8 +518,8 @@ class UrbackupServer {
   async getClientSettings ({ clientName } = {}) {
     const returnValue = [];
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -565,8 +565,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -582,12 +582,12 @@ class UrbackupServer {
       settings[0].sa = 'clientsettings_save';
       settings[0].t_clientid = settings[0].clientid;
 
-      const saveResponse = await this.#fetchJson('settings', settings[0]);
-      if (saveResponse === null) {
+      const saveSettingsResponse = await this.#fetchJson('settings', settings[0]);
+      if (saveSettingsResponse === null) {
         return null;
       }
 
-      returnValue = saveResponse.saved_ok === true;
+      returnValue = saveSettingsResponse.saved_ok === true;
     }
 
     return returnValue;
@@ -607,17 +607,17 @@ class UrbackupServer {
       return '';
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
-    const settingsResponse = await this.getClientSettings({ clientName: clientName });
-    if (settingsResponse === null) {
+    const clientSettings = await this.getClientSettings({ clientName: clientName });
+    if (clientSettings === null) {
       return null;
     }
 
-    return settingsResponse.length === 0 ? '' : (settingsResponse[0].internet_authkey.toString() || null);
+    return clientSettings.length === 0 ? '' : (clientSettings[0].internet_authkey.toString() || null);
   }
 
   /**
@@ -639,8 +639,8 @@ class UrbackupServer {
   async getStatus ({ clientName, includeRemoved = true } = {}) {
     let returnValue = [];
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -680,8 +680,8 @@ class UrbackupServer {
   async getUsage ({ clientName } = {}) {
     let returnValue = [];
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -721,8 +721,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -760,8 +760,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -804,8 +804,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -856,8 +856,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -953,8 +953,8 @@ class UrbackupServer {
   async getLiveLog ({ clientName, recentOnly = false } = {}) {
     let returnValue = [];
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -996,8 +996,8 @@ class UrbackupServer {
    * server.getGeneralSettings().then(data => console.log(data));
    */
   async getGeneralSettings () {
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -1027,8 +1027,8 @@ class UrbackupServer {
       return returnValue;
     }
 
-    const loginResponse = await this.#login();
-    if (loginResponse !== true) {
+    const login = await this.#login();
+    if (login !== true) {
       return null;
     }
 
@@ -1041,11 +1041,11 @@ class UrbackupServer {
       settings[key] = newValue;
       settings.sa = 'general_save';
 
-      const saveResponse = await this.#fetchJson('settings', settings);
-      if (saveResponse === null) {
+      const saveSettingsResponse = await this.#fetchJson('settings', settings);
+      if (saveSettingsResponse === null) {
         return null;
       }
-      returnValue = saveResponse.saved_ok === true;
+      returnValue = saveSettingsResponse.saved_ok === true;
     }
 
     return returnValue;
