@@ -50,7 +50,7 @@ Represents a UrBackup Server.
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.cancelRemovingClient(params)](#UrbackupServer+cancelRemovingClient) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>boolean</code> \| <code>null</code>
     * [.getClientHints()](#UrbackupServer+getClientHints) ⇒ <code>Array</code> \| <code>null</code>
     * [.addClientHint(params)](#UrbackupServer+addClientHint) ⇒ <code>boolean</code> \| <code>null</code>
     * [.removeClientHint(params)](#UrbackupServer+removeClientHint) ⇒ <code>boolean</code> \| <code>null</code>
@@ -176,7 +176,8 @@ server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
 
 ### urbackupServer.removeClient(params) ⇒ <code>boolean</code> \| <code>null</code>
 Marks the client for removal.
-Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemovingClient``` method.
+Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemoveClient``` method.
+Using client ID should be preferred to client name for repeated method calls.
 WARNING: removing clients will also delete all their backups.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
@@ -185,16 +186,22 @@ WARNING: removing clients will also delete all their backups.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
-**Example** *(Remove client)*  
+**Example** *(Remove client by ID)*  
+```js
+server.removeClient({clientId: 1}).then(data => console.log(data));
+```
+**Example** *(Remove client by name)*  
 ```js
 server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
-<a name="UrbackupServer+cancelRemovingClient"></a>
+<a name="UrbackupServer+cancelRemoveClient"></a>
 
-### urbackupServer.cancelRemovingClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.cancelRemoveClient(params) ⇒ <code>boolean</code> \| <code>null</code>
 Unmarks the client as ready for removal.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
@@ -202,11 +209,16 @@ Unmarks the client as ready for removal.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
-**Example** *(Stop the server from removing a client)*  
+**Example** *(Stop the server from removing a client by ID)*  
 ```js
-server.cancelRemovingClient({clientName: 'laptop2'}).then(data => console.log(data));
+server.cancelRemoveClient({clientId: 1}).then(data => console.log(data));
+```
+**Example** *(Stop the server from removing a client by name)*  
+```js
+server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientHints"></a>
 
@@ -368,7 +380,7 @@ server.getUsage({clientName: 'laptop1'}).then(data => console.log(data));
 ### urbackupServer.getActivities([params]) ⇒ <code>Object</code> \| <code>null</code>
 Retrieves a list of current and/or past activities.
 Matches all clients by default, but ```clientName``` can be used to request activities for one particular client.
-By default this method returns only activities that are currently in progress ans skips last activities.
+By default this method returns only activities that are currently in progress and skips last activities.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.  
