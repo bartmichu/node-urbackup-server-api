@@ -519,37 +519,61 @@ class UrbackupServer {
 
   /**
    * Retrieves client settings.
-   * Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
+   * Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined which matches all clients.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
    * @example <caption>Get settings for a specific client only</caption>
    * server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getClientSettings({clientId: 3}).then(data => console.log(data));
    */
-  async getClientSettings ({ clientName } = {}) {
+  async getClientSettings ({ clientId, clientName } = {}) {
     const returnValue = [];
+
+    // short-circuit
+    if (clientId <= 0 || clientName === '') {
+      return returnValue;
+    }
 
     const login = await this.#login();
     if (login !== true) {
       return null;
     }
 
-    let clients = await this.getClients({ includeRemoved: true });
+    const clientIds = [];
+    const allClients = await this.getClients({ includeRemoved: true });
 
-    if (clients === null || clients.some(client => typeof client.id === 'undefined')) {
+    // short-circuit unexpected response
+    if (allClients === null || allClients.some(client => typeof client.id === 'undefined')) {
       return null;
     }
 
-    if (typeof clientName !== 'undefined') {
-      clients = clients.filter(client => client.name === clientName);
+    if (typeof clientId === 'undefined') {
+      for (const client of allClients) {
+        if (typeof clientName === 'undefined') {
+          clientIds.push(client.id);
+        } else {
+          if (client.name === clientName) {
+            clientIds.push(client.id);
+            break;
+          }
+        }
+      }
+    } else {
+      // need to check if clientId exists bacause later clientsettings call will match everything
+      if (allClients.some(client => client.id === clientId)) {
+        clientIds.push(clientId);
+      }
     }
 
-    for (const client of clients) {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: client.id });
+    for (const id of clientIds) {
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: id });
 
+      // short-circuit unexpected response
       if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
         return null;
       }
