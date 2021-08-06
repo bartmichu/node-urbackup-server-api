@@ -354,7 +354,7 @@ class UrbackupServer {
     let returnValue = false;
 
     // short-circuit
-    if ((typeof clientId !== 'undefined' && typeof clientName !== 'undefined') || clientId <= 0 || clientName === '') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '') {
       return returnValue;
     }
 
@@ -404,7 +404,7 @@ class UrbackupServer {
   async cancelRemoveClient ({ clientId, clientName } = {}) {
     let returnValue = false;
 
-    if ((typeof clientId !== 'undefined' && typeof clientName !== 'undefined') || clientId <= 0 || clientName === '') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '') {
       return returnValue;
     }
 
