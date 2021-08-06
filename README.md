@@ -270,7 +270,7 @@ server.removeClientHint({address: '192.168.100.200'}).then(data => console.log(d
 
 ### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code> \| <code>null</code>
 Retrieves client settings.
-Matches all clients by default, but ```clientName``` can be used to request settings for one particular client.
+Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -278,7 +278,8 @@ Matches all clients by default, but ```clientName``` can be used to request sett
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined which matches all clients. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Get settings for all clients)*  
 ```js
@@ -287,12 +288,14 @@ server.getClientSettings().then(data => console.log(data));
 **Example** *(Get settings for a specific client only)*  
 ```js
 server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
+server.getClientSettings({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+setClientSetting"></a>
 
 ### urbackupServer.setClientSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
 Changes one specific element of client settings.
 A list of settings can be obtained with ```getClientSettings``` method.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
@@ -300,7 +303,8 @@ A list of settings can be obtained with ```getClientSettings``` method.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.key | <code>string</code> | (Required) Settings element to change. Defaults to undefined. |
 | params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | (Required) New value for settings element. Defaults to undefined. |
 
