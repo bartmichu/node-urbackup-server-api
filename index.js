@@ -168,11 +168,14 @@ class UrbackupServer {
   async #getClientId (clientName) {
     let returnValue = 0;
 
+    // short-circuit
     if (typeof clientName === 'undefined' || clientName === '') {
       return returnValue;
     }
 
     const clients = await this.getClients({ includeRemoved: true });
+
+    // short-circuit unexpected response
     if (clients === null) {
       return null;
     }
@@ -197,6 +200,8 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
+
+    // short-circuit unexpected response
     if (statusResponse === null || typeof statusResponse?.server_identity === 'undefined') {
       return null;
     }
@@ -218,6 +223,8 @@ class UrbackupServer {
     }
 
     const usersResponse = await this.#fetchJson('settings', { sa: 'listusers' });
+
+    // short-circuit unexpected response
     if (usersResponse === null || typeof usersResponse?.users === 'undefined') {
       return null;
     }
@@ -240,6 +247,8 @@ class UrbackupServer {
     }
 
     const settingsResponse = await this.#fetchJson('settings');
+
+    // short-circuit unexpected response
     if (settingsResponse === null || typeof settingsResponse?.navitems?.groups === 'undefined') {
       return null;
     }
@@ -271,6 +280,8 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
+
+    // short-circuit unexpected response
     if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
       return null;
     }
@@ -302,6 +313,7 @@ class UrbackupServer {
   async addClient ({ clientName } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if (typeof clientName === 'undefined' || clientName === '') {
       return returnValue;
     }
@@ -312,6 +324,8 @@ class UrbackupServer {
     }
 
     const addClientResponse = await this.#fetchJson('add_client', { clientname: clientName });
+
+    // short-circuit unexpected response
     if (addClientResponse === null) {
       return null;
     }
@@ -339,6 +353,7 @@ class UrbackupServer {
   async removeClient ({ clientId, clientName } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if ((typeof clientId !== 'undefined' && typeof clientName !== 'undefined') || clientId <= 0 || clientName === '') {
       return returnValue;
     }
