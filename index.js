@@ -366,6 +366,8 @@ class UrbackupServer {
     let id;
     if (typeof clientId === 'undefined') {
       id = await this.#getClientId(clientName);
+
+      // short-circuit unexpected response
       if (id === null) {
         return null;
       }
@@ -376,6 +378,7 @@ class UrbackupServer {
     if (typeof id !== 'undefined' && id !== 0) {
       const statusResponse = await this.#fetchJson('status', { remove_client: id });
 
+      // short-circuit unexpected response
       if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
         return null;
       }
@@ -404,6 +407,7 @@ class UrbackupServer {
   async cancelRemoveClient ({ clientId, clientName } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '') {
       return returnValue;
     }
@@ -416,6 +420,8 @@ class UrbackupServer {
     let id;
     if (typeof clientId === 'undefined') {
       id = await this.#getClientId(clientName);
+
+      // short-circuit unexpected response
       if (id === null) {
         return null;
       }
@@ -426,6 +432,7 @@ class UrbackupServer {
     if (typeof id !== 'undefined' && id !== 0) {
       const statusResponse = await this.#fetchJson('status', { remove_client: id, stop_remove_client: true });
 
+      // short-circuit unexpected response
       if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
         return null;
       }
@@ -452,6 +459,8 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
+
+    // short-circuit unexpected response
     if (statusResponse === null || typeof statusResponse?.extra_clients === 'undefined') {
       return null;
     }
@@ -472,6 +481,7 @@ class UrbackupServer {
   async addClientHint ({ address } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if (typeof address === 'undefined' || address === '') {
       return returnValue;
     };
@@ -482,6 +492,8 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status', { hostname: address });
+
+    // short-circuit unexpected response
     if (statusResponse === null || typeof statusResponse?.extra_clients === 'undefined') {
       return null;
     }
@@ -503,6 +515,7 @@ class UrbackupServer {
   async removeClientHint ({ address } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if (typeof address === 'undefined' || address === '') {
       return returnValue;
     };
@@ -513,6 +526,8 @@ class UrbackupServer {
     }
 
     const extraClients = await this.getClientHints();
+
+    // short-circuit unexpected response
     if (extraClients === null) {
       return null;
     }
@@ -520,6 +535,8 @@ class UrbackupServer {
     const matchingClient = extraClients.find(extraClient => extraClient.hostname === address);
     if (typeof matchingClient !== 'undefined') {
       const statusResponse = await this.#fetchJson('status', { hostname: matchingClient.id, remove: true });
+
+      // short-circuit unexpected response
       if (statusResponse === null || typeof statusResponse?.extra_clients === 'undefined') {
         return null;
       }
@@ -614,6 +631,7 @@ class UrbackupServer {
   async setClientSetting ({ clientName, key, newValue } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if (typeof clientName === 'undefined' || typeof key === 'undefined' || typeof newValue === 'undefined') {
       return returnValue;
     }
@@ -625,6 +643,7 @@ class UrbackupServer {
 
     const settings = await this.getClientSettings({ clientName: clientName });
 
+    // short-circuit unexpected response
     if (settings === null) {
       return null;
     }
@@ -636,6 +655,8 @@ class UrbackupServer {
       settings[0].t_clientid = settings[0].clientid;
 
       const saveSettingsResponse = await this.#fetchJson('settings', settings[0]);
+
+      // short-circuit unexpected response
       if (saveSettingsResponse === null) {
         return null;
       }
@@ -656,6 +677,7 @@ class UrbackupServer {
    * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
    */
   async getClientAuthkey ({ clientName } = {}) {
+    // short-circuit
     if (typeof clientName === 'undefined') {
       return '';
     }
@@ -666,6 +688,8 @@ class UrbackupServer {
     }
 
     const clientSettings = await this.getClientSettings({ clientName: clientName });
+
+    // short-circuit unexpected response
     if (clientSettings === null) {
       return null;
     }
@@ -698,6 +722,8 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson('status');
+
+    // short-circuit unexpected response
     if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
       return null;
     }
@@ -739,6 +765,8 @@ class UrbackupServer {
     }
 
     const usageResponse = await this.#fetchJson('usage');
+
+    // short-circuit unexpected response
     if (usageResponse === null || typeof usageResponse?.usage === 'undefined') {
       return null;
     }
@@ -770,6 +798,7 @@ class UrbackupServer {
   async getActivities ({ clientName, includeCurrent = true, includePast = false } = {}) {
     const returnValue = { current: [], past: [] };
 
+    // short-circuit
     if (includeCurrent === false && includePast === false) {
       return returnValue;
     }
@@ -780,6 +809,8 @@ class UrbackupServer {
     }
 
     const activitiesResponse = await this.#fetchJson('progress');
+
+    // short-circuit unexpected response
     if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
       return null;
     }
@@ -809,6 +840,7 @@ class UrbackupServer {
   async stopActivity ({ clientName, activityId } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if (typeof clientName === 'undefined' || clientName === '' || typeof activityId === 'undefined' || activityId === 0) {
       return returnValue;
     }
@@ -819,12 +851,16 @@ class UrbackupServer {
     }
 
     const clientId = await this.#getClientId(clientName);
+
+    // short-circuit unexpected response
     if (clientId === null) {
       return null;
     }
 
     if (clientId > 0) {
       const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId, stop_id: activityId });
+
+      // short-circuit unexpected response
       if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
         return null;
       }
@@ -853,6 +889,7 @@ class UrbackupServer {
   async getBackups ({ clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
     const returnValue = { file: [], image: [] };
 
+    // short-circuit
     if (typeof clientName === 'undefined' || (includeFileBackups === false && includeImageBackups === false)) {
       return returnValue;
     }
@@ -863,6 +900,8 @@ class UrbackupServer {
     }
 
     const clientId = await this.#getClientId(clientName);
+
+    // short-circuit unexpected response
     if (clientId === null) {
       return null;
     }
@@ -870,21 +909,26 @@ class UrbackupServer {
     if (clientId > 0) {
       const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId });
 
+      // short-circuit unexpected response
       if (backupsResponse === null) {
         return null;
       }
 
       if (includeFileBackups === true) {
+        // short-circuit unexpected response
         if (typeof backupsResponse?.backups === 'undefined') {
           return null;
         }
+
         returnValue.file = backupsResponse.backups;
       }
 
       if (includeImageBackups === true) {
+        // short-circuit unexpected response
         if (typeof backupsResponse?.backup_images === 'undefined') {
           return null;
         }
+
         returnValue.image = backupsResponse.backup_images;
       }
     }
@@ -905,6 +949,7 @@ class UrbackupServer {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
     let returnValue = false;
 
+    // short-circuit
     if (typeof clientName === 'undefined' || clientName === '' || !backupTypes.includes(backupType)) {
       return returnValue;
     }
@@ -915,12 +960,16 @@ class UrbackupServer {
     }
 
     const clientId = await this.#getClientId(clientName);
+
+    // short-circuit unexpected response
     if (clientId === null) {
       return null;
     }
 
     if (clientId > 0) {
       const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId, start_type: backupType });
+
+      // short-circuit unexpected response
       if (backupResponse === null || typeof backupResponse.result === 'undefined' || backupResponse.result.filter(element => Object.keys(element).includes('start_ok')).length !== 1) {
         return null;
       }
@@ -1012,9 +1061,13 @@ class UrbackupServer {
     }
 
     const clientId = await this.#getClientId(clientName);
+
+    // short-circuit unexpected response
     if (clientId === null) {
       return null;
-    } else if (clientId === 0 && typeof clientName !== 'undefined') {
+    }
+
+    if (clientId === 0 && typeof clientName !== 'undefined') {
       // 0 is a valid value for livelog and should be used when clientName is undefined
       return returnValue;
     }
@@ -1023,6 +1076,7 @@ class UrbackupServer {
     try {
       const logResponse = await this.#fetchJson('livelog', { clientid: clientId, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
 
+      // short-circuit unexpected response
       if (logResponse === null || typeof logResponse.logdata === 'undefined') {
         return null;
       }
@@ -1055,6 +1109,8 @@ class UrbackupServer {
     }
 
     const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
+
+    // short-circuit unexpected response
     if (settingsResponse === null || typeof settingsResponse?.settings === 'undefined') {
       return null;
     }
@@ -1076,16 +1132,20 @@ class UrbackupServer {
   async setGeneralSetting ({ key, newValue } = {}) {
     let returnValue = false;
 
+    // short-circuit
     if (typeof key === 'undefined' || typeof newValue === 'undefined') {
       return returnValue;
     }
 
     const login = await this.#login();
+
     if (login !== true) {
       return null;
     }
 
     const settings = await this.getGeneralSettings();
+
+    // short-circuit unexpected response
     if (settings === null) {
       return null;
     }
@@ -1095,9 +1155,12 @@ class UrbackupServer {
       settings.sa = 'general_save';
 
       const saveSettingsResponse = await this.#fetchJson('settings', settings);
+
+      // short-circuit unexpected response
       if (saveSettingsResponse === null) {
         return null;
       }
+
       returnValue = saveSettingsResponse.saved_ok === true;
     }
 
