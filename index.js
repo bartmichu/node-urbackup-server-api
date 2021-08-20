@@ -187,6 +187,34 @@ class UrbackupServer {
   }
 
   /**
+   * This method is not meant to be used outside the class.
+   * Used internally to translate client ID to client name.
+   *
+   * @param {string} clientId - Client's ID.
+   * @returns {string|null} When successfull, a string with client's name. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
+   */
+  async #getClientName (clientId) {
+    let returnValue = '';
+
+    // short-circuit
+    if (typeof clientId === 'undefined') {
+      return returnValue;
+    }
+
+    const clients = await this.getClients({ includeRemoved: true });
+
+    // short-circuit unexpected response
+    if (clients === null) {
+      return null;
+    }
+
+    const clientName = clients.find(client => client.id === clientId)?.name;
+    returnValue = typeof clientName === 'undefined' ? '' : clientName;
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves server identity.
    *
    * @returns {string|null} When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.
@@ -345,9 +373,8 @@ class UrbackupServer {
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.
-   * @example <caption>Remove client by ID</caption>
+   * @example <caption>Remove client</caption>
    * server.removeClient({clientId: 1}).then(data => console.log(data));
-   * @example <caption>Remove client by name</caption>
    * server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async removeClient ({ clientId, clientName } = {}) {
@@ -552,6 +579,7 @@ class UrbackupServer {
   /**
    * Retrieves client settings.
    * Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -619,20 +647,23 @@ class UrbackupServer {
   /**
    * Changes one specific element of client settings.
    * A list of settings can be obtained with ```getClientSettings``` method.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
    * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Set directories to backup to be optional by default</caption>
    * server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+   * server.setClientSetting({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
    */
-  async setClientSetting ({ clientName, key, newValue } = {}) {
+  async setClientSetting ({ clientId, clientName, key, newValue } = {}) {
     let returnValue = false;
 
     // short-circuit
-    if (typeof clientName === 'undefined' || typeof key === 'undefined' || typeof newValue === 'undefined') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || typeof key === 'undefined' || typeof newValue === 'undefined') {
       return returnValue;
     }
 
@@ -641,20 +672,20 @@ class UrbackupServer {
       return null;
     }
 
-    const settings = await this.getClientSettings({ clientName: clientName });
+    const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
 
     // short-circuit unexpected response
-    if (settings === null) {
+    if (clientSettings === null) {
       return null;
     }
 
-    if (settings.length > 0 && Object.keys(settings[0]).includes(key)) {
-      settings[0][key] = newValue;
-      settings[0].overwrite = true;
-      settings[0].sa = 'clientsettings_save';
-      settings[0].t_clientid = settings[0].clientid;
+    if (clientSettings.length > 0 && Object.keys(clientSettings[0]).includes(key)) {
+      clientSettings[0][key] = newValue;
+      clientSettings[0].overwrite = true;
+      clientSettings[0].sa = 'clientsettings_save';
+      clientSettings[0].t_clientid = clientSettings[0].clientid;
 
-      const saveSettingsResponse = await this.#fetchJson('settings', settings[0]);
+      const saveSettingsResponse = await this.#fetchJson('settings', clientSettings[0]);
 
       // short-circuit unexpected response
       if (saveSettingsResponse === null) {
@@ -669,16 +700,19 @@ class UrbackupServer {
 
   /**
    * Retrieves authentication key for a specified client.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {string|null} When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get authentication key for a specific client</caption>
    * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
    */
-  async getClientAuthkey ({ clientName } = {}) {
+  async getClientAuthkey ({ clientId, clientName } = {}) {
     // short-circuit
-    if (typeof clientName === 'undefined') {
+    if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
       return '';
     }
 
@@ -687,7 +721,7 @@ class UrbackupServer {
       return null;
     }
 
-    const clientSettings = await this.getClientSettings({ clientName: clientName });
+    const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
 
     // short-circuit unexpected response
     if (clientSettings === null) {
@@ -700,10 +734,12 @@ class UrbackupServer {
   /**
    * Retrieves backup status.
    * Matches all clients by default, including clients marked for removal.
-   * Client name can be passed as an argument in which case only that one client's status is returned.
+   * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array|null} When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get status for all clients</caption>
@@ -712,8 +748,9 @@ class UrbackupServer {
    * server.getStatus({includeRemoved: false}).then(data => console.log(data));
    * @example <caption>Get status for a specific client only</caption>
    * server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getStatus({clientId: 3}).then(data => console.log(data));
    */
-  async getStatus ({ clientName, includeRemoved = true } = {}) {
+  async getStatus ({ clientId, clientName, includeRemoved = true } = {}) {
     let returnValue = [];
 
     const login = await this.#login();
@@ -728,14 +765,15 @@ class UrbackupServer {
       return null;
     }
 
-    if (typeof clientName === 'undefined') {
+    if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
       if (includeRemoved === false) {
         return statusResponse.status.filter(client => client.delete_pending !== '1');
       } else {
         return statusResponse.status;
       }
     } else {
-      const clientStatus = statusResponse.status.find(client => client.name === clientName);
+      const clientStatus = statusResponse.status.find(client => typeof clientId !== 'undefined' ? client.id === clientId : client.name === clientName);
+
       if (typeof clientStatus !== 'undefined') {
         returnValue = (includeRemoved === false && clientStatus.delete_pending === '1') ? returnValue : [clientStatus];
       }
@@ -746,17 +784,20 @@ class UrbackupServer {
 
   /**
    * Retrieves storage usage.
-   * Matches all clients by default, but ```clientName``` can be used to request usage for one particular client.
+   * Matches all clients by default, but ```clientName``` OR ```clientId``` can be used to request usage for one particular client.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @returns {Array|null} When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get usage for all clients</caption>
    * server.getUsage().then(data => console.log(data));
    * @example <caption>Get usage for a specific client only</caption>
    * server.getUsage({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getUsage({clientId: 3}).then(data => console.log(data));
    */
-  async getUsage ({ clientName } = {}) {
+  async getUsage ({ clientId, clientName } = {}) {
     let returnValue = [];
 
     const login = await this.#login();
@@ -771,7 +812,16 @@ class UrbackupServer {
       return null;
     }
 
-    returnValue = typeof clientName === 'undefined' ? usageResponse.usage : usageResponse.usage.filter(client => client.name === clientName);
+    if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+      returnValue = usageResponse.usage;
+    } else {
+      let translatedClientName;
+      if (typeof clientId !== 'undefined') {
+        // usage response does not contain a property with client ID so translation to client name is needed
+        translatedClientName = await this.#getClientName(clientId);
+      }
+      returnValue = usageResponse.usage.find(client => typeof clientId !== 'undefined' ? client.name === translatedClientName : client.name === clientName) ?? returnValue;
+    }
 
     return returnValue;
   }
