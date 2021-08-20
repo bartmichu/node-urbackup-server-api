@@ -189,12 +189,9 @@ WARNING: removing clients will also delete all their backups.
 | params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
-**Example** *(Remove client by ID)*  
+**Example** *(Remove client)*  
 ```js
 server.removeClient({clientId: 1}).then(data => console.log(data));
-```
-**Example** *(Remove client by name)*  
-```js
 server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+cancelRemoveClient"></a>
@@ -271,6 +268,7 @@ server.removeClientHint({address: '192.168.100.200'}).then(data => console.log(d
 ### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code> \| <code>null</code>
 Retrieves client settings.
 Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -311,11 +309,13 @@ Using client ID should be preferred to client name for repeated method calls.
 **Example** *(Set directories to backup to be optional by default)*  
 ```js
 server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+server.setClientSetting({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientAuthkey"></a>
 
 ### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code> \| <code>null</code>
 Retrieves authentication key for a specified client.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -323,18 +323,21 @@ Retrieves authentication key for a specified client.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Get authentication key for a specific client)*  
 ```js
 server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
+server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getStatus"></a>
 
 ### urbackupServer.getStatus([params]) ⇒ <code>Array</code> \| <code>null</code>
 Retrieves backup status.
 Matches all clients by default, including clients marked for removal.
-Client name can be passed as an argument in which case only that one client's status is returned.
+Client name or client ID can be passed as an argument in which case only that one client's status is returned.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -342,7 +345,8 @@ Client name can be passed as an argument in which case only that one client's st
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 | [params.includeRemoved] | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get status for all clients)*  
@@ -356,12 +360,14 @@ server.getStatus({includeRemoved: false}).then(data => console.log(data));
 **Example** *(Get status for a specific client only)*  
 ```js
 server.getStatus({clientName: 'laptop1'}).then(data => console.log(data));
+server.getStatus({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getUsage"></a>
 
 ### urbackupServer.getUsage([params]) ⇒ <code>Array</code> \| <code>null</code>
 Retrieves storage usage.
-Matches all clients by default, but ```clientName``` can be used to request usage for one particular client.
+Matches all clients by default, but ```clientName``` OR ```clientId``` can be used to request usage for one particular client.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -369,7 +375,8 @@ Matches all clients by default, but ```clientName``` can be used to request usag
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 
 **Example** *(Get usage for all clients)*  
 ```js
@@ -378,6 +385,7 @@ server.getUsage().then(data => console.log(data));
 **Example** *(Get usage for a specific client only)*  
 ```js
 server.getUsage({clientName: 'laptop1'}).then(data => console.log(data));
+server.getUsage({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getActivities"></a>
 
