@@ -828,11 +828,13 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of current and/or past activities.
-   * Matches all clients by default, but ```clientName``` can be used to request activities for one particular client.
+   * Matches all clients by default, but ```clientName``` or ```clientId``` can be used to request activities for one particular client.
    * By default this method returns only activities that are currently in progress and skips last activities.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @param {boolean} [params.includeCurrent] - (Optional) Whether or not currently running activities should be included. Defaults to true.
    * @param {boolean} [params.includePast] - (Optional) Whether or not past activities should be included. Defaults to false.
    * @returns {Object|null} When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.
@@ -842,10 +844,12 @@ class UrbackupServer {
    * server.getActivities({includeCurrent: false, includePast: true}).then(data => console.log(data));
    * @example <caption>Get current (in progress) activities for a specific client only</caption>
    * server.getActivities({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getActivities({clientId: 3}).then(data => console.log(data));
    * @example <caption>Get all activities for a specific client only</caption>
    * server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
+   * server.getActivities({clientId: '3', includeCurrent: true, includePast: true}).then(data => console.log(data));
    */
-  async getActivities ({ clientName, includeCurrent = true, includePast = false } = {}) {
+  async getActivities ({ clientId, clientName, includeCurrent = true, includePast = false } = {}) {
     const returnValue = { current: [], past: [] };
 
     // short-circuit
@@ -866,11 +870,19 @@ class UrbackupServer {
     }
 
     if (includeCurrent === true) {
-      returnValue.current = typeof clientName === 'undefined' ? activitiesResponse.progress : activitiesResponse.progress.filter(activity => activity.name === clientName);
+      if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+        returnValue.current = activitiesResponse.progress;
+      } else {
+        returnValue.current = activitiesResponse.progress.filter(activity => typeof clientId !== 'undefined' ? activity.clientid === clientId : activity.name === clientName);
+      }
     }
 
     if (includePast === true) {
-      returnValue.past = typeof clientName === 'undefined' ? activitiesResponse.lastacts : activitiesResponse.lastacts.filter(activity => activity.name === clientName);
+      if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+        returnValue.past = activitiesResponse.lastacts;
+      } else {
+        returnValue.past = activitiesResponse.lastacts.filter(activity => typeof clientId !== 'undefined' ? activity.clientid === clientId : activity.name === clientName);
+      }
     }
 
     return returnValue;
@@ -879,19 +891,22 @@ class UrbackupServer {
   /**
    * Stops one activity.
    * A list of current activities can be obtained with ```getActivities``` method.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {number} params.activityId - (Required) Activity ID. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Stop activity</caption>
    * server.stopActivity({clientName: 'laptop1', activityId: 42}).then(data => console.log(data));
+   * server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data));
    */
-  async stopActivity ({ clientName, activityId } = {}) {
+  async stopActivity ({ clientId, clientName, activityId } = {}) {
     let returnValue = false;
 
     // short-circuit
-    if (typeof clientName === 'undefined' || clientName === '' || typeof activityId === 'undefined' || activityId === 0) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (typeof clientId === 'undefined' && clientName === '') || typeof activityId === 'undefined' || activityId === 0) {
       return returnValue;
     }
 
@@ -900,15 +915,19 @@ class UrbackupServer {
       return null;
     }
 
-    const clientId = await this.#getClientId(clientName);
+    let translatedClientId;
 
-    // short-circuit unexpected response
-    if (clientId === null) {
-      return null;
+    if (typeof clientId === 'undefined') {
+      translatedClientId = await this.#getClientId(clientName);
+
+      // short-circuit unexpected response
+      if (translatedClientId === null) {
+        return null;
+      }
     }
 
-    if (clientId > 0) {
-      const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId, stop_id: activityId });
+    if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof translatedClientId !== 'undefined' && translatedClientId > 0)) {
+      const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? translatedClientId, stop_id: activityId });
 
       // short-circuit unexpected response
       if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
