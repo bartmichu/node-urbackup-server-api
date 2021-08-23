@@ -390,27 +390,25 @@ class UrbackupServer {
       return null;
     }
 
-    let id;
-    if (typeof clientId === 'undefined') {
-      id = await this.#getClientId(clientName);
+    let mappedClientId;
+    if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      mappedClientId = await this.#getClientId(clientName);
 
       // short-circuit unexpected response
-      if (id === null) {
+      if (mappedClientId === null) {
         return null;
       }
-    } else {
-      id = clientId;
     }
 
-    if (typeof id !== 'undefined' && id !== 0) {
-      const statusResponse = await this.#fetchJson('status', { remove_client: id });
+    if (typeof mappedClientId !== 'undefined' && mappedClientId !== 0) {
+      const statusResponse = await this.#fetchJson('status', { remove_client: clientId ?? mappedClientId });
 
       // short-circuit unexpected response
       if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
         return null;
       }
 
-      if (statusResponse.status.find(client => client.id === id)?.delete_pending === '1') {
+      if (statusResponse.status.find(client => client.id === (clientId ?? mappedClientId))?.delete_pending === '1') {
         returnValue = true;
       }
     }
@@ -444,27 +442,25 @@ class UrbackupServer {
       return null;
     }
 
-    let id;
+    let mappedClientId;
     if (typeof clientId === 'undefined') {
-      id = await this.#getClientId(clientName);
+      mappedClientId = await this.#getClientId(clientName);
 
       // short-circuit unexpected response
-      if (id === null) {
+      if (mappedClientId === null) {
         return null;
       }
-    } else {
-      id = clientId;
     }
 
-    if (typeof id !== 'undefined' && id !== 0) {
-      const statusResponse = await this.#fetchJson('status', { remove_client: id, stop_remove_client: true });
+    if (typeof mappedClientId !== 'undefined' && mappedClientId !== 0) {
+      const statusResponse = await this.#fetchJson('status', { remove_client: clientId ?? mappedClientId, stop_remove_client: true });
 
       // short-circuit unexpected response
       if (statusResponse === null || typeof statusResponse?.status === 'undefined') {
         return null;
       }
 
-      if (statusResponse.status.find(client => client.id === id)?.delete_pending === '0') {
+      if (statusResponse.status.find(client => client.id === (clientId ?? mappedClientId))?.delete_pending === '0') {
         returnValue = true;
       }
     }
@@ -579,11 +575,10 @@ class UrbackupServer {
   /**
    * Retrieves client settings.
    * Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
-   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @returns {Array|null} When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
@@ -624,7 +619,7 @@ class UrbackupServer {
         }
       }
     } else {
-      // need to check if clientId exists bacause later clientsettings call will match everything
+      // need to check if clientId exists bacause later 'clientsettings' call will match everything
       if (allClients.some(client => client.id === clientId)) {
         clientIds.push(clientId);
       }
@@ -728,14 +723,13 @@ class UrbackupServer {
       return null;
     }
 
-    return clientSettings.length === 0 ? '' : (clientSettings[0].internet_authkey.toString() || null);
+    return clientSettings.length === 0 ? '' : clientSettings[0].internet_authkey.toString() ?? null;
   }
 
   /**
    * Retrieves backup status.
    * Matches all clients by default, including clients marked for removal.
    * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
-   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
@@ -830,7 +824,6 @@ class UrbackupServer {
    * Retrieves a list of current and/or past activities.
    * Matches all clients by default, but ```clientName``` or ```clientId``` can be used to request activities for one particular client.
    * By default this method returns only activities that are currently in progress and skips last activities.
-   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.

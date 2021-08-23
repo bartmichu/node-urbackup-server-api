@@ -268,7 +268,6 @@ server.removeClientHint({address: '192.168.100.200'}).then(data => console.log(d
 ### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code> \| <code>null</code>
 Retrieves client settings.
 Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
-Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -276,8 +275,8 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 
 **Example** *(Get settings for all clients)*  
 ```js
@@ -337,7 +336,6 @@ server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
 Retrieves backup status.
 Matches all clients by default, including clients marked for removal.
 Client name or client ID can be passed as an argument in which case only that one client's status is returned.
-Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -393,7 +391,6 @@ server.getUsage({clientId: 3}).then(data => console.log(data));
 Retrieves a list of current and/or past activities.
 Matches all clients by default, but ```clientName``` or ```clientId``` can be used to request activities for one particular client.
 By default this method returns only activities that are currently in progress and skips last activities.
-Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.  
