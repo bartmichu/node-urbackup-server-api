@@ -391,8 +391,9 @@ server.getUsage({clientId: 3}).then(data => console.log(data));
 
 ### urbackupServer.getActivities([params]) ⇒ <code>Object</code> \| <code>null</code>
 Retrieves a list of current and/or past activities.
-Matches all clients by default, but ```clientName``` can be used to request activities for one particular client.
+Matches all clients by default, but ```clientName``` or ```clientId``` can be used to request activities for one particular client.
 By default this method returns only activities that are currently in progress and skips last activities.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -400,7 +401,8 @@ By default this method returns only activities that are currently in progress an
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which matches all clients. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 | [params.includeCurrent] | <code>boolean</code> | (Optional) Whether or not currently running activities should be included. Defaults to true. |
 | [params.includePast] | <code>boolean</code> | (Optional) Whether or not past activities should be included. Defaults to false. |
 
@@ -415,16 +417,19 @@ server.getActivities({includeCurrent: false, includePast: true}).then(data => co
 **Example** *(Get current (in progress) activities for a specific client only)*  
 ```js
 server.getActivities({clientName: 'laptop1'}).then(data => console.log(data));
+server.getActivities({clientId: 3}).then(data => console.log(data));
 ```
 **Example** *(Get all activities for a specific client only)*  
 ```js
 server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
+server.getActivities({clientId: '3', includeCurrent: true, includePast: true}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+stopActivity"></a>
 
 ### urbackupServer.stopActivity(params) ⇒ <code>boolean</code> \| <code>null</code>
 Stops one activity.
 A list of current activities can be obtained with ```getActivities``` method.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
@@ -432,17 +437,20 @@ A list of current activities can be obtained with ```getActivities``` method.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.activityId | <code>number</code> | (Required) Activity ID. Defaults to undefined. |
 
 **Example** *(Stop activity)*  
 ```js
 server.stopActivity({clientName: 'laptop1', activityId: 42}).then(data => console.log(data));
+server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getBackups"></a>
 
 ### urbackupServer.getBackups(params) ⇒ <code>Object</code> \| <code>null</code>
 Retrieves a list of file and/or image backups for a specific client.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with backups info. Object with empty arrays when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -450,13 +458,15 @@ Retrieves a list of file and/or image backups for a specific client.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | [params.includeFileBackups] | <code>boolean</code> | (Optional) Whether or not file backups should be included. Defaults to true. |
 | [params.includeImageBackups] | <code>boolean</code> | (Optional) Whether or not image backups should be included. Defaults to true. |
 
 **Example** *(Get all backups for a specific client)*  
 ```js
 server.getBackups({clientName: 'laptop1'}).then(data => console.log(data));
+server.getBackups({clientId: 3}).then(data => console.log(data));
 ```
 **Example** *(Get image backups for a specific client)*  
 ```js
@@ -470,6 +480,7 @@ server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data
 
 ### urbackupServer.startFullFileBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
 Starts full file backup.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
@@ -477,16 +488,19 @@ Starts full file backup.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
 ```js
 server.startFullFileBackup({clientName: 'laptop1').then(data => console.log(data));
+server.startFullFileBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startIncrementalFileBackup"></a>
 
 ### urbackupServer.startIncrementalFileBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
 Starts incremental file backup.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
@@ -494,16 +508,19 @@ Starts incremental file backup.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
 ```js
 server.startIncrementalFileBackup({clientName: 'laptop1').then(data => console.log(data));
+server.startIncrementalFileBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startFullImageBackup"></a>
 
 ### urbackupServer.startFullImageBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
 Starts full image backup.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
@@ -511,16 +528,19 @@ Starts full image backup.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
 ```js
 server.startFullImageBackup({clientName: 'laptop1').then(data => console.log(data));
+server.startFullImageBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startIncrementalImageBackup"></a>
 
 ### urbackupServer.startIncrementalImageBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
 Starts incremental image backup.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
@@ -528,18 +548,22 @@ Starts incremental image backup.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
 ```js
 server.startIncrementalImageBackup({clientName: 'laptop1').then(data => console.log(data));
+server.startIncrementalImageBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getLiveLog"></a>
 
 ### urbackupServer.getLiveLog([params]) ⇒ <code>Array</code> \| <code>null</code>
 Retrieves live logs.
-Server logs are requested by default, but ```clientName``` can be used to request logs for one particular client.
-Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
+Server logs are requested by default, but ```clientName``` or ```clientId``` can be used to request logs for one particular client.
+Instance property is being used internally to keep track of log entries that were previously requested.
+When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
+Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.  
@@ -547,7 +571,8 @@ Instance property is being used internally to keep track of log entries that wer
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Defaults to undefined, which means server logs will be requested. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined. |
+| [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientName``` is also undefined. |
 | [params.recentOnly] | <code>boolean</code> | (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false. |
 
 **Example** *(Get server logs)*  
@@ -557,6 +582,7 @@ server.getLiveLog().then(data => console.log(data));
 **Example** *(Get logs for a specific client only)*  
 ```js
 server.getLiveLog({clientName: 'laptop1'}).then(data => console.log(data));
+server.getLiveLog({clientId: 3}).then(data => console.log(data));
 ```
 **Example** *(Get logs for a specific client only, but skip previously fetched logs)*  
 ```js

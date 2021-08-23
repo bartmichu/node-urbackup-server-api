@@ -160,7 +160,7 @@ class UrbackupServer {
 
   /**
    * This method is not meant to be used outside the class.
-   * Used internally to translate client name to client ID.
+   * Used internally to map client name to client ID.
    *
    * @param {string} clientName - Client's name.
    * @returns {number|null} When successfull, a number representing client's ID. 0 (zero) when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
@@ -188,7 +188,7 @@ class UrbackupServer {
 
   /**
    * This method is not meant to be used outside the class.
-   * Used internally to translate client ID to client name.
+   * Used internally to map client ID to client name.
    *
    * @param {string} clientId - Client's ID.
    * @returns {string|null} When successfull, a string with client's name. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.
@@ -815,12 +815,12 @@ class UrbackupServer {
     if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
       returnValue = usageResponse.usage;
     } else {
-      let translatedClientName;
+      let mappedClientName;
       if (typeof clientId !== 'undefined') {
         // usage response does not contain a property with client ID so translation to client name is needed
-        translatedClientName = await this.#getClientName(clientId);
+        mappedClientName = await this.#getClientName(clientId);
       }
-      returnValue = usageResponse.usage.find(client => typeof clientId !== 'undefined' ? client.name === translatedClientName : client.name === clientName) ?? returnValue;
+      returnValue = usageResponse.usage.find(client => typeof clientId !== 'undefined' ? client.name === mappedClientName : client.name === clientName) ?? returnValue;
     }
 
     return returnValue;
@@ -915,19 +915,18 @@ class UrbackupServer {
       return null;
     }
 
-    let translatedClientId;
-
-    if (typeof clientId === 'undefined') {
-      translatedClientId = await this.#getClientId(clientName);
+    let mappedClientId;
+    if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      mappedClientId = await this.#getClientId(clientName);
 
       // short-circuit unexpected response
-      if (translatedClientId === null) {
+      if (mappedClientId === null) {
         return null;
       }
     }
 
-    if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof translatedClientId !== 'undefined' && translatedClientId > 0)) {
-      const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? translatedClientId, stop_id: activityId });
+    if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+      const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? mappedClientId, stop_id: activityId });
 
       // short-circuit unexpected response
       if (activitiesResponse === null || typeof activitiesResponse?.progress === 'undefined' || typeof activitiesResponse?.lastacts === 'undefined') {
@@ -942,24 +941,27 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of file and/or image backups for a specific client.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {boolean} [params.includeFileBackups] - (Optional) Whether or not file backups should be included. Defaults to true.
    * @param {boolean} [params.includeImageBackups] - (Optional) Whether or not image backups should be included. Defaults to true.
    * @returns {Object|null} When successfull, an object with backups info. Object with empty arrays when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get all backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getBackups({clientId: 3}).then(data => console.log(data));
    * @example <caption>Get image backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1', includeFileBackups: false}).then(data => console.log(data));
    * @example <caption>Get file backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
    */
-  async getBackups ({ clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
+  async getBackups ({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
     const returnValue = { file: [], image: [] };
 
     // short-circuit
-    if (typeof clientName === 'undefined' || (includeFileBackups === false && includeImageBackups === false)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (includeFileBackups === false && includeImageBackups === false)) {
       return returnValue;
     }
 
@@ -968,15 +970,18 @@ class UrbackupServer {
       return null;
     }
 
-    const clientId = await this.#getClientId(clientName);
+    let mappedClientId;
+    if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      mappedClientId = await this.#getClientId(clientName);
 
-    // short-circuit unexpected response
-    if (clientId === null) {
-      return null;
+      // short-circuit unexpected response
+      if (mappedClientId === null) {
+        return null;
+      }
     }
 
-    if (clientId > 0) {
-      const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId });
+    if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+      const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId ?? mappedClientId });
 
       // short-circuit unexpected response
       if (backupsResponse === null) {
@@ -1007,19 +1012,20 @@ class UrbackupServer {
 
   /**
    * This method is not meant to be used outside the class.
-   * Used internally to start a backup.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.backupType - (Required) backup type, case sensitive. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    */
-  async #startBackup ({ clientName, backupType } = {}) {
+  async #startBackup ({ clientId, clientName, backupType } = {}) {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
     let returnValue = false;
 
     // short-circuit
-    if (typeof clientName === 'undefined' || clientName === '' || !backupTypes.includes(backupType)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (typeof clientId === 'undefined' && clientName === '') || !backupTypes.includes(backupType)) {
       return returnValue;
     }
 
@@ -1028,15 +1034,18 @@ class UrbackupServer {
       return null;
     }
 
-    const clientId = await this.#getClientId(clientName);
+    let mappedClientId;
+    if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      mappedClientId = await this.#getClientId(clientName);
 
-    // short-circuit unexpected response
-    if (clientId === null) {
-      return null;
+      // short-circuit unexpected response
+      if (mappedClientId === null) {
+        return null;
+      }
     }
 
-    if (clientId > 0) {
-      const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId, start_type: backupType });
+    if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+      const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId ?? mappedClientId, start_type: backupType });
 
       // short-circuit unexpected response
       if (backupResponse === null || typeof backupResponse.result === 'undefined' || backupResponse.result.filter(element => Object.keys(element).includes('start_ok')).length !== 1) {
@@ -1051,77 +1060,93 @@ class UrbackupServer {
 
   /**
    * Starts full file backup.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Start backup</caption>
    * server.startFullFileBackup({clientName: 'laptop1').then(data => console.log(data));
+   * server.startFullFileBackup({clientId: 3).then(data => console.log(data));
    */
-  async startFullFileBackup ({ clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'full_file' });
+  async startFullFileBackup ({ clientId, clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'full_file' });
     return returnValue;
   }
 
   /**
    * Starts incremental file backup.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Start backup</caption>
    * server.startIncrementalFileBackup({clientName: 'laptop1').then(data => console.log(data));
+   * server.startIncrementalFileBackup({clientId: 3).then(data => console.log(data));
    */
-  async startIncrementalFileBackup ({ clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'incr_file' });
+  async startIncrementalFileBackup ({ clientId, clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'incr_file' });
     return returnValue;
   }
 
   /**
    * Starts full image backup.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Start backup</caption>
    * server.startFullImageBackup({clientName: 'laptop1').then(data => console.log(data));
+   * server.startFullImageBackup({clientId: 3).then(data => console.log(data));
    */
-  async startFullImageBackup ({ clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'full_image' });
+  async startFullImageBackup ({ clientId, clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'full_image' });
     return returnValue;
   }
 
   /**
    * Starts incremental image backup.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean|null} When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Start backup</caption>
    * server.startIncrementalImageBackup({clientName: 'laptop1').then(data => console.log(data));
+   * server.startIncrementalImageBackup({clientId: 3).then(data => console.log(data));
    */
-  async startIncrementalImageBackup ({ clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientName: clientName, backupType: 'incr_image' });
+  async startIncrementalImageBackup ({ clientId, clientName } = {}) {
+    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'incr_image' });
     return returnValue;
   }
 
   /**
    * Retrieves live logs.
-   * Server logs are requested by default, but ```clientName``` can be used to request logs for one particular client.
-   * Instance property is being used internally to keep track of log entries that were previously requested. When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
+   * Server logs are requested by default, but ```clientName``` or ```clientId``` can be used to request logs for one particular client.
+   * Instance property is being used internally to keep track of log entries that were previously requested.
+   * When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
+   * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Defaults to undefined, which means server logs will be requested.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined.
+   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientName``` is also undefined.
    * @param {boolean} [params.recentOnly] - (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false.
    * @returns {Array|null} When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.
    * @example <caption>Get server logs</caption>
    * server.getLiveLog().then(data => console.log(data));
    * @example <caption>Get logs for a specific client only</caption>
    * server.getLiveLog({clientName: 'laptop1'}).then(data => console.log(data));
+   * server.getLiveLog({clientId: 3}).then(data => console.log(data));
    * @example <caption>Get logs for a specific client only, but skip previously fetched logs</caption>
    * server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => console.log(data));
    */
-  async getLiveLog ({ clientName, recentOnly = false } = {}) {
+  async getLiveLog ({ clientId, clientName, recentOnly = false } = {}) {
     let returnValue = [];
 
     const login = await this.#login();
@@ -1129,21 +1154,24 @@ class UrbackupServer {
       return null;
     }
 
-    const clientId = await this.#getClientId(clientName);
+    let mappedClientId;
+    if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      mappedClientId = await this.#getClientId(clientName);
 
-    // short-circuit unexpected response
-    if (clientId === null) {
-      return null;
+      // short-circuit unexpected response
+      if (mappedClientId === null) {
+        return null;
+      }
     }
 
-    if (clientId === 0 && typeof clientName !== 'undefined') {
-      // 0 is a valid value for livelog and should be used when clientName is undefined
+    if (clientId === 0 || mappedClientId === 0) {
+      // 0 is a valid value for livelog and should be used when both clientId and clientName are undefined
       return returnValue;
     }
 
     const [value, release] = await this.#semaphore.acquire();
     try {
-      const logResponse = await this.#fetchJson('livelog', { clientid: clientId, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
+      const logResponse = await this.#fetchJson('livelog', { clientid: clientId ?? mappedClientId ?? 0, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
 
       // short-circuit unexpected response
       if (logResponse === null || typeof logResponse.logdata === 'undefined') {
