@@ -152,6 +152,7 @@ class UrbackupServer {
         }
       }
     } catch (error) {
+      // TODO: handle errors
     } finally {
       release();
     }
@@ -1177,6 +1178,7 @@ class UrbackupServer {
 
       returnValue = logResponse.logdata;
     } catch (error) {
+      // TODO: handle errors
     } finally {
       release();
     }
