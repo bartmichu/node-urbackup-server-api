@@ -611,10 +611,10 @@ class UrbackupServer {
    * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when save request was unsuccessful or invalid key/value.
    * @example <caption>Set directories to backup to be optional by default</caption>
-   * server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
-   * server.setClientSetting({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+   * server.setClientSettings({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+   * server.setClientSettings({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
    */
-  async setClientSetting ({ clientId, clientName, key, newValue } = {}) {
+  async setClientSettings ({ clientId, clientName, key, newValue } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || typeof key === 'undefined' || typeof newValue === 'undefined') {
       throw new Error('API call error: missing or invalid parameters');
     }
@@ -1146,9 +1146,9 @@ class UrbackupServer {
    * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when save request was unsuccessful or invalid key/value.
    * @example <caption>Disable image backups</caption>
-   * server.setGeneralSetting({key: 'no_images', newValue: true}).then(data => console.log(data));
+   * server.setGeneralSettings({key: 'no_images', newValue: true}).then(data => console.log(data));
    */
-  async setGeneralSetting ({ key, newValue } = {}) {
+  async setGeneralSettings ({ key, newValue } = {}) {
     if (typeof key === 'undefined' || typeof newValue === 'undefined') {
       throw new Error('API call error: missing or invalid parameters');
     }
