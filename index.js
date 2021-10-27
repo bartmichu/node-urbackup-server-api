@@ -343,6 +343,52 @@ class UrbackupServer {
   }
 
   /**
+   * This method is not meant to be used outside the class.
+   * Marks/unmarks the client as ready for removal.
+   * Using client ID should be preferred to client name for repeated method calls.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {boolean} params.stopRemove - {Required) Whether it's 'remove' or 'cancel remove' operation.
+   * @returns {boolean} When successfull, boolean true. Boolean false when stopping was not successfull.
+   */
+  async #removeClientCommon ({ clientId, clientName, stopRemove } = {}) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || typeof stopRemove === 'undefined') {
+      throw new Error('API call error: missing or invalid parameters');
+    }
+
+    const returnValue = false;
+    const login = await this.#login();
+
+    if (login === true) {
+      let mappedClientId;
+
+      if (typeof clientId === 'undefined') {
+        mappedClientId = await this.#getClientId(clientName);
+        if (mappedClientId === 0) {
+          return returnValue;
+        }
+      }
+
+      let statusResponse;
+      if (stopRemove === true) {
+        statusResponse = await this.#fetchJson('status', { remove_client: clientId ?? mappedClientId, stop_remove_client: true });
+      } else {
+        statusResponse = await this.#fetchJson('status', { remove_client: clientId ?? mappedClientId });
+      }
+
+      if (Array.isArray(statusResponse?.status)) {
+        return statusResponse.status.find(client => client.id === (clientId ?? mappedClientId))?.delete_pending === (stopRemove === true ? '0' : '1');
+      } else {
+        throw new Error('API response error: missing values');
+      }
+    } else {
+      throw new Error('Login failed: unknown reason');
+    }
+  }
+
+  /**
    * Marks the client for removal.
    * Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemoveClient``` method.
    * Using client ID should be preferred to client name for repeated method calls.
@@ -357,37 +403,8 @@ class UrbackupServer {
    * server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async removeClient ({ clientId, clientName } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '') {
-      throw new Error('API call error: missing or invalid parameters');
-    }
-
-    let returnValue = false;
-    const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-
-      if (typeof clientId === 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
-        if (mappedClientId === 0) {
-          return returnValue;
-        }
-      }
-
-      const statusResponse = await this.#fetchJson('status', { remove_client: clientId ?? mappedClientId });
-
-      if (Array.isArray(statusResponse?.status)) {
-        if (statusResponse.status.find(client => client.id === (clientId ?? mappedClientId))?.delete_pending === '1') {
-          returnValue = true;
-        }
-
-        return returnValue;
-      } else {
-        throw new Error('API response error: missing values');
-      }
-    } else {
-      throw new Error('Login failed: unknown reason');
-    }
+    const returnValue = await this.#removeClientCommon({ clientId, clientName, stopRemove: false });
+    return returnValue;
   }
 
   /**
@@ -404,37 +421,8 @@ class UrbackupServer {
    * server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async cancelRemoveClient ({ clientId, clientName } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '') {
-      throw new Error('API call error: missing or invalid parameters');
-    }
-
-    let returnValue = false;
-    const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-
-      if (typeof clientId === 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
-        if (mappedClientId === 0) {
-          return returnValue;
-        }
-      }
-
-      const statusResponse = await this.#fetchJson('status', { remove_client: clientId ?? mappedClientId, stop_remove_client: true });
-
-      if (Array.isArray(statusResponse?.status)) {
-        if (statusResponse.status.find(client => client.id === (clientId ?? mappedClientId))?.delete_pending === '0') {
-          returnValue = true;
-        }
-
-        return returnValue;
-      } else {
-        throw new Error('API response error: missing values');
-      }
-    } else {
-      throw new Error('Login failed: unknown reason');
-    }
+    const returnValue = await this.#removeClientCommon({ clientId: clientId, clientName: clientName, stopRemove: true });
+    return returnValue;
   }
 
   /**
@@ -941,6 +929,7 @@ class UrbackupServer {
 
   /**
    * This method is not meant to be used outside the class.
+   * Starts a backup job.
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
@@ -949,7 +938,7 @@ class UrbackupServer {
    * @param {string} params.backupType - (Required) backup type, case sensitive. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when starting was not successful.
    */
-  async #startBackup ({ clientId, clientName, backupType } = {}) {
+  async #startBackupCommon ({ clientId, clientName, backupType } = {}) {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || !backupTypes.includes(backupType)) {
@@ -993,7 +982,7 @@ class UrbackupServer {
    * server.startFullFileBackup({clientId: 3).then(data => console.log(data));
    */
   async startFullFileBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'full_file' });
+    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'full_file' });
     return returnValue;
   }
 
@@ -1010,7 +999,7 @@ class UrbackupServer {
    * server.startIncrementalFileBackup({clientId: 3).then(data => console.log(data));
    */
   async startIncrementalFileBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'incr_file' });
+    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'incr_file' });
     return returnValue;
   }
 
@@ -1027,7 +1016,7 @@ class UrbackupServer {
    * server.startFullImageBackup({clientId: 3).then(data => console.log(data));
    */
   async startFullImageBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'full_image' });
+    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'full_image' });
     return returnValue;
   }
 
@@ -1044,7 +1033,7 @@ class UrbackupServer {
    * server.startIncrementalImageBackup({clientId: 3).then(data => console.log(data));
    */
   async startIncrementalImageBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackup({ clientId: clientId, clientName: clientName, backupType: 'incr_image' });
+    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'incr_image' });
     return returnValue;
   }
 
