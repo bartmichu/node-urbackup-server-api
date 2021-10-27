@@ -349,7 +349,7 @@ class UrbackupServer {
    * WARNING: removing clients will also delete all their backups.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successfull, boolean true. Boolean false when removing was not successfull.
    * @example <caption>Remove client</caption>
@@ -395,7 +395,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successfull, boolean true. Boolean false when stopping was not successfull.
    * @example <caption>Stop the server from removing a client by ID</caption>
@@ -605,7 +605,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
    * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
@@ -655,7 +655,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {string} When successful, a string with client's authentication key. Empty string when no matching clients found.
    * @example <caption>Get authentication key for a specific client</caption>
@@ -695,7 +695,7 @@ class UrbackupServer {
    * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array} When successful, an array of objects with status info for matching clients. Empty array when no matching clients found.
@@ -744,7 +744,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @returns {Array} When successful, an array of objects with storage usage info for each client. Empty array when no matching clients found.
    * @example <caption>Get usage for all clients</caption>
@@ -845,7 +845,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {number} params.activityId - (Required) Activity ID. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when stopping was not successful.
@@ -887,7 +887,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {boolean} [params.includeFileBackups] - (Optional) Whether or not file backups should be included. Defaults to true.
    * @param {boolean} [params.includeImageBackups] - (Optional) Whether or not image backups should be included. Defaults to true.
@@ -944,7 +944,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.backupType - (Required) backup type, case sensitive. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when starting was not successful.
@@ -985,7 +985,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1002,7 +1002,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1019,7 +1019,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1036,7 +1036,7 @@ class UrbackupServer {
    * Using client ID should be preferred to client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>

@@ -55,7 +55,7 @@ Represents a UrBackup Server.
     * [.addClientHint(params)](#UrbackupServer+addClientHint) ⇒ <code>boolean</code>
     * [.removeClientHint(params)](#UrbackupServer+removeClientHint) ⇒ <code>boolean</code>
     * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code>
-    * [.setClientSetting(params)](#UrbackupServer+setClientSetting) ⇒ <code>boolean</code>
+    * [.setClientSettings(params)](#UrbackupServer+setClientSettings) ⇒ <code>boolean</code>
     * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code>
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code>
@@ -68,7 +68,7 @@ Represents a UrBackup Server.
     * [.startIncrementalImageBackup(params)](#UrbackupServer+startIncrementalImageBackup) ⇒ <code>boolean</code>
     * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Array</code>
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code>
-    * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code>
+    * [.setGeneralSettings(params)](#UrbackupServer+setGeneralSettings) ⇒ <code>boolean</code>
 
 <a name="new_UrbackupServer_new"></a>
 
@@ -185,7 +185,7 @@ WARNING: removing clients will also delete all their backups.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Remove client)*  
@@ -205,7 +205,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Stop the server from removing a client by ID)*  
@@ -287,9 +287,9 @@ server.getClientSettings().then(data => console.log(data));
 server.getClientSettings({clientName: 'laptop1'}).then(data => console.log(data));
 server.getClientSettings({clientId: 3}).then(data => console.log(data));
 ```
-<a name="UrbackupServer+setClientSetting"></a>
+<a name="UrbackupServer+setClientSettings"></a>
 
-### urbackupServer.setClientSetting(params) ⇒ <code>boolean</code>
+### urbackupServer.setClientSettings(params) ⇒ <code>boolean</code>
 Changes one specific element of client settings.
 A list of settings can be obtained with ```getClientSettings``` method.
 Using client ID should be preferred to client name for repeated method calls.
@@ -300,15 +300,15 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.key | <code>string</code> | (Required) Settings element to change. Defaults to undefined. |
 | params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | (Required) New value for settings element. Defaults to undefined. |
 
 **Example** *(Set directories to backup to be optional by default)*  
 ```js
-server.setClientSetting({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
-server.setClientSetting({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+server.setClientSettings({clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
+server.setClientSettings({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClientAuthkey"></a>
 
@@ -322,7 +322,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Get authentication key for a specific client)*  
@@ -343,7 +343,7 @@ Client name or client ID can be passed as an argument in which case only that on
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 | [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 | [params.includeRemoved] | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
@@ -373,7 +373,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 | [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 
 **Example** *(Get usage for all clients)*  
@@ -434,7 +434,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.activityId | <code>number</code> | (Required) Activity ID. Defaults to undefined. |
 
@@ -455,7 +455,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | [params.includeFileBackups] | <code>boolean</code> | (Optional) Whether or not file backups should be included. Defaults to true. |
 | [params.includeImageBackups] | <code>boolean</code> | (Optional) Whether or not image backups should be included. Defaults to true. |
@@ -485,7 +485,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -505,7 +505,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -525,7 +525,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -545,7 +545,7 @@ Using client ID should be preferred to client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -596,9 +596,9 @@ Retrieves general settings.
 ```js
 server.getGeneralSettings().then(data => console.log(data));
 ```
-<a name="UrbackupServer+setGeneralSetting"></a>
+<a name="UrbackupServer+setGeneralSettings"></a>
 
-### urbackupServer.setGeneralSetting(params) ⇒ <code>boolean</code>
+### urbackupServer.setGeneralSettings(params) ⇒ <code>boolean</code>
 Changes one specific element of general settings.
 A list of settings can be obtained with ```getGeneralSettings``` method.
 
@@ -613,5 +613,5 @@ A list of settings can be obtained with ```getGeneralSettings``` method.
 
 **Example** *(Disable image backups)*  
 ```js
-server.setGeneralSetting({key: 'no_images', newValue: true}).then(data => console.log(data));
+server.setGeneralSettings({key: 'no_images', newValue: true}).then(data => console.log(data));
 ```
