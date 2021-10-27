@@ -44,31 +44,31 @@ Represents a UrBackup Server.
 
 * [UrbackupServer](#UrbackupServer)
     * [new UrbackupServer([params])](#new_UrbackupServer_new)
-    * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>string</code> \| <code>null</code>
-    * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Array</code> \| <code>null</code>
-    * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code> \| <code>null</code>
-    * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code> \| <code>null</code>
-    * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getClientHints()](#UrbackupServer+getClientHints) ⇒ <code>Array</code> \| <code>null</code>
-    * [.addClientHint(params)](#UrbackupServer+addClientHint) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.removeClientHint(params)](#UrbackupServer+removeClientHint) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code> \| <code>null</code>
-    * [.setClientSetting(params)](#UrbackupServer+setClientSetting) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code> \| <code>null</code>
-    * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code> \| <code>null</code>
-    * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code> \| <code>null</code>
-    * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code> \| <code>null</code>
-    * [.stopActivity(params)](#UrbackupServer+stopActivity) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Object</code> \| <code>null</code>
-    * [.startFullFileBackup(params)](#UrbackupServer+startFullFileBackup) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.startIncrementalFileBackup(params)](#UrbackupServer+startIncrementalFileBackup) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.startFullImageBackup(params)](#UrbackupServer+startFullImageBackup) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.startIncrementalImageBackup(params)](#UrbackupServer+startIncrementalImageBackup) ⇒ <code>boolean</code> \| <code>null</code>
-    * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Array</code> \| <code>null</code>
-    * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code> \| <code>null</code>
-    * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code> \| <code>null</code>
+    * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>string</code>
+    * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Array</code>
+    * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code>
+    * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code>
+    * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code>
+    * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code>
+    * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>boolean</code>
+    * [.getClientHints()](#UrbackupServer+getClientHints) ⇒ <code>Array</code>
+    * [.addClientHint(params)](#UrbackupServer+addClientHint) ⇒ <code>boolean</code>
+    * [.removeClientHint(params)](#UrbackupServer+removeClientHint) ⇒ <code>boolean</code>
+    * [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Array</code>
+    * [.setClientSetting(params)](#UrbackupServer+setClientSetting) ⇒ <code>boolean</code>
+    * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>string</code>
+    * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Array</code>
+    * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Array</code>
+    * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Object</code>
+    * [.stopActivity(params)](#UrbackupServer+stopActivity) ⇒ <code>boolean</code>
+    * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Object</code>
+    * [.startFullFileBackup(params)](#UrbackupServer+startFullFileBackup) ⇒ <code>boolean</code>
+    * [.startIncrementalFileBackup(params)](#UrbackupServer+startIncrementalFileBackup) ⇒ <code>boolean</code>
+    * [.startFullImageBackup(params)](#UrbackupServer+startFullImageBackup) ⇒ <code>boolean</code>
+    * [.startIncrementalImageBackup(params)](#UrbackupServer+startIncrementalImageBackup) ⇒ <code>boolean</code>
+    * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Array</code>
+    * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Object</code>
+    * [.setGeneralSetting(params)](#UrbackupServer+setGeneralSetting) ⇒ <code>boolean</code>
 
 <a name="new_UrbackupServer_new"></a>
 
@@ -78,8 +78,8 @@ Represents a UrBackup Server.
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
 | [params.url] | <code>string</code> | (Optional) Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414. |
-| [params.username] | <code>string</code> | (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty or undefined. |
-| [params.password] | <code>string</code> | (Optional) Password used to log in. Defaults to empty string. Anonymous login is used if password is empty or undefined. |
+| [params.username] | <code>string</code> | (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty. |
+| [params.password] | <code>string</code> | (Optional) Password used to log in. Defaults to empty string. |
 
 **Example** *(Connect locally to the built-in server without password)*  
 ```js
@@ -95,51 +95,51 @@ const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'a
 ```
 <a name="UrbackupServer+getServerIdentity"></a>
 
-### urbackupServer.getServerIdentity() ⇒ <code>string</code> \| <code>null</code>
+### urbackupServer.getServerIdentity() ⇒ <code>string</code>
 Retrieves server identity.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with server identity. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>string</code> - When successfull, a string with server identity.  
 **Example** *(Get server identity)*  
 ```js
 server.getServerIdentity().then(data => console.log(data));
 ```
 <a name="UrbackupServer+getUsers"></a>
 
-### urbackupServer.getUsers() ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getUsers() ⇒ <code>Array</code>
 Retrieves a list of users.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing users. Empty array when no users found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Array</code> - When successfull, an array of objects representing users. Empty array when no users found.  
 **Example** *(Get all users)*  
 ```js
 server.getUsers().then(data => console.log(data));
 ```
 <a name="UrbackupServer+getGroups"></a>
 
-### urbackupServer.getGroups() ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getGroups() ⇒ <code>Array</code>
 Retrieves a list of groups.
 By default, UrBackup clients are added to a group named with empty string.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing groups. Empty array when no groups found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Array</code> - When successfull, an array of objects representing groups. Empty array when no groups found.  
 **Example** *(Get all groups)*  
 ```js
 server.getGroups().then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClients"></a>
 
-### urbackupServer.getClients([params]) ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getClients([params]) ⇒ <code>Array</code>
 Retrieves a list of clients.
 Matches all clients by default, including clients marked for removal.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found. Null when API call was unsuccessfull ar returned unexpected data.  
+**Returns**: <code>Array</code> - When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.groupName] | <code>string</code> | (Optional) Group name, case sensitive. Defaults to undefined, which matches all groups. |
+| [params.groupName] | <code>string</code> | (Optional) Group name, case sensitive. By dafault, UrBackup clients are added to a group named with empty string. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all clients)*  
@@ -156,16 +156,16 @@ server.getClients({groupName: 'office'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClient"></a>
 
-### urbackupServer.addClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.addClient(params) ⇒ <code>boolean</code>
 Adds a new client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists.  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Empty string is not a valid client name. Defaults to undefined. |
 
 **Example** *(Add new client)*  
 ```js
@@ -173,14 +173,14 @@ server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+removeClient"></a>
 
-### urbackupServer.removeClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.removeClient(params) ⇒ <code>boolean</code>
 Marks the client for removal.
 Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemoveClient``` method.
 Using client ID should be preferred to client name for repeated method calls.
 WARNING: removing clients will also delete all their backups.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successfull, boolean true. Boolean false when removing was not successfull.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -195,12 +195,12 @@ server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+cancelRemoveClient"></a>
 
-### urbackupServer.cancelRemoveClient(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.cancelRemoveClient(params) ⇒ <code>boolean</code>
 Unmarks the client as ready for removal.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successfull, boolean true. Boolean false when stopping was not successfull.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -218,23 +218,23 @@ server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data
 ```
 <a name="UrbackupServer+getClientHints"></a>
 
-### urbackupServer.getClientHints() ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getClientHints() ⇒ <code>Array</code>
 Retrieves a list of client discovery hints, also known as extra clients.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing client hints. Empty array when no matching client hints found. Null when API call was unsuccessfull ar returned unexpected data.  
+**Returns**: <code>Array</code> - When successful, an array of objects representing client hints. Empty array when no matching client hints found.  
 **Example** *(Get extra clients)*  
 ```js
 server.getClientHints().then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClientHint"></a>
 
-### urbackupServer.addClientHint(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.addClientHint(params) ⇒ <code>boolean</code>
 Adds a new client discovery hint, also known as extra client.
 Discovery hints are a way of improving client discovery in local area networks.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when adding was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when adding was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -247,11 +247,11 @@ server.addClientHint({address: '192.168.100.200'}).then(data => console.log(data
 ```
 <a name="UrbackupServer+removeClientHint"></a>
 
-### urbackupServer.removeClientHint(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.removeClientHint(params) ⇒ <code>boolean</code>
 Removes specific client discovery hint, also known as extra client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when removing was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when removing was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -264,17 +264,18 @@ server.removeClientHint({address: '192.168.100.200'}).then(data => console.log(d
 ```
 <a name="UrbackupServer+getClientSettings"></a>
 
-### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getClientSettings([params]) ⇒ <code>Array</code>
 Retrieves client settings.
 Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
+Clients marked for removal are not excluded.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array with objects represeting client settings. Empty array when no matching client found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Array</code> - When successful, an array with objects represeting client settings. Empty array when no matching client found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.clientId] | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
+| [params.clientId] | <code>number</code> | (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 | [params.clientName] | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 
 **Example** *(Get settings for all clients)*  
@@ -288,13 +289,13 @@ server.getClientSettings({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+setClientSetting"></a>
 
-### urbackupServer.setClientSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.setClientSetting(params) ⇒ <code>boolean</code>
 Changes one specific element of client settings.
 A list of settings can be obtained with ```getClientSettings``` method.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when save request was unsuccessful or invalid key/value.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -311,12 +312,12 @@ server.setClientSetting({clientId: 3, key: 'backup_dirs_optional', newValue: tru
 ```
 <a name="UrbackupServer+getClientAuthkey"></a>
 
-### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code> \| <code>null</code>
+### urbackupServer.getClientAuthkey(params) ⇒ <code>string</code>
 Retrieves authentication key for a specified client.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>string</code> \| <code>null</code> - When successfull, a string with client's authentication key. Empty string when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>string</code> - When successful, a string with client's authentication key. Empty string when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -331,13 +332,13 @@ server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getStatus"></a>
 
-### urbackupServer.getStatus([params]) ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getStatus([params]) ⇒ <code>Array</code>
 Retrieves backup status.
 Matches all clients by default, including clients marked for removal.
 Client name or client ID can be passed as an argument in which case only that one client's status is returned.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with status info for matching clients. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Array</code> - When successful, an array of objects with status info for matching clients. Empty array when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -361,13 +362,13 @@ server.getStatus({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getUsage"></a>
 
-### urbackupServer.getUsage([params]) ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getUsage([params]) ⇒ <code>Array</code>
 Retrieves storage usage.
 Matches all clients by default, but ```clientName``` OR ```clientId``` can be used to request usage for one particular client.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects with storage usage info for each client. Empty array when no matching clients found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Array</code> - When successful, an array of objects with storage usage info for each client. Empty array when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -386,13 +387,13 @@ server.getUsage({clientId: 3}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getActivities"></a>
 
-### urbackupServer.getActivities([params]) ⇒ <code>Object</code> \| <code>null</code>
+### urbackupServer.getActivities([params]) ⇒ <code>Object</code>
 Retrieves a list of current and/or past activities.
 Matches all clients by default, but ```clientName``` or ```clientId``` can be used to request activities for one particular client.
 By default this method returns only activities that are currently in progress and skips last activities.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with activities info. Object with empty array when no matching clients/activities found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Object</code> - When successful, an object with activities info in two separate arrays (one for current and one for past activities). Object with empty arrays when no matching clients/activities found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -422,13 +423,13 @@ server.getActivities({clientId: '3', includeCurrent: true, includePast: true}).t
 ```
 <a name="UrbackupServer+stopActivity"></a>
 
-### urbackupServer.stopActivity(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.stopActivity(params) ⇒ <code>boolean</code>
 Stops one activity.
 A list of current activities can be obtained with ```getActivities``` method.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when stopping was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when stopping was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -444,12 +445,12 @@ server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data
 ```
 <a name="UrbackupServer+getBackups"></a>
 
-### urbackupServer.getBackups(params) ⇒ <code>Object</code> \| <code>null</code>
+### urbackupServer.getBackups(params) ⇒ <code>Object</code>
 Retrieves a list of file and/or image backups for a specific client.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with backups info. Object with empty arrays when no matching clients/backups found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Object</code> - When successful, an object with backups info. Object with empty arrays when no matching clients/backups found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -474,12 +475,12 @@ server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data
 ```
 <a name="UrbackupServer+startFullFileBackup"></a>
 
-### urbackupServer.startFullFileBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.startFullFileBackup(params) ⇒ <code>boolean</code>
 Starts full file backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -494,12 +495,12 @@ server.startFullFileBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startIncrementalFileBackup"></a>
 
-### urbackupServer.startIncrementalFileBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.startIncrementalFileBackup(params) ⇒ <code>boolean</code>
 Starts incremental file backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -514,12 +515,12 @@ server.startIncrementalFileBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startFullImageBackup"></a>
 
-### urbackupServer.startFullImageBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.startFullImageBackup(params) ⇒ <code>boolean</code>
 Starts full image backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -534,12 +535,12 @@ server.startFullImageBackup({clientId: 3).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startIncrementalImageBackup"></a>
 
-### urbackupServer.startIncrementalImageBackup(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.startIncrementalImageBackup(params) ⇒ <code>boolean</code>
 Starts incremental image backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when starting was not successfull. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -554,7 +555,7 @@ server.startIncrementalImageBackup({clientId: 3).then(data => console.log(data))
 ```
 <a name="UrbackupServer+getLiveLog"></a>
 
-### urbackupServer.getLiveLog([params]) ⇒ <code>Array</code> \| <code>null</code>
+### urbackupServer.getLiveLog([params]) ⇒ <code>Array</code>
 Retrieves live logs.
 Server logs are requested by default, but ```clientName``` or ```clientId``` can be used to request logs for one particular client.
 Instance property is being used internally to keep track of log entries that were previously requested.
@@ -562,7 +563,7 @@ When ```recentOnly``` is set to true, then only recent (unfetched) logs are requ
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> \| <code>null</code> - When successfull, an array of objects representing log entries. Empty array when no matching clients or logs found. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Array</code> - When successful, an array of objects representing log entries. Empty array when no matching clients or logs found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -586,23 +587,23 @@ server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => consol
 ```
 <a name="UrbackupServer+getGeneralSettings"></a>
 
-### urbackupServer.getGeneralSettings() ⇒ <code>Object</code> \| <code>null</code>
+### urbackupServer.getGeneralSettings() ⇒ <code>Object</code>
 Retrieves general settings.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> \| <code>null</code> - When successfull, an object with general settings. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>Object</code> - When successful, an object with general settings.  
 **Example** *(Get general settings)*  
 ```js
 server.getGeneralSettings().then(data => console.log(data));
 ```
 <a name="UrbackupServer+setGeneralSetting"></a>
 
-### urbackupServer.setGeneralSetting(params) ⇒ <code>boolean</code> \| <code>null</code>
+### urbackupServer.setGeneralSetting(params) ⇒ <code>boolean</code>
 Changes one specific element of general settings.
 A list of settings can be obtained with ```getGeneralSettings``` method.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> \| <code>null</code> - When successfull, boolean true. Boolean false when save request was unsuccessfull or invalid key/value. Null when API call was unsuccessfull or returned unexpected data.  
+**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when save request was unsuccessful or invalid key/value.  
 
 | Param | Type | Description |
 | --- | --- | --- |
