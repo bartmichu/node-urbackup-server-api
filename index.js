@@ -117,6 +117,7 @@ class UrbackupServer {
    * @returns {boolean} Boolean true if logged in successfuly or was already logged in.
    */
   async #login () {
+    // eslint-disable-next-line no-unused-vars
     const [value, release] = await this.#semaphore.acquire();
     try {
       if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
@@ -1074,6 +1075,7 @@ class UrbackupServer {
         return returnValue;
       }
 
+      // eslint-disable-next-line no-unused-vars
       const [value, release] = await this.#semaphore.acquire();
       try {
         const logResponse = await this.#fetchJson('livelog', { clientid: clientId ?? mappedClientId ?? 0, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
