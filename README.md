@@ -99,7 +99,7 @@ const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'a
 Retrieves server identity.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>string</code> - When successfull, a string with server identity.  
+**Returns**: <code>string</code> - Server identity.  
 **Example** *(Get server identity)*  
 ```js
 server.getServerIdentity().then(data => console.log(data));
@@ -110,7 +110,7 @@ server.getServerIdentity().then(data => console.log(data));
 Retrieves a list of users.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successfull, an array of objects representing users. Empty array when no users found.  
+**Returns**: <code>Array</code> - Array of objects representing users. Empty array when no users found.  
 **Example** *(Get all users)*  
 ```js
 server.getUsers().then(data => console.log(data));
@@ -122,7 +122,7 @@ Retrieves a list of groups.
 By default, UrBackup clients are added to a group named with empty string.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successfull, an array of objects representing groups. Empty array when no groups found.  
+**Returns**: <code>Array</code> - Array of objects representing groups. Empty array when no groups found.  
 **Example** *(Get all groups)*  
 ```js
 server.getGroups().then(data => console.log(data));
@@ -134,7 +134,7 @@ Retrieves a list of clients.
 Matches all clients by default, including clients marked for removal.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successfull, an array of objects representing clients matching search criteria. Empty array when no matching clients found.  
+**Returns**: <code>Array</code> - Array of objects representing clients matching search criteria. Empty array when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -160,7 +160,7 @@ server.getClients({groupName: 'office'}).then(data => console.log(data));
 Adds a new client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successfull, boolean true. Boolean false when adding was not successfull, for example client already exists.  
+**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when adding was not successfull, for example client already exists.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -180,7 +180,7 @@ Using client ID should be preferred to client name for repeated method calls.
 WARNING: removing clients will also delete all their backups.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successfull, boolean true. Boolean false when removing was not successfull.  
+**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when removing was not successfull.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -200,7 +200,7 @@ Unmarks the client as ready for removal.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successfull, boolean true. Boolean false when stopping was not successfull.  
+**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when stopping was not successfull.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -222,7 +222,7 @@ server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data
 Retrieves a list of client discovery hints, also known as extra clients.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successful, an array of objects representing client hints. Empty array when no matching client hints found.  
+**Returns**: <code>Array</code> - Array of objects representing client hints. Empty array when no matching client hints found.  
 **Example** *(Get extra clients)*  
 ```js
 server.getClientHints().then(data => console.log(data));
@@ -234,7 +234,7 @@ Adds a new client discovery hint, also known as extra client.
 Discovery hints are a way of improving client discovery in local area networks.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when adding was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when adding was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -251,7 +251,7 @@ server.addClientHint({address: '192.168.100.200'}).then(data => console.log(data
 Removes specific client discovery hint, also known as extra client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when removing was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when removing was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -270,7 +270,7 @@ Matches all clients by default, but ```clientId``` or ```clientName``` can be us
 Clients marked for removal are not excluded.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successful, an array with objects represeting client settings. Empty array when no matching client found.  
+**Returns**: <code>Array</code> - Array with objects represeting client settings. Empty array when no matching client found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -295,7 +295,7 @@ A list of settings can be obtained with ```getClientSettings``` method.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when save request was unsuccessful or invalid key/value.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when save request was unsuccessful or invalid key/value.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -317,7 +317,7 @@ Retrieves authentication key for a specified client.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>string</code> - When successful, a string with client's authentication key. Empty string when no matching clients found.  
+**Returns**: <code>string</code> - Client's authentication key. Empty string when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -338,7 +338,7 @@ Matches all clients by default, including clients marked for removal.
 Client name or client ID can be passed as an argument in which case only that one client's status is returned.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successful, an array of objects with status info for matching clients. Empty array when no matching clients found.  
+**Returns**: <code>Array</code> - Array of objects with status info for matching clients. Empty array when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -368,7 +368,7 @@ Matches all clients by default, but ```clientName``` OR ```clientId``` can be us
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successful, an array of objects with storage usage info for each client. Empty array when no matching clients found.  
+**Returns**: <code>Array</code> - Array of objects with storage usage info for each client. Empty array when no matching clients found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -393,7 +393,7 @@ Matches all clients by default, but ```clientName``` or ```clientId``` can be us
 By default this method returns only activities that are currently in progress and skips last activities.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> - When successful, an object with activities info in two separate arrays (one for current and one for past activities). Object with empty arrays when no matching clients/activities found.  
+**Returns**: <code>Object</code> - Object with activities info in two separate arrays (one for current and one for past activities). Object with empty arrays when no matching clients/activities found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -429,7 +429,7 @@ A list of current activities can be obtained with ```getActivities``` method.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when stopping was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when stopping was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -450,7 +450,7 @@ Retrieves a list of file and/or image backups for a specific client.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> - When successful, an object with backups info. Object with empty arrays when no matching clients/backups found.  
+**Returns**: <code>Object</code> - Object with backups info. Object with empty arrays when no matching clients/backups found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -480,7 +480,7 @@ Starts full file backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -500,7 +500,7 @@ Starts incremental file backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -520,7 +520,7 @@ Starts full image backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -540,7 +540,7 @@ Starts incremental image backup.
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when starting was not successful.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when starting was not successful.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -563,7 +563,7 @@ When ```recentOnly``` is set to true, then only recent (unfetched) logs are requ
 Using client ID should be preferred to client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Array</code> - When successful, an array of objects representing log entries. Empty array when no matching clients or logs found.  
+**Returns**: <code>Array</code> - Array of objects representing log entries. Empty array when no matching clients or logs found.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -591,7 +591,7 @@ server.getLiveLog({clientName: 'laptop1', recentOnly: true}).then(data => consol
 Retrieves general settings.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Object</code> - When successful, an object with general settings.  
+**Returns**: <code>Object</code> - Object with general settings.  
 **Example** *(Get general settings)*  
 ```js
 server.getGeneralSettings().then(data => console.log(data));
@@ -603,7 +603,7 @@ Changes one specific element of general settings.
 A list of settings can be obtained with ```getGeneralSettings``` method.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successful, boolean true. Boolean false when save request was unsuccessful or invalid key/value.  
+**Returns**: <code>boolean</code> - When successful, Boolean true. Boolean false when save request was unsuccessful or invalid key/value.  
 
 | Param | Type | Description |
 | --- | --- | --- |
