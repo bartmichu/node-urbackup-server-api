@@ -1067,11 +1067,6 @@ class UrbackupServer {
 
       if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
-
-        // TODO: handle errors, for now short-circuit unexpected response
-        if (mappedClientId === null) {
-          return null;
-        }
       }
 
       if (clientId === 0 || mappedClientId === 0) {
