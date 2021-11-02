@@ -318,14 +318,18 @@ class UrbackupServer {
    * Adds a new client.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.clientName - (Required) Client's name, case sensitive. Empty string is not a valid client name. Defaults to undefined.
+   * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
    * @returns {boolean} When successfull, Boolean true. Boolean false when adding was not successfull, for example client already exists.
    * @example <caption>Add new client</caption>
    * server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async addClient ({ clientName } = {}) {
-    if (typeof clientName === 'undefined' || clientName === '') {
+    if (typeof clientName === 'undefined') {
       throw new Error('API call error: missing or invalid parameters');
+    }
+
+    if (clientName === '') {
+      return false;
     }
 
     const login = await this.#login();
@@ -355,8 +359,12 @@ class UrbackupServer {
    * @returns {boolean} When successfull, Boolean true. Boolean false when stopping was not successfull.
    */
   async #removeClientCommon ({ clientId, clientName, stopRemove } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || typeof stopRemove === 'undefined') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof stopRemove === 'undefined') {
       throw new Error('API call error: missing or invalid parameters');
+    }
+
+    if (clientName === '') {
+      return false;
     }
 
     const returnValue = false;
@@ -539,11 +547,16 @@ class UrbackupServer {
    * server.getClientSettings({clientId: 3}).then(data => console.log(data));
    */
   async getClientSettings ({ clientId, clientName } = {}) {
-    if (clientId <= 0 || clientName === '') {
+    if (clientId <= 0) {
       throw new Error('API call error: missing or invalid parameters');
     }
 
     const returnValue = [];
+
+    if (clientName === '') {
+      return returnValue;
+    }
+
     const login = await this.#login();
 
     if (login === true) {
@@ -604,11 +617,16 @@ class UrbackupServer {
    * server.setClientSettings({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
    */
   async setClientSettings ({ clientId, clientName, key, newValue } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || typeof key === 'undefined' || typeof newValue === 'undefined') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof key === 'undefined' || typeof newValue === 'undefined') {
       throw new Error('API call error: missing or invalid parameters');
     }
 
     let returnValue = false;
+
+    if (clientName === '') {
+      return returnValue;
+    }
+
     const login = await this.#login();
 
     if (login === true) {
@@ -652,11 +670,16 @@ class UrbackupServer {
    * server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
    */
   async getClientAuthkey ({ clientId, clientName } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0) {
       throw new Error('API call error: missing or invalid parameters');
     }
 
     let returnValue = '';
+
+    if (clientName === '') {
+      return returnValue;
+    }
+
     const login = await this.#login();
 
     if (login === true) {
@@ -698,6 +721,11 @@ class UrbackupServer {
    */
   async getStatus ({ clientId, clientName, includeRemoved = true } = {}) {
     const defaultReturnValue = [];
+
+    if (clientName === '') {
+      return defaultReturnValue;
+    }
+
     const login = await this.#login();
 
     if (login === true) {
@@ -744,6 +772,11 @@ class UrbackupServer {
    */
   async getUsage ({ clientId, clientName } = {}) {
     const defaultReturnValue = [];
+
+    if (clientName === '') {
+      return defaultReturnValue;
+    }
+
     const login = await this.#login();
 
     if (login === true) {
@@ -792,6 +825,10 @@ class UrbackupServer {
    */
   async getActivities ({ clientId, clientName, includeCurrent = true, includePast = false } = {}) {
     const returnValue = { current: [], past: [] };
+
+    if (clientName === '') {
+      return returnValue;
+    }
 
     if (includeCurrent === false && includePast === false) {
       return returnValue;
@@ -843,8 +880,12 @@ class UrbackupServer {
    * server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data));
    */
   async stopActivity ({ clientId, clientName, activityId } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || typeof activityId === 'undefined' || activityId <= 0) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0) {
       throw new Error('API call error: missing or invalid parameters');
+    }
+
+    if (clientName === '') {
+      return false;
     }
 
     const login = await this.#login();
@@ -890,11 +931,16 @@ class UrbackupServer {
    * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
    */
   async getBackups ({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || (includeFileBackups === false && includeImageBackups === false)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || (includeFileBackups === false && includeImageBackups === false)) {
       throw new Error('API call error: missing or invalid parameters');
     }
 
     const returnValue = { file: [], image: [] };
+
+    if (clientName === '') {
+      return returnValue;
+    }
+
     const login = await this.#login();
 
     if (login === true) {
@@ -942,8 +988,12 @@ class UrbackupServer {
   async #startBackupCommon ({ clientId, clientName, backupType } = {}) {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || clientName === '' || !backupTypes.includes(backupType)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || !backupTypes.includes(backupType)) {
       throw new Error('API call error: missing or invalid parameters');
+    }
+
+    if (clientName === '') {
+      return false;
     }
 
     const login = await this.#login();
@@ -1060,6 +1110,10 @@ class UrbackupServer {
    */
   async getLiveLog ({ clientId, clientName, recentOnly = false } = {}) {
     let returnValue = [];
+
+    if (clientName === '') {
+      return returnValue;
+    }
 
     const login = await this.#login();
 

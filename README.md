@@ -165,7 +165,7 @@ Adds a new client.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>Object</code> | (Required) An object containing parameters. |
-| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Empty string is not a valid client name. Defaults to undefined. |
+| params.clientName | <code>string</code> | (Required) Client's name, case sensitive. Defaults to undefined. |
 
 **Example** *(Add new client)*  
 ```js
