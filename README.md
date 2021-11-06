@@ -47,6 +47,8 @@ Represents a UrBackup Server.
     * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>string</code>
     * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Array</code>
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code>
+    * [.addGroup(params)](#UrbackupServer+addGroup) ⇒ <code>boolean</code>
+    * [.removeGroup(params)](#UrbackupServer+removeGroup) ⇒ <code>boolean</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Array</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code>
@@ -119,13 +121,51 @@ server.getUsers().then(data => console.log(data));
 
 ### urbackupServer.getGroups() ⇒ <code>Array</code>
 Retrieves a list of groups.
-By default, UrBackup clients are added to a group named with empty string.
+By default, UrBackup clients are added to a group id 0 with name '' (empty string).
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Array</code> - Array of objects representing groups. Empty array when no groups found.  
 **Example** *(Get all groups)*  
 ```js
 server.getGroups().then(data => console.log(data));
+```
+<a name="UrbackupServer+addGroup"></a>
+
+### urbackupServer.addGroup(params) ⇒ <code>boolean</code>
+Adds a new group.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when adding was not successfull, for example group already exists.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.groupName | <code>string</code> | (Required) Group name, case sensitive. UrBackup clients are added to a group id 0 with name '' (empty string) by default. Defaults to undefined. |
+
+**Example** *(Add new group)*  
+```js
+server.addGroup({groupName: 'prod'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+removeGroup"></a>
+
+### urbackupServer.removeGroup(params) ⇒ <code>boolean</code>
+Removes group.
+All clients in this group will be re-assigned to the default group.
+Using group ID should be preferred to group name for repeated method calls.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when removing was not successfull.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | (Required) An object containing parameters. |
+| params.groupId | <code>number</code> | (Required if groupName is undefined) Group ID. Must be greater than 0. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined. |
+| params.groupName | <code>string</code> | (Required if groupId is undefined) Group name, case sensitive. Must be different than '' (empty string). Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined. |
+
+**Example** *(Remove group)*  
+```js
+server.removeGroup({groupId: 1}).then(data => console.log(data));
+server.removeGroup({groupName: 'prod'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClients"></a>
 
@@ -139,7 +179,7 @@ Matches all clients by default, including clients marked for removal.
 | Param | Type | Description |
 | --- | --- | --- |
 | [params] | <code>Object</code> | (Optional) An object containing parameters. |
-| [params.groupName] | <code>string</code> | (Optional) Group name, case sensitive. By dafault, UrBackup clients are added to a group named with empty string. Defaults to undefined, which matches all groups. |
+| [params.groupName] | <code>string</code> | (Optional) Group name, case sensitive. By default, UrBackup clients are added to group id 0 with name '' (empty string). Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all clients)*  

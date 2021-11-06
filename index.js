@@ -201,6 +201,26 @@ class UrbackupServer {
   }
 
   /**
+   * This method is not meant to be used outside the class.
+   * Used internally to map group name to group ID.
+   * WARNING: return value can conflict with default group ID, which is also 0 (zero).
+   *
+   * @param {string} groupName - Group name. Must be different than '', which is default group name.
+   * @returns {number} Group ID. 0 (zero) when no matching clients found. That can conflict with default group ID, which is also 0.
+   */
+  async #getGroupId (groupName) {
+    if (typeof groupName === 'undefined' || groupName === '') {
+      throw new Error('API call error: missing or invalid parameters');
+    }
+
+    const defaultReturnValue = 0;
+    const groups = await this.getGroups();
+    const groupId = groups.find(group => group.name === groupName)?.id;
+
+    return typeof groupId === 'undefined' ? defaultReturnValue : groupId;
+  }
+
+  /**
    * Retrieves server identity.
    *
    * @returns {string} Server identity.
@@ -248,7 +268,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of groups.
-   * By default, UrBackup clients are added to a group named with empty string.
+   * By default, UrBackup clients are added to a group id 0 with name '' (empty string).
    *
    * @returns {Array} Array of objects representing groups. Empty array when no groups found.
    * @example <caption>Get all groups</caption>
@@ -271,11 +291,88 @@ class UrbackupServer {
   }
 
   /**
+   * Adds a new group.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {string} params.groupName - (Required) Group name, case sensitive. UrBackup clients are added to a group id 0 with name '' (empty string) by default. Defaults to undefined.
+   * @returns {boolean} When successfull, Boolean true. Boolean false when adding was not successfull, for example group already exists.
+   * @example <caption>Add new group</caption>
+   * server.addGroup({groupName: 'prod'}).then(data => console.log(data));
+   */
+  async addGroup ({ groupName } = {}) {
+    if (typeof groupName === 'undefined') {
+      throw new Error('API call error: missing or invalid parameters');
+    }
+
+    // UrBackup clients are added to a group id 0 with name '' (empty string) by default. Explicitly adding group with empty name breaks the web UI and can have unintended consequences.
+    if (groupName === '') {
+      return false;
+    }
+
+    const login = await this.#login();
+
+    if (login === true) {
+      const response = await this.#fetchJson('settings', { sa: 'groupadd', name: groupName });
+
+      if ('add_ok' in response || 'already_exists' in response) {
+        return response?.add_ok === true;
+      } else {
+        throw new Error('API response error: missing values');
+      }
+    } else {
+      throw new Error('Login failed: unknown reason');
+    }
+  }
+
+  /**
+   * Removes group.
+   * All clients in this group will be re-assigned to the default group.
+   * Using group ID should be preferred to group name for repeated method calls.
+   *
+   * @param {Object} params - (Required) An object containing parameters.
+   * @param {number} params.groupId - (Required if groupName is undefined) Group ID. Must be greater than 0. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
+   * @param {string} params.groupName - (Required if groupId is undefined) Group name, case sensitive. Must be different than '' (empty string). Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
+   * @returns {boolean} When successfull, Boolean true. Boolean false when removing was not successfull.
+   * @example <caption>Remove group</caption>
+   * server.removeGroup({groupId: 1}).then(data => console.log(data));
+   * server.removeGroup({groupName: 'prod'}).then(data => console.log(data));
+   */
+  async removeGroup ({ groupId, groupName } = {}) {
+    if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
+      throw new Error('API call error: missing or invalid parameters');
+    }
+
+    if (groupId === 0 || groupName === '') {
+      return false;
+    }
+
+    const login = await this.#login();
+
+    if (login === true) {
+      let mappedGroupId;
+
+      if (typeof groupId === 'undefined') {
+        mappedGroupId = await this.#getGroupId(groupName);
+        if (mappedGroupId === 0) {
+          return false;
+        }
+      }
+
+      const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
+
+      // Possible UrBackup bug: server returns delete_ok:true for non-existent group ID
+      return response?.delete_ok === true;
+    } else {
+      throw new Error('Login failed: unknown reason');
+    }
+  }
+
+  /**
    * Retrieves a list of clients.
    * Matches all clients by default, including clients marked for removal.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.groupName] - (Optional) Group name, case sensitive. By dafault, UrBackup clients are added to a group named with empty string. Defaults to undefined, which matches all groups.
+   * @param {string} [params.groupName] - (Optional) Group name, case sensitive. By default, UrBackup clients are added to group id 0 with name '' (empty string). Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array} Array of objects representing clients matching search criteria. Empty array when no matching clients found.
    * @example <caption>Get all clients</caption>
