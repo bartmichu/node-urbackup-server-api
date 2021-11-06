@@ -154,7 +154,7 @@ All clients in this group will be re-assigned to the default group.
 Using group ID should be preferred to group name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when removing was not successfull.  
+**Returns**: <code>boolean</code> - When successfull, Boolean true. Boolean false when removing was not successfull. Due to UrBackup bug, it returns ```true``` when called with non-existent ```groupId```.  
 
 | Param | Type | Description |
 | --- | --- | --- |

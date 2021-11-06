@@ -304,7 +304,7 @@ class UrbackupServer {
       throw new Error('API call error: missing or invalid parameters');
     }
 
-    // UrBackup clients are added to a group id 0 with name '' (empty string) by default. Explicitly adding group with empty name breaks the web UI and can have unintended consequences.
+    // Possible UrBackup bug: server does not allow adding multiple groups with the same name, but allows '' (empty string) which is the same as default group name
     if (groupName === '') {
       return false;
     }
@@ -332,7 +332,7 @@ class UrbackupServer {
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.groupId - (Required if groupName is undefined) Group ID. Must be greater than 0. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
    * @param {string} params.groupName - (Required if groupId is undefined) Group name, case sensitive. Must be different than '' (empty string). Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when removing was not successfull.
+   * @returns {boolean} When successfull, Boolean true. Boolean false when removing was not successfull. Due to UrBackup bug, it returns ```true``` when called with non-existent ```groupId```.
    * @example <caption>Remove group</caption>
    * server.removeGroup({groupId: 1}).then(data => console.log(data));
    * server.removeGroup({groupName: 'prod'}).then(data => console.log(data));
