@@ -4,7 +4,7 @@ Node.js wrapper for [UrBackup](https://www.urbackup.org/) server web API.
 
 You can use it to interact with UrBackup server installed locally or over the network. It allows you to view and modify settings, add or remove clients, get information about running tasks, clients status, backup jobs, start or stop backups and a lot more.
 
-*Please note that this code is still a work in progress - some functionality is missing, but method signatures are unlikely to change. I'm targeting Node >= 16 at the moment, but will probably transpile for older versions once the module is ready.*
+*Please note that this code is still a work in progress - some functionality is missing, but method signatures are unlikely to change.*
 
 Installation:
 
