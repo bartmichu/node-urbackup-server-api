@@ -18,17 +18,19 @@ class UrbackupServer {
   /**
    * @class
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.url] - (Optional) Server's URL. Must include protocol, hostname and port. Defaults to http://127.0.0.1:55414.
-   * @param {string} [params.username] - (Optional) Username used to log in. Defaults to empty string. Anonymous login is used if userneme is empty.
-   * @param {string} [params.password] - (Optional) Password used to log in. Defaults to empty string.
-   * @example <caption>Connect locally to the built-in server without password</caption>
+   * @param {string} [params.url] - (Optional) The URL of the server, must include the protocol, hostname, and port. If not specified, it will default to http://127.0.0.1:55414.
+   * @param {string} [params.username] - (Optional) The username used for logging in. If empty, anonymous login method will be used. The default value is an empty string.
+   * @param {string} [params.password] - (Optional) The password used to log in. The default value is an empty string.
+   * @example <caption>Connect to the built-in server locally without a password</caption>
    * const server = new UrbackupServer();
-   * @example <caption>Connect locally with password</caption>
+   * @example <caption>Connect locally with a specified password</caption>
    * const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'admin', password: 'secretpassword'});
    * @example <caption>Connect over the network</caption>
    * const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'admin', password: 'secretpassword'});
    */
-  constructor ({ url = 'http://127.0.0.1:55414', username = '', password = '' } = {}) {
+  constructor (
+    { url = 'http://127.0.0.1:55414', username = '', password = '' } = {}
+  ) {
     this.#url = new URL(url);
     this.#url.pathname = 'x';
     this.#username = username;
@@ -36,8 +38,8 @@ class UrbackupServer {
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to clear session ID and logged-in flag.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to clear the session ID and logged-in flag.
    */
   #clearLoginStatus () {
     this.#sessionId = '';
@@ -45,8 +47,8 @@ class UrbackupServer {
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to make API call to the server.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to make API call to the server.
    *
    * @param {string} action - Action.
    * @param {Object} [bodyParams] - Action parameters.
@@ -71,13 +73,15 @@ class UrbackupServer {
     if (response?.ok === true) {
       return response.json();
     } else {
-      throw new Error('Fetch request did not end normally, response was unsuccessful (status not in the range 200-299)');
+      throw new Error(
+        'Fetch request did not end normally, response was unsuccessful (status not in the range 200-299)'
+      );
     }
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to hash user password.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to hash user password.
    *
    * @param {string} salt - PBKDF2 salt value as stored on the server.
    * @param {number} rounds - PBKDF2 iterations number.
@@ -97,26 +101,32 @@ class UrbackupServer {
       });
     }
 
-    let passwordHash = crypto.createHash('md5').update(salt + this.#password, 'utf8').digest();
+    let passwordHash = crypto.createHash('md5').update(
+      salt + this.#password,
+      'utf8'
+    ).digest();
     let derivedKey;
 
     if (rounds > 0) {
       derivedKey = await pbkdf2Async(passwordHash);
     }
-    passwordHash = crypto.createHash('md5').update(randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash), 'utf8').digest('hex');
+    passwordHash = crypto.createHash('md5').update(
+      randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash),
+      'utf8'
+    ).digest('hex');
 
     return passwordHash;
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to log in to the server.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to log in to the server.
    * If username is empty then anonymous login method is used.
    *
-   * @returns {boolean} Boolean true if logged in successfuly or was already logged in.
+   * @returns {boolean} Boolean value true if the login was successful or if the user was already logged in.
    */
   async #login () {
-    // Use semaphore to prevent race condition with login status i.e. this.#sessionId
+    // NOTE: Use a semaphore to prevent race conditions with the login status, i.e. this.#sessionId
     // eslint-disable-next-line no-unused-vars
     const [value, release] = await this.#semaphore.acquire();
     try {
@@ -136,23 +146,32 @@ class UrbackupServer {
           throw new Error('Anonymous login failed');
         }
       } else {
-        const saltResponse = await this.#fetchJson('salt', { username: this.#username });
+        const saltResponse = await this.#fetchJson('salt', {
+          username: this.#username
+        });
 
         if (typeof saltResponse?.salt === 'string') {
           this.#sessionId = saltResponse.ses;
-          const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
-          const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
+          const hashedPassword = await this.#hashPassword(
+            saltResponse.salt,
+            saltResponse.pbkdf2_rounds,
+            saltResponse.rnd
+          );
+          const userLoginResponse = await this.#fetchJson('login', {
+            username: this.#username,
+            password: hashedPassword
+          });
 
           if (userLoginResponse?.success === true) {
             this.#isLoggedIn = true;
             return true;
           } else {
-            // invalid password
+            // NOTE: invalid password case
             this.#clearLoginStatus();
             throw new Error('Login failed: invalid username or password');
           }
         } else {
-          // invalid username
+          // NOTE: invalid username case
           this.#clearLoginStatus();
           throw new Error('Login failed: invalid username or password');
         }
@@ -163,59 +182,65 @@ class UrbackupServer {
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to map client name to client ID.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to map client name to client ID.
    *
-   * @param {string} clientName - Client's name.
-   * @returns {number} Client's ID. 0 (zero) when no matching clients found.
+   * @param {string} clientName - The client's name.
+   * @returns {number} The client's ID. Numeric 0 (zero) if no matching clients are found.
    */
   async #getClientId (clientName) {
     if (typeof clientName === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     const defaultReturnValue = 0;
     const clients = await this.getClients({ includeRemoved: true });
-    const clientId = clients.find(client => client.name === clientName)?.id;
+    const clientId = clients.find((client) => client.name === clientName)?.id;
 
     return typeof clientId === 'undefined' ? defaultReturnValue : clientId;
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to map client ID to client name.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to map client ID to client name.
    *
-   * @param {string} clientId - Client's ID.
-   * @returns {string} Client's name. Empty string when no matching clients found.
+   * @param {string} clientId - The client's ID.
+   * @returns {string} The client's name. Empty string if no matching clients are found.
    */
   async #getClientName (clientId) {
     if (typeof clientId === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     const defaultReturnValue = '';
     const clients = await this.getClients({ includeRemoved: true });
-    const clientName = clients.find(client => client.id === clientId)?.name;
+    const clientName = clients.find((client) => client.id === clientId)?.name;
 
     return typeof clientName === 'undefined' ? defaultReturnValue : clientName;
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to map group name to group ID.
-   * WARNING: return value can conflict with default group ID, which is also 0 (zero).
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to map group name to group ID.
+   * WARNING: The return value can potentially conflict with the default group ID, which is also set to 0 (zero).
    *
-   * @param {string} groupName - Group name. Must be different than '', which is default group name.
-   * @returns {number} Group ID. 0 (zero) when no matching clients found. That can conflict with default group ID, which is also 0.
+   * @param {string} groupName - Group name. Must have a value different from an empty string, which is the default group name.
+   * @returns {number} Group ID. When no matching clients are found, the group ID defaults to 0 (zero), which may conflict with the default group ID.
    */
   async #getGroupId (groupName) {
     if (typeof groupName === 'undefined' || groupName === '') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     const defaultReturnValue = 0;
     const groups = await this.getGroups();
-    const groupId = groups.find(group => group.name === groupName)?.id;
+    const groupId = groups.find((group) => group.name === groupName)?.id;
 
     return typeof groupId === 'undefined' ? defaultReturnValue : groupId;
   }
@@ -246,7 +271,7 @@ class UrbackupServer {
   /**
    * Retrieves a list of users.
    *
-   * @returns {Array} Array of objects representing users. Empty array when no users found.
+   * @returns {Array} An array of objects representing users. If no users are found, it returns an empty array.
    * @example <caption>Get all users</caption>
    * server.getUsers().then(data => console.log(data));
    */
@@ -254,7 +279,9 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const usersResponse = await this.#fetchJson('settings', { sa: 'listusers' });
+      const usersResponse = await this.#fetchJson('settings', {
+        sa: 'listusers'
+      });
 
       if (Array.isArray(usersResponse?.users)) {
         return usersResponse.users;
@@ -270,7 +297,7 @@ class UrbackupServer {
    * Retrieves a list of groups.
    * By default, UrBackup clients are added to a group id 0 with name '' (empty string).
    *
-   * @returns {Array} Array of objects representing groups. Empty array when no groups found.
+   * @returns {Array} An array of objects representing groups. If no groups are found, it returns an empty array.
    * @example <caption>Get all groups</caption>
    * server.getGroups().then(data => console.log(data));
    */
@@ -294,17 +321,19 @@ class UrbackupServer {
    * Adds a new group.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {string} params.groupName - (Required) Group name, case sensitive. UrBackup clients are added to a group id 0 with name '' (empty string) by default. Defaults to undefined.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when adding was not successfull, for example group already exists.
+   * @param {string} params.groupName - (Required) The group name, case-sensitive. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
+   * @returns {boolean} When successful, a Boolean value of true is returned. If the group already exists, or adding the group was not successful for any reason, then a Boolean value of false is returned.
    * @example <caption>Add new group</caption>
    * server.addGroup({groupName: 'prod'}).then(data => console.log(data));
    */
   async addGroup ({ groupName } = {}) {
     if (typeof groupName === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
-    // Possible UrBackup bug: server does not allow adding multiple groups with the same name, but allows '' (empty string) which is the same as default group name
+    // TODO: Possible UrBackup bug: server does not allow adding multiple groups with the same name, but allows '' (empty string) which is the same as default group name.
     if (groupName === '') {
       return false;
     }
@@ -312,7 +341,10 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const response = await this.#fetchJson('settings', { sa: 'groupadd', name: groupName });
+      const response = await this.#fetchJson('settings', {
+        sa: 'groupadd',
+        name: groupName
+      });
 
       if ('add_ok' in response || 'already_exists' in response) {
         return response?.add_ok === true;
@@ -327,19 +359,21 @@ class UrbackupServer {
   /**
    * Removes group.
    * All clients in this group will be re-assigned to the default group.
-   * Using group ID should be preferred to group name for repeated method calls.
+   * The use of group ID is preferred over group name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.groupId - (Required if groupName is undefined) Group ID. Must be greater than 0. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
    * @param {string} params.groupName - (Required if groupId is undefined) Group name, case sensitive. Must be different than '' (empty string). Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when removing was not successfull. Due to UrBackup bug, it returns ```true``` when called with non-existent ```groupId```.
+   * @returns {boolean} When the removal is successful, the method returns a Boolean value of true. If the removal is not successful, the method returns a Boolean value of false. However, there is a known UrBackup bug where it returns true even when called with a non-existent groupId.
    * @example <caption>Remove group</caption>
    * server.removeGroup({groupId: 1}).then(data => console.log(data));
    * server.removeGroup({groupName: 'prod'}).then(data => console.log(data));
    */
   async removeGroup ({ groupId, groupName } = {}) {
     if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     if (groupId === 0 || groupName === '') {
@@ -358,9 +392,12 @@ class UrbackupServer {
         }
       }
 
-      const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
+      const response = await this.#fetchJson('settings', {
+        sa: 'groupremove',
+        id: groupId ?? mappedGroupId
+      });
 
-      // Possible UrBackup bug: server returns delete_ok:true for non-existent group ID
+      // TODO: There is a possible UrBackup bug where the server returns delete_ok:true even when attempting to delete a non-existent group ID.
       return response?.delete_ok === true;
     } else {
       throw new Error('Login failed: unknown reason');
@@ -369,15 +406,15 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of clients.
-   * Matches all clients by default, including clients marked for removal.
+   * By default, this method matches all clients, including those marked for removal.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.groupName] - (Optional) Group name, case sensitive. By default, UrBackup clients are added to group id 0 with name '' (empty string). Defaults to undefined, which matches all groups.
+   * @param {string} [params.groupName] - (Optional) Group name, case sensitive. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array} Array of objects representing clients matching search criteria. Empty array when no matching clients found.
    * @example <caption>Get all clients</caption>
    * server.getClients().then(data => console.log(data));
-   * @example <caption>Get all clients, but skip clients marked for removal</caption>
+   * @example <caption>Get all clients, but exclude clients marked for removal</caption>
    * server.getClients({includeRemoved: false}).then(data => console.log(data));
    * @example <caption>Get all clients belonging to a specific group</caption>
    * server.getClients({groupName: 'office'}).then(data => console.log(data));
@@ -391,7 +428,9 @@ class UrbackupServer {
 
       if (Array.isArray(statusResponse?.status)) {
         for (const client of statusResponse.status) {
-          if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
+          if (
+            typeof groupName !== 'undefined' && groupName !== client.groupname
+          ) {
             continue;
           }
 
@@ -399,7 +438,12 @@ class UrbackupServer {
             continue;
           }
 
-          returnValue.push({ id: client.id, name: client.name, group: client.groupname, deletePending: client.delete_pending });
+          returnValue.push({
+            id: client.id,
+            name: client.name,
+            group: client.groupname,
+            deletePending: client.delete_pending
+          });
         }
 
         return returnValue;
@@ -416,13 +460,15 @@ class UrbackupServer {
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {string} params.clientName - (Required) Client's name, case sensitive. Defaults to undefined.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when adding was not successfull, for example client already exists.
+   * @returns {boolean} When successful, it returns a Boolean value of true. If adding the client was not successful, for example if the client already exists, it returns false.
    * @example <caption>Add new client</caption>
    * server.addClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async addClient ({ clientName } = {}) {
     if (typeof clientName === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     if (clientName === '') {
@@ -432,7 +478,9 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const addClientResponse = await this.#fetchJson('add_client', { clientname: clientName });
+      const addClientResponse = await this.#fetchJson('add_client', {
+        clientname: clientName
+      });
 
       if (addClientResponse?.ok === true) {
         return addClientResponse.added_new_client === true;
@@ -445,19 +493,24 @@ class UrbackupServer {
   }
 
   /**
-   * This method is not meant to be used outside the class.
-   * Used internally to mark/unmark client as ready for removal.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to mark/unmark client as ready for removal.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {boolean} params.stopRemove - {Required) Whether it's 'remove' or 'cancel remove' operation.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when stopping was not successfull.
+   * @returns {boolean} When successful, the method returns a Boolean value of true. If the operation to stop the removal was not successful, it returns false.
    */
   async #removeClientCommon ({ clientId, clientName, stopRemove } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof stopRemove === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+    if (
+      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      clientId <= 0 || typeof stopRemove === 'undefined'
+    ) {
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     if (clientName === '') {
@@ -485,7 +538,9 @@ class UrbackupServer {
       const statusResponse = await this.#fetchJson('status', apiCallParameters);
 
       if (Array.isArray(statusResponse?.status)) {
-        return statusResponse.status.find(client => client.id === (clientId ?? mappedClientId))?.delete_pending === (stopRemove === true ? '0' : '1');
+        return statusResponse.status.find((client) =>
+          client.id === (clientId ?? mappedClientId)
+        )?.delete_pending === (stopRemove === true ? '0' : '1');
       } else {
         throw new Error('API response error: missing values');
       }
@@ -497,42 +552,50 @@ class UrbackupServer {
   /**
    * Marks the client for removal.
    * Actual removing happens during the cleanup in the cleanup time window. Until then, this operation can be reversed with ```cancelRemoveClient``` method.
-   * Using client ID should be preferred to client name for repeated method calls.
-   * WARNING: removing clients will also delete all their backups.
+   * The use of client ID is preferred over client name for repeated method calls.
+   * WARNING: Removing clients will also delete all their backups stored on the UrBackup server.
    *
    * @param {Object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID, which must be greater than 0. If both clientId and clientName are defined, the ID takes precedence. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when removing was not successfull.
+   * @returns {boolean} When successful, returns Boolean true. Returns Boolean false when removing was not successful.
    * @example <caption>Remove client</caption>
    * server.removeClient({clientId: 1}).then(data => console.log(data));
    * server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async removeClient ({ clientId, clientName } = {}) {
-    const returnValue = await this.#removeClientCommon({ clientId, clientName, stopRemove: false });
+    const returnValue = await this.#removeClientCommon({
+      clientId,
+      clientName,
+      stopRemove: false
+    });
     return returnValue;
   }
 
   /**
    * Unmarks the client as ready for removal.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
-   * @returns {boolean} When successfull, Boolean true. Boolean false when stopping was not successfull.
+   * @returns {boolean} When successful, returns a Boolean value of true. Returns Boolean false when the stopping process was not successful.
    * @example <caption>Stop the server from removing a client by ID</caption>
    * server.cancelRemoveClient({clientId: 1}).then(data => console.log(data));
    * @example <caption>Stop the server from removing a client by name</caption>
    * server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async cancelRemoveClient ({ clientId, clientName } = {}) {
-    const returnValue = await this.#removeClientCommon({ clientId: clientId, clientName: clientName, stopRemove: true });
+    const returnValue = await this.#removeClientCommon({
+      clientId: clientId,
+      clientName: clientName,
+      stopRemove: true
+    });
     return returnValue;
   }
 
   /**
-   * Retrieves a list of client discovery hints, also known as extra clients.
+   * Retrieves a list of client discovery hints, which are also known as extra clients.
    *
    * @returns {Array} Array of objects representing client hints. Empty array when no matching client hints found.
    * @example <caption>Get extra clients</caption>
@@ -566,16 +629,22 @@ class UrbackupServer {
    */
   async addClientHint ({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error('API call error: missing or invalid parameters');
-    };
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
+    }
 
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status', { hostname: address });
+      const statusResponse = await this.#fetchJson('status', {
+        hostname: address
+      });
 
       if (Array.isArray(statusResponse?.extra_clients)) {
-        return statusResponse.extra_clients.some(extraClient => extraClient.hostname === address);
+        return statusResponse.extra_clients.some((extraClient) =>
+          extraClient.hostname === address
+        );
       } else {
         throw new Error('API response error: missing values');
       }
@@ -595,8 +664,10 @@ class UrbackupServer {
    */
   async removeClientHint ({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error('API call error: missing or invalid parameters');
-    };
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
+    }
 
     let returnValue = false;
     const login = await this.#login();
@@ -605,13 +676,22 @@ class UrbackupServer {
       const extraClients = await this.getClientHints();
 
       if (Array.isArray(extraClients)) {
-        const matchingClient = extraClients.find(extraClient => extraClient.hostname === address);
+        const matchingClient = extraClients.find((extraClient) =>
+          extraClient.hostname === address
+        );
 
         if (typeof matchingClient !== 'undefined') {
-          const statusResponse = await this.#fetchJson('status', { hostname: matchingClient.id, remove: true });
+          const statusResponse = await this.#fetchJson('status', {
+            hostname: matchingClient.id,
+            remove: true
+          });
 
           if (Array.isArray(statusResponse?.extra_clients)) {
-            if (typeof statusResponse.extra_clients.find(extraClient => extraClient.hostname === address) === 'undefined') {
+            if (
+              typeof statusResponse.extra_clients.find((extraClient) =>
+                extraClient.hostname === address
+              ) === 'undefined'
+            ) {
               returnValue = true;
             }
           } else {
@@ -631,12 +711,12 @@ class UrbackupServer {
   /**
    * Retrieves client settings.
    * Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
-   * Clients marked for removal are not excluded.
+   * Clients marked for removal are not excluded from the results.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
-   * @returns {Array} Array with objects represeting client settings. Empty array when no matching client found.
+   * @returns {Array} An array with objects representing client settings. Returns an empty array if no matching client is found.
    * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
    * @example <caption>Get settings for a specific client only</caption>
@@ -645,7 +725,9 @@ class UrbackupServer {
    */
   async getClientSettings ({ clientId, clientName } = {}) {
     if (clientId <= 0) {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     const returnValue = [];
@@ -660,7 +742,7 @@ class UrbackupServer {
       const clientIds = [];
       const allClients = await this.getClients({ includeRemoved: true });
 
-      if (allClients.some(client => typeof client.id === 'undefined')) {
+      if (allClients.some((client) => typeof client.id === 'undefined')) {
         throw new Error('API response error: missing values');
       }
 
@@ -676,14 +758,17 @@ class UrbackupServer {
           }
         }
       } else {
-        // need to make sure that given clientId really exists bacause 'clientsettings' API call returns settings even when called with invalid ID
-        if (allClients.some(client => client.id === clientId)) {
+        // NOTE: need to make sure that given clientId really exists bacause 'clientsettings' API call returns settings even when called with invalid ID.
+        if (allClients.some((client) => client.id === clientId)) {
           clientIds.push(clientId);
         }
       }
 
       for (const id of clientIds) {
-        const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: id });
+        const settingsResponse = await this.#fetchJson('settings', {
+          sa: 'clientsettings',
+          t_clientid: id
+        });
 
         if (typeof settingsResponse?.settings === 'object') {
           returnValue.push(settingsResponse.settings);
@@ -701,7 +786,7 @@ class UrbackupServer {
   /**
    * Changes one specific element of client settings.
    * A list of settings can be obtained with ```getClientSettings``` method.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -714,8 +799,14 @@ class UrbackupServer {
    * server.setClientSettings({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
    */
   async setClientSettings ({ clientId, clientName, key, newValue } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof key === 'undefined' || typeof newValue === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+    if (
+      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      clientId <= 0 || typeof key === 'undefined' ||
+      typeof newValue === 'undefined'
+    ) {
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     let returnValue = false;
@@ -727,7 +818,11 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
+      const clientSettings = await this.getClientSettings(
+        typeof clientId === 'undefined'
+          ? { clientName: clientName }
+          : { clientId: clientId }
+      );
 
       if (Array.isArray(clientSettings) && clientSettings.length > 0) {
         if (Object.keys(clientSettings[0]).includes(key)) {
@@ -736,7 +831,10 @@ class UrbackupServer {
           clientSettings[0].sa = 'clientsettings_save';
           clientSettings[0].t_clientid = clientSettings[0].clientid;
 
-          const saveSettingsResponse = await this.#fetchJson('settings', clientSettings[0]);
+          const saveSettingsResponse = await this.#fetchJson(
+            'settings',
+            clientSettings[0]
+          );
 
           if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
             returnValue = saveSettingsResponse.saved_ok === true;
@@ -756,19 +854,24 @@ class UrbackupServer {
 
   /**
    * Retrieves authentication key for a specified client.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
-   * @returns {string} Client's authentication key. Empty string when no matching clients found.
+   * @returns {string} Client's authentication key. Empty string if no matching clients are found.
    * @example <caption>Get authentication key for a specific client</caption>
    * server.getClientAuthkey({clientName: 'laptop1'}).then(data => console.log(data));
    * server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
    */
   async getClientAuthkey ({ clientId, clientName } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0) {
-      throw new Error('API call error: missing or invalid parameters');
+    if (
+      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      clientId <= 0
+    ) {
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     let returnValue = '';
@@ -780,7 +883,11 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
+      const clientSettings = await this.getClientSettings(
+        typeof clientId === 'undefined'
+          ? { clientName: clientName }
+          : { clientId: clientId }
+      );
 
       if (Array.isArray(clientSettings)) {
         if (clientSettings.length > 0) {
@@ -829,17 +936,28 @@ class UrbackupServer {
       const statusResponse = await this.#fetchJson('status');
 
       if (Array.isArray(statusResponse?.status)) {
-        if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+        if (
+          typeof clientId === 'undefined' && typeof clientName === 'undefined'
+        ) {
           if (includeRemoved === false) {
-            return statusResponse.status.filter(client => client.delete_pending !== '1');
+            return statusResponse.status.filter((client) =>
+              client.delete_pending !== '1'
+            );
           } else {
             return statusResponse.status;
           }
         } else {
-          const clientStatus = statusResponse.status.find(client => typeof clientId !== 'undefined' ? client.id === clientId : client.name === clientName);
+          const clientStatus = statusResponse.status.find((client) =>
+            typeof clientId !== 'undefined'
+              ? client.id === clientId
+              : client.name === clientName
+          );
 
           if (typeof clientStatus !== 'undefined') {
-            return (includeRemoved === false && clientStatus.delete_pending === '1') ? defaultReturnValue : [clientStatus];
+            return (includeRemoved === false &&
+                clientStatus.delete_pending === '1')
+              ? defaultReturnValue
+              : [clientStatus];
           } else {
             return defaultReturnValue;
           }
@@ -854,8 +972,8 @@ class UrbackupServer {
 
   /**
    * Retrieves storage usage.
-   * Matches all clients by default, but ```clientName``` OR ```clientId``` can be used to request usage for one particular client.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
@@ -880,7 +998,9 @@ class UrbackupServer {
       const usageResponse = await this.#fetchJson('usage');
 
       if (Array.isArray(usageResponse?.usage)) {
-        if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+        if (
+          typeof clientId === 'undefined' && typeof clientName === 'undefined'
+        ) {
           return usageResponse.usage;
         } else {
           let mappedClientName;
@@ -888,7 +1008,11 @@ class UrbackupServer {
             // usage response does not contain a property with client ID so translation to client name is needed
             mappedClientName = await this.#getClientName(clientId);
           }
-          return usageResponse.usage.find(client => typeof clientId !== 'undefined' ? client.name === mappedClientName : client.name === clientName) ?? defaultReturnValue;
+          return usageResponse.usage.find((client) =>
+            typeof clientId !== 'undefined'
+              ? client.name === mappedClientName
+              : client.name === clientName
+          ) ?? defaultReturnValue;
         }
       } else {
         throw new Error('API response error: missing values');
@@ -920,7 +1044,9 @@ class UrbackupServer {
    * server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
    * server.getActivities({clientId: '3', includeCurrent: true, includePast: true}).then(data => console.log(data));
    */
-  async getActivities ({ clientId, clientName, includeCurrent = true, includePast = false } = {}) {
+  async getActivities (
+    { clientId, clientName, includeCurrent = true, includePast = false } = {}
+  ) {
     const returnValue = { current: [], past: [] };
 
     if (clientName === '') {
@@ -936,20 +1062,36 @@ class UrbackupServer {
     if (login === true) {
       const activitiesResponse = await this.#fetchJson('progress');
 
-      if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
+      if (
+        Array.isArray(activitiesResponse?.progress) &&
+        Array.isArray(activitiesResponse?.lastacts)
+      ) {
         if (includeCurrent === true) {
-          if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+          if (
+            typeof clientId === 'undefined' && typeof clientName === 'undefined'
+          ) {
             returnValue.current = activitiesResponse.progress;
           } else {
-            returnValue.current = activitiesResponse.progress.filter(activity => typeof clientId !== 'undefined' ? activity.clientid === clientId : activity.name === clientName);
+            returnValue.current = activitiesResponse.progress.filter(
+              (activity) =>
+                typeof clientId !== 'undefined'
+                  ? activity.clientid === clientId
+                  : activity.name === clientName
+            );
           }
         }
 
         if (includePast === true) {
-          if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+          if (
+            typeof clientId === 'undefined' && typeof clientName === 'undefined'
+          ) {
             returnValue.past = activitiesResponse.lastacts;
           } else {
-            returnValue.past = activitiesResponse.lastacts.filter(activity => typeof clientId !== 'undefined' ? activity.clientid === clientId : activity.name === clientName);
+            returnValue.past = activitiesResponse.lastacts.filter((activity) =>
+              typeof clientId !== 'undefined'
+                ? activity.clientid === clientId
+                : activity.name === clientName
+            );
           }
         }
 
@@ -965,7 +1107,7 @@ class UrbackupServer {
   /**
    * Stops one activity.
    * A list of current activities can be obtained with ```getActivities``` method.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -977,8 +1119,13 @@ class UrbackupServer {
    * server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data));
    */
   async stopActivity ({ clientId, clientName, activityId } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0) {
-      throw new Error('API call error: missing or invalid parameters');
+    if (
+      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0
+    ) {
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     if (clientName === '') {
@@ -989,14 +1136,25 @@ class UrbackupServer {
 
     if (login === true) {
       let mappedClientId;
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      if (
+        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
+      ) {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
-        const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? mappedClientId, stop_id: activityId });
+      if (
+        (typeof clientId !== 'undefined' && clientId > 0) ||
+        (typeof mappedClientId !== 'undefined' && mappedClientId > 0)
+      ) {
+        const activitiesResponse = await this.#fetchJson('progress', {
+          stop_clientid: clientId ?? mappedClientId,
+          stop_id: activityId
+        });
 
-        if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
+        if (
+          Array.isArray(activitiesResponse?.progress) &&
+          Array.isArray(activitiesResponse?.lastacts)
+        ) {
           return true;
         } else {
           throw new Error('API response error: missing values');
@@ -1011,7 +1169,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of file and/or image backups for a specific client.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -1027,9 +1185,22 @@ class UrbackupServer {
    * @example <caption>Get file backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
    */
-  async getBackups ({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || (includeFileBackups === false && includeImageBackups === false)) {
-      throw new Error('API call error: missing or invalid parameters');
+  async getBackups (
+    {
+      clientId,
+      clientName,
+      includeFileBackups = true,
+      includeImageBackups = true
+    } = {}
+  ) {
+    if (
+      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      clientId <= 0 ||
+      (includeFileBackups === false && includeImageBackups === false)
+    ) {
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     const returnValue = { file: [], image: [] };
@@ -1043,14 +1214,25 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      if (
+        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
+      ) {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
-        const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId ?? mappedClientId });
+      if (
+        (typeof clientId !== 'undefined' && clientId > 0) ||
+        (typeof mappedClientId !== 'undefined' && mappedClientId > 0)
+      ) {
+        const backupsResponse = await this.#fetchJson('backups', {
+          sa: 'backups',
+          clientid: clientId ?? mappedClientId
+        });
 
-        if (Array.isArray(backupsResponse?.backup_images) && Array.isArray(backupsResponse?.backups)) {
+        if (
+          Array.isArray(backupsResponse?.backup_images) &&
+          Array.isArray(backupsResponse?.backups)
+        ) {
           if (includeFileBackups === true) {
             returnValue.file = backupsResponse.backups;
           }
@@ -1072,9 +1254,9 @@ class UrbackupServer {
   }
 
   /**
-   * This method is not meant to be used outside the class.
+   * This method is intended for internal use only and should not be called outside the class.
    * Starts a backup job.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -1085,8 +1267,13 @@ class UrbackupServer {
   async #startBackupCommon ({ clientId, clientName, backupType } = {}) {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || !backupTypes.includes(backupType)) {
-      throw new Error('API call error: missing or invalid parameters');
+    if (
+      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      clientId <= 0 || !backupTypes.includes(backupType)
+    ) {
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     if (clientName === '') {
@@ -1097,14 +1284,27 @@ class UrbackupServer {
 
     if (login === true) {
       let mappedClientId;
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      if (
+        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
+      ) {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
-        const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId ?? mappedClientId, start_type: backupType });
+      if (
+        (typeof clientId !== 'undefined' && clientId > 0) ||
+        (typeof mappedClientId !== 'undefined' && mappedClientId > 0)
+      ) {
+        const backupResponse = await this.#fetchJson('start_backup', {
+          start_client: clientId ?? mappedClientId,
+          start_type: backupType
+        });
 
-        if (Array.isArray(backupResponse.result) && backupResponse.result.filter(element => Object.keys(element).includes('start_ok')).length !== 1) {
+        if (
+          Array.isArray(backupResponse.result) &&
+          backupResponse.result.filter((element) =>
+            Object.keys(element).includes('start_ok')
+          ).length !== 1
+        ) {
           return !!backupResponse.result[0].start_ok;
         } else {
           throw new Error('API response error: missing values');
@@ -1119,7 +1319,7 @@ class UrbackupServer {
 
   /**
    * Starts full file backup.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -1130,13 +1330,17 @@ class UrbackupServer {
    * server.startFullFileBackup({clientId: 3).then(data => console.log(data));
    */
   async startFullFileBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'full_file' });
+    const returnValue = await this.#startBackupCommon({
+      clientId: clientId,
+      clientName: clientName,
+      backupType: 'full_file'
+    });
     return returnValue;
   }
 
   /**
    * Starts incremental file backup.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -1147,13 +1351,17 @@ class UrbackupServer {
    * server.startIncrementalFileBackup({clientId: 3).then(data => console.log(data));
    */
   async startIncrementalFileBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'incr_file' });
+    const returnValue = await this.#startBackupCommon({
+      clientId: clientId,
+      clientName: clientName,
+      backupType: 'incr_file'
+    });
     return returnValue;
   }
 
   /**
    * Starts full image backup.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -1164,13 +1372,17 @@ class UrbackupServer {
    * server.startFullImageBackup({clientId: 3).then(data => console.log(data));
    */
   async startFullImageBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'full_image' });
+    const returnValue = await this.#startBackupCommon({
+      clientId: clientId,
+      clientName: clientName,
+      backupType: 'full_image'
+    });
     return returnValue;
   }
 
   /**
    * Starts incremental image backup.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
@@ -1181,7 +1393,11 @@ class UrbackupServer {
    * server.startIncrementalImageBackup({clientId: 3).then(data => console.log(data));
    */
   async startIncrementalImageBackup ({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({ clientId: clientId, clientName: clientName, backupType: 'incr_image' });
+    const returnValue = await this.#startBackupCommon({
+      clientId: clientId,
+      clientName: clientName,
+      backupType: 'incr_image'
+    });
     return returnValue;
   }
 
@@ -1190,7 +1406,7 @@ class UrbackupServer {
    * Server logs are requested by default, but ```clientName``` or ```clientId``` can be used to request logs for one particular client.
    * Instance property is being used internally to keep track of log entries that were previously requested.
    * When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
-   * Using client ID should be preferred to client name for repeated method calls.
+   * The use of client ID is preferred over client name for repeated method calls.
    *
    * @param {Object} [params] - (Optional) An object containing parameters.
    * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined.
@@ -1217,7 +1433,9 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
+      if (
+        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
+      ) {
         mappedClientId = await this.#getClientId(clientName);
       }
 
@@ -1230,7 +1448,10 @@ class UrbackupServer {
       // eslint-disable-next-line no-unused-vars
       const [value, release] = await this.#semaphore.acquire();
       try {
-        const logResponse = await this.#fetchJson('livelog', { clientid: clientId ?? mappedClientId ?? 0, lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId) });
+        const logResponse = await this.#fetchJson('livelog', {
+          clientid: clientId ?? mappedClientId ?? 0,
+          lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId)
+        });
 
         if (Array.isArray(logResponse.logdata)) {
           const lastId = logResponse.logdata.slice(-1)[0]?.id;
@@ -1263,7 +1484,9 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
+      const settingsResponse = await this.#fetchJson('settings', {
+        sa: 'general'
+      });
 
       if (typeof settingsResponse?.settings === 'object') {
         return settingsResponse.settings;
@@ -1288,7 +1511,9 @@ class UrbackupServer {
    */
   async setGeneralSettings ({ key, newValue } = {}) {
     if (typeof key === 'undefined' || typeof newValue === 'undefined') {
-      throw new Error('API call error: missing or invalid parameters');
+      throw new Error(
+        'The API call has failed due to missing or invalid parameters.'
+      );
     }
 
     const login = await this.#login();
@@ -1300,7 +1525,10 @@ class UrbackupServer {
         settings[key] = newValue;
         settings.sa = 'general_save';
 
-        const saveSettingsResponse = await this.#fetchJson('settings', settings);
+        const saveSettingsResponse = await this.#fetchJson(
+          'settings',
+          settings
+        );
 
         if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
           return saveSettingsResponse.saved_ok;
