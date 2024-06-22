@@ -29,9 +29,7 @@ class UrbackupServer {
    * @example <caption>Connect over the network</caption>
    * const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'admin', password: 'secretpassword'});
    */
-  constructor(
-    { url = 'http://127.0.0.1:55414', username = '', password = '' } = {}
-  ) {
+  constructor({ url = 'http://127.0.0.1:55414', username = '', password = '' } = {}) {
     this.#url = new URL(url);
     this.#url.pathname = 'x';
     this.#username = username;
@@ -77,9 +75,7 @@ class UrbackupServer {
     if (response?.ok === true) {
       return response.json();
     } else {
-      throw new Error(
-        'Fetch request did not end normally, response was unsuccessful (status not in the range 200-299)'
-      );
+      throw new Error('Fetch request did not end normally, response was unsuccessful (status not in the range 200-299)');
     }
   }
 
@@ -109,19 +105,17 @@ class UrbackupServer {
       });
     }
 
-    let passwordHash = crypto.createHash('md5').update(
-      salt + this.#password,
-      'utf8'
-    ).digest();
+    let passwordHash = crypto.createHash('md5')
+      .update(salt + this.#password, 'utf8')
+      .digest();
     let derivedKey;
 
     if (rounds > 0) {
       derivedKey = await pbkdf2Async(passwordHash);
     }
-    passwordHash = crypto.createHash('md5').update(
-      randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash),
-      'utf8'
-    ).digest('hex');
+    passwordHash = crypto.createHash('md5')
+      .update(randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash), 'utf8')
+      .digest('hex');
 
     return passwordHash;
   }
@@ -161,15 +155,8 @@ class UrbackupServer {
 
         if (typeof saltResponse?.salt === 'string') {
           this.#sessionId = saltResponse.ses;
-          const hashedPassword = await this.#hashPassword(
-            saltResponse.salt,
-            saltResponse.pbkdf2_rounds,
-            saltResponse.rnd
-          );
-          const userLoginResponse = await this.#fetchJson('login', {
-            username: this.#username,
-            password: hashedPassword
-          });
+          const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
+          const userLoginResponse = await this.#fetchJson('login', { username: this.#username, password: hashedPassword });
 
           if (userLoginResponse?.success === true) {
             this.#isLoggedIn = true;
@@ -200,9 +187,7 @@ class UrbackupServer {
    */
   async #getClientId(clientName) {
     if (typeof clientName === 'undefined') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const defaultReturnValue = 0;
@@ -222,9 +207,7 @@ class UrbackupServer {
    */
   async #getClientName(clientId) {
     if (typeof clientId === 'undefined') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const defaultReturnValue = '';
@@ -245,9 +228,7 @@ class UrbackupServer {
    */
   async #getGroupId(groupName) {
     if (typeof groupName === 'undefined' || groupName === '') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const defaultReturnValue = 0;
@@ -289,9 +270,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const usersResponse = await this.#fetchJson('settings', {
-        sa: 'listusers'
-      });
+      const usersResponse = await this.#fetchJson('settings', { sa: 'listusers' });
 
       if (Array.isArray(usersResponse?.users)) {
         return usersResponse.users;
@@ -336,9 +315,7 @@ class UrbackupServer {
    */
   async addGroup({ groupName } = {}) {
     if (typeof groupName === 'undefined') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     // TODO: Possible UrBackup bug: server does not allow adding multiple groups with the same name, but allows '' (empty string) which is the same as default group name.
@@ -349,10 +326,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const response = await this.#fetchJson('settings', {
-        sa: 'groupadd',
-        name: groupName
-      });
+      const response = await this.#fetchJson('settings', { sa: 'groupadd', name: groupName });
 
       if ('add_ok' in response || 'already_exists' in response) {
         return response?.add_ok === true;
@@ -378,9 +352,7 @@ class UrbackupServer {
    */
   async removeGroup({ groupId, groupName } = {}) {
     if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     if (groupId === 0 || groupName === '') {
@@ -399,10 +371,7 @@ class UrbackupServer {
         }
       }
 
-      const response = await this.#fetchJson('settings', {
-        sa: 'groupremove',
-        id: groupId ?? mappedGroupId
-      });
+      const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
 
       // TODO: There is a possible UrBackup bug where the server returns delete_ok:true even when attempting to delete a non-existent group ID.
       return response?.delete_ok === true;
@@ -434,9 +403,7 @@ class UrbackupServer {
 
       if (Array.isArray(statusResponse?.status)) {
         for (const client of statusResponse.status) {
-          if (
-            typeof groupName !== 'undefined' && groupName !== client.groupname
-          ) {
+          if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
             continue;
           }
 
@@ -471,9 +438,7 @@ class UrbackupServer {
    */
   async addClient({ clientName } = {}) {
     if (typeof clientName === 'undefined') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -483,9 +448,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const addClientResponse = await this.#fetchJson('add_client', {
-        clientname: clientName
-      });
+      const addClientResponse = await this.#fetchJson('add_client', { clientname: clientName });
 
       if (addClientResponse?.ok === true) {
         return addClientResponse.added_new_client === true;
@@ -510,13 +473,8 @@ class UrbackupServer {
    * const removeStatus = await this.#removeClientCommon({ clientId: clientId, clientName: clientName, stopRemove: true });
    */
   async #removeClientCommon({ clientId, clientName, stopRemove } = {}) {
-    if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      clientId <= 0 || typeof stopRemove === 'undefined'
-    ) {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof stopRemove === 'undefined') {
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -569,11 +527,7 @@ class UrbackupServer {
    * server.removeClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async removeClient({ clientId, clientName } = {}) {
-    const returnValue = await this.#removeClientCommon({
-      clientId,
-      clientName,
-      stopRemove: false
-    });
+    const returnValue = await this.#removeClientCommon({ clientId, clientName, stopRemove: false });
     return returnValue;
   }
 
@@ -590,11 +544,7 @@ class UrbackupServer {
    * server.cancelRemoveClient({clientName: 'laptop2'}).then(data => console.log(data));
    */
   async cancelRemoveClient({ clientId, clientName } = {}) {
-    const returnValue = await this.#removeClientCommon({
-      clientId: clientId,
-      clientName: clientName,
-      stopRemove: true
-    });
+    const returnValue = await this.#removeClientCommon({ clientId: clientId, clientName: clientName, stopRemove: true });
     return returnValue;
   }
 
@@ -631,9 +581,7 @@ class UrbackupServer {
    */
   async addClientHint({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const login = await this.#login();
@@ -665,9 +613,7 @@ class UrbackupServer {
    */
   async removeClientHint({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     let returnValue = false;
@@ -677,22 +623,13 @@ class UrbackupServer {
       const extraClients = await this.getClientHints();
 
       if (Array.isArray(extraClients)) {
-        const matchingClient = extraClients.find((extraClient) =>
-          extraClient.hostname === address
-        );
+        const matchingClient = extraClients.find((extraClient) => extraClient.hostname === address);
 
         if (typeof matchingClient !== 'undefined') {
-          const statusResponse = await this.#fetchJson('status', {
-            hostname: matchingClient.id,
-            remove: true
-          });
+          const statusResponse = await this.#fetchJson('status', { hostname: matchingClient.id, remove: true });
 
           if (Array.isArray(statusResponse?.extra_clients)) {
-            if (
-              typeof statusResponse.extra_clients.find((extraClient) =>
-                extraClient.hostname === address
-              ) === 'undefined'
-            ) {
+            if (typeof statusResponse.extra_clients.find((extraClient) => extraClient.hostname === address) === 'undefined') {
               returnValue = true;
             }
           } else {
@@ -725,9 +662,7 @@ class UrbackupServer {
    */
   async getClientSettings({ clientId, clientName } = {}) {
     if (clientId <= 0) {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const returnValue = [];
@@ -765,10 +700,7 @@ class UrbackupServer {
       }
 
       for (const id of clientIds) {
-        const settingsResponse = await this.#fetchJson('settings', {
-          sa: 'clientsettings',
-          t_clientid: id
-        });
+        const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: id });
 
         if (typeof settingsResponse?.settings === 'object') {
           returnValue.push(settingsResponse.settings);
@@ -798,11 +730,7 @@ class UrbackupServer {
    * server.setClientSettings({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
    */
   async setClientSettings({ clientId, clientName, key, newValue } = {}) {
-    if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      clientId <= 0 || typeof key === 'undefined' ||
-      typeof newValue === 'undefined'
-    ) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof key === 'undefined' || typeof newValue === 'undefined') {
       throw new Error(
         'The API call has failed due to missing or invalid parameters.'
       );
@@ -817,11 +745,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const clientSettings = await this.getClientSettings(
-        typeof clientId === 'undefined'
-          ? { clientName: clientName }
-          : { clientId: clientId }
-      );
+      const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
 
       if (Array.isArray(clientSettings) && clientSettings.length > 0) {
         if (Object.keys(clientSettings[0]).includes(key)) {
@@ -830,10 +754,7 @@ class UrbackupServer {
           clientSettings[0].sa = 'clientsettings_save';
           clientSettings[0].t_clientid = clientSettings[0].clientid;
 
-          const saveSettingsResponse = await this.#fetchJson(
-            'settings',
-            clientSettings[0]
-          );
+          const saveSettingsResponse = await this.#fetchJson('settings', clientSettings[0]);
 
           if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
             returnValue = saveSettingsResponse.saved_ok === true;
@@ -863,13 +784,8 @@ class UrbackupServer {
    * server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
    */
   async getClientAuthkey({ clientId, clientName } = {}) {
-    if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      clientId <= 0
-    ) {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0) {
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     let returnValue = '';
@@ -881,11 +797,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const clientSettings = await this.getClientSettings(
-        typeof clientId === 'undefined'
-          ? { clientName: clientName }
-          : { clientId: clientId }
-      );
+      const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
 
       if (Array.isArray(clientSettings)) {
         if (clientSettings.length > 0) {
@@ -933,9 +845,7 @@ class UrbackupServer {
       const statusResponse = await this.#fetchJson('status');
 
       if (Array.isArray(statusResponse?.status)) {
-        if (
-          typeof clientId === 'undefined' && typeof clientName === 'undefined'
-        ) {
+        if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
           if (includeRemoved === false) {
             return statusResponse.status.filter((client) =>
               client.delete_pending !== '1'
@@ -944,15 +854,10 @@ class UrbackupServer {
             return statusResponse.status;
           }
         } else {
-          const clientStatus = statusResponse.status.find((client) =>
-            typeof clientId !== 'undefined'
-              ? client.id === clientId
-              : client.name === clientName
-          );
+          const clientStatus = statusResponse.status.find((client) => typeof clientId !== 'undefined' ? client.id === clientId : client.name === clientName);
 
           if (typeof clientStatus !== 'undefined') {
-            return (includeRemoved === false &&
-              clientStatus.delete_pending === '1')
+            return (includeRemoved === false && clientStatus.delete_pending === '1')
               ? defaultReturnValue
               : [clientStatus];
           } else {
@@ -994,9 +899,7 @@ class UrbackupServer {
       const usageResponse = await this.#fetchJson('usage');
 
       if (Array.isArray(usageResponse?.usage)) {
-        if (
-          typeof clientId === 'undefined' && typeof clientName === 'undefined'
-        ) {
+        if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
           return usageResponse.usage;
         } else {
           let mappedClientName;
@@ -1039,9 +942,7 @@ class UrbackupServer {
    * server.getActivities({clientName: 'laptop1', includeCurrent: true, includePast: true}).then(data => console.log(data));
    * server.getActivities({clientId: '3', includeCurrent: true, includePast: true}).then(data => console.log(data));
    */
-  async getActivities(
-    { clientId, clientName, includeCurrent = true, includePast = false } = {}
-  ) {
+  async getActivities({ clientId, clientName, includeCurrent = true, includePast = false } = {}) {
     const returnValue = { current: [], past: [] };
 
     if (clientName === '') {
@@ -1057,29 +958,21 @@ class UrbackupServer {
     if (login === true) {
       const activitiesResponse = await this.#fetchJson('progress');
 
-      if (
-        Array.isArray(activitiesResponse?.progress) &&
-        Array.isArray(activitiesResponse?.lastacts)
-      ) {
+      if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
         if (includeCurrent === true) {
-          if (
-            typeof clientId === 'undefined' && typeof clientName === 'undefined'
-          ) {
+          if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
             returnValue.current = activitiesResponse.progress;
           } else {
-            returnValue.current = activitiesResponse.progress.filter(
-              (activity) =>
-                typeof clientId !== 'undefined'
-                  ? activity.clientid === clientId
-                  : activity.name === clientName
+            returnValue.current = activitiesResponse.progress.filter((activity) =>
+              typeof clientId !== 'undefined'
+                ? activity.clientid === clientId
+                : activity.name === clientName
             );
           }
         }
 
         if (includePast === true) {
-          if (
-            typeof clientId === 'undefined' && typeof clientName === 'undefined'
-          ) {
+          if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
             returnValue.past = activitiesResponse.lastacts;
           } else {
             returnValue.past = activitiesResponse.lastacts.filter((activity) =>
@@ -1113,13 +1006,8 @@ class UrbackupServer {
    * server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data));
    */
   async stopActivity({ clientId, clientName, activityId } = {}) {
-    if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0
-    ) {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0) {
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -1130,25 +1018,14 @@ class UrbackupServer {
 
     if (login === true) {
       let mappedClientId;
-      if (
-        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
-      ) {
+      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if (
-        (typeof clientId !== 'undefined' && clientId > 0) ||
-        (typeof mappedClientId !== 'undefined' && mappedClientId > 0)
-      ) {
-        const activitiesResponse = await this.#fetchJson('progress', {
-          stop_clientid: clientId ?? mappedClientId,
-          stop_id: activityId
-        });
+      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+        const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? mappedClientId, stop_id: activityId });
 
-        if (
-          Array.isArray(activitiesResponse?.progress) &&
-          Array.isArray(activitiesResponse?.lastacts)
-        ) {
+        if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
           return true;
         } else {
           throw new Error('API response error: missing values');
@@ -1178,22 +1055,9 @@ class UrbackupServer {
    * @example <caption>Get file backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
    */
-  async getBackups(
-    {
-      clientId,
-      clientName,
-      includeFileBackups = true,
-      includeImageBackups = true
-    } = {}
-  ) {
-    if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      clientId <= 0 ||
-      (includeFileBackups === false && includeImageBackups === false)
-    ) {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+  async getBackups({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || (includeFileBackups === false && includeImageBackups === false)) {
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const returnValue = { file: [], image: [] };
@@ -1207,25 +1071,14 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (
-        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
-      ) {
+      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if (
-        (typeof clientId !== 'undefined' && clientId > 0) ||
-        (typeof mappedClientId !== 'undefined' && mappedClientId > 0)
-      ) {
-        const backupsResponse = await this.#fetchJson('backups', {
-          sa: 'backups',
-          clientid: clientId ?? mappedClientId
-        });
+      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+        const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId ?? mappedClientId });
 
-        if (
-          Array.isArray(backupsResponse?.backup_images) &&
-          Array.isArray(backupsResponse?.backups)
-        ) {
+        if (Array.isArray(backupsResponse?.backup_images) && Array.isArray(backupsResponse?.backups)) {
           if (includeFileBackups === true) {
             returnValue.file = backupsResponse.backups;
           }
@@ -1261,13 +1114,8 @@ class UrbackupServer {
   async #startBackupCommon({ clientId, clientName, backupType } = {}) {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
-    if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      clientId <= 0 || !backupTypes.includes(backupType)
-    ) {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || !backupTypes.includes(backupType)) {
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -1278,27 +1126,14 @@ class UrbackupServer {
 
     if (login === true) {
       let mappedClientId;
-      if (
-        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
-      ) {
+      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if (
-        (typeof clientId !== 'undefined' && clientId > 0) ||
-        (typeof mappedClientId !== 'undefined' && mappedClientId > 0)
-      ) {
-        const backupResponse = await this.#fetchJson('start_backup', {
-          start_client: clientId ?? mappedClientId,
-          start_type: backupType
-        });
+      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+        const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId ?? mappedClientId, start_type: backupType });
 
-        if (
-          Array.isArray(backupResponse.result) &&
-          backupResponse.result.filter((element) =>
-            Object.keys(element).includes('start_ok')
-          ).length !== 1
-        ) {
+        if (Array.isArray(backupResponse.result) && backupResponse.result.filter((element) => Object.keys(element).includes('start_ok')).length !== 1) {
           return !!backupResponse.result[0].start_ok;
         } else {
           throw new Error('API response error: missing values');
@@ -1422,9 +1257,7 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (
-        typeof clientId === 'undefined' && typeof clientName !== 'undefined'
-      ) {
+      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
       }
 
@@ -1472,9 +1305,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const settingsResponse = await this.#fetchJson('settings', {
-        sa: 'general'
-      });
+      const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
 
       if (typeof settingsResponse?.settings === 'object') {
         return settingsResponse.settings;
@@ -1498,9 +1329,7 @@ class UrbackupServer {
    */
   async setGeneralSettings({ key, newValue } = {}) {
     if (typeof key === 'undefined' || typeof newValue === 'undefined') {
-      throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
-      );
+      throw new Error('The API call has failed due to missing or invalid parameters.');
     }
 
     const login = await this.#login();
@@ -1512,10 +1341,7 @@ class UrbackupServer {
         settings[key] = newValue;
         settings.sa = 'general_save';
 
-        const saveSettingsResponse = await this.#fetchJson(
-          'settings',
-          settings
-        );
+        const saveSettingsResponse = await this.#fetchJson('settings', settings);
 
         if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
           return saveSettingsResponse.saved_ok;
