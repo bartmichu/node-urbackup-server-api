@@ -18,10 +18,10 @@ class UrbackupServer {
 
   /**
    * This is a constructor.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.url] - (Optional) The URL of the server, must include the protocol, hostname, and port. If not specified, it will default to http://127.0.0.1:55414.
-   * @param {string} [params.username] - (Optional) The username used for logging in. If empty, anonymous login method will be used. The default value is an empty string.
-   * @param {string} [params.password] - (Optional) The password used to log in. The default value is an empty string.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {string} params.url - (Optional) The URL of the server, must include the protocol, hostname, and port. If not specified, it will default to http://127.0.0.1:55414.
+   * @param {string} params.username - (Optional) The username used for logging in. If empty, anonymous login method will be used. The default value is an empty string.
+   * @param {string} params.password - (Optional) The password used to log in. The default value is an empty string.
    * @example <caption>Connect to the built-in server locally without a password</caption>
    * const server = new UrbackupServer();
    * @example <caption>Connect locally with a specified password</caption>
@@ -51,7 +51,7 @@ class UrbackupServer {
    * This method is intended for internal use only and should not be called outside the class.
    * It is used to make API call to the server.
    * @param {string} action - Action.
-   * @param {object} [bodyParams] - Action parameters.
+   * @param {object} bodyParams - Action parameters.
    * @returns {object} Response body text parsed as JSON.
    * @example
    * const response = await this.#fetchJson('status');
@@ -75,7 +75,7 @@ class UrbackupServer {
     if (response?.ok === true) {
       return response.json();
     } else {
-      throw new Error('Fetch request did not end normally, response was unsuccessful (status not in the range 200-299)');
+      throw new Error('Fetch request did not end normally, response was unsuccessful (status not in the range 200-299).');
     }
   }
 
@@ -108,11 +108,12 @@ class UrbackupServer {
     let passwordHash = crypto.createHash('md5')
       .update(salt + this.#password, 'utf8')
       .digest();
-    let derivedKey;
 
+    let derivedKey;
     if (rounds > 0) {
       derivedKey = await pbkdf2Async(passwordHash);
     }
+
     passwordHash = crypto.createHash('md5')
       .update(randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash), 'utf8')
       .digest('hex');
@@ -146,12 +147,10 @@ class UrbackupServer {
           return true;
         } else {
           this.#clearLoginStatus();
-          throw new Error('Anonymous login failed');
+          throw new Error('Anonymous login failed.');
         }
       } else {
-        const saltResponse = await this.#fetchJson('salt', {
-          username: this.#username
-        });
+        const saltResponse = await this.#fetchJson('salt', { username: this.#username });
 
         if (typeof saltResponse?.salt === 'string') {
           this.#sessionId = saltResponse.ses;
@@ -162,14 +161,14 @@ class UrbackupServer {
             this.#isLoggedIn = true;
             return true;
           } else {
-            // NOTE: invalid password case
+            // NOTE: invalid password
             this.#clearLoginStatus();
-            throw new Error('Login failed: invalid username or password');
+            throw new Error('Login failed: invalid username or password.');
           }
         } else {
-          // NOTE: invalid username case
+          // NOTE: invalid username
           this.#clearLoginStatus();
-          throw new Error('Login failed: invalid username or password');
+          throw new Error('Login failed: invalid username or password.');
         }
       }
     } finally {
@@ -187,7 +186,7 @@ class UrbackupServer {
    */
   async #getClientId(clientName) {
     if (typeof clientName === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     const defaultReturnValue = 0;
@@ -207,7 +206,7 @@ class UrbackupServer {
    */
   async #getClientName(clientId) {
     if (typeof clientId === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     const defaultReturnValue = '';
@@ -228,9 +227,10 @@ class UrbackupServer {
    */
   async #getGroupId(groupName) {
     if (typeof groupName === 'undefined' || groupName === '') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
+    // TODO: resolve conflicts (compare with length?)
     const defaultReturnValue = 0;
     const groups = await this.getGroups();
     const groupId = groups.find((group) => group.name === groupName)?.id;
@@ -253,10 +253,10 @@ class UrbackupServer {
       if (typeof statusResponse?.server_identity === 'string') {
         return statusResponse.server_identity;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -275,16 +275,16 @@ class UrbackupServer {
       if (Array.isArray(usersResponse?.users)) {
         return usersResponse.users;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
   /**
    * Retrieves a list of groups.
-   * By default, UrBackup clients are added to a group id 0 with name '' (empty string).
+   * By default, UrBackup clients are added to a group ID 0 with empty name (empty string).
    * @returns {Array} An array of objects representing groups. If no groups are found, it returns an empty array.
    * @example <caption>Get all groups</caption>
    * server.getGroups().then(data => console.log(data));
@@ -298,10 +298,10 @@ class UrbackupServer {
       if (Array.isArray(settingsResponse?.navitems?.groups)) {
         return settingsResponse.navitems.groups;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -315,10 +315,11 @@ class UrbackupServer {
    */
   async addGroup({ groupName } = {}) {
     if (typeof groupName === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    // TODO: Possible UrBackup bug: server does not allow adding multiple groups with the same name, but allows '' (empty string) which is the same as default group name.
+    // TODO: Possible UrBackup bug: server does not allow adding multiple groups with the same name,
+    // but allows '' (empty string) which is the same as default group name.
     if (groupName === '') {
       return false;
     }
@@ -331,10 +332,10 @@ class UrbackupServer {
       if ('add_ok' in response || 'already_exists' in response) {
         return response?.add_ok === true;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -352,7 +353,7 @@ class UrbackupServer {
    */
   async removeGroup({ groupId, groupName } = {}) {
     if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     if (groupId === 0 || groupName === '') {
@@ -373,19 +374,20 @@ class UrbackupServer {
 
       const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
 
-      // TODO: There is a possible UrBackup bug where the server returns delete_ok:true even when attempting to delete a non-existent group ID.
+      // TODO: There is a possible UrBackup bug where the server returns delete_ok:true even when
+      // attempting to delete a non-existent group ID.
       return response?.delete_ok === true;
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
   /**
    * Retrieves a list of clients.
    * By default, this method matches all clients, including those marked for removal.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {string} [params.groupName] - (Optional) Group name, case sensitive. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups.
-   * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {string} params.groupName - (Optional) Group name, case sensitive. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups.
+   * @param {boolean} params.includeRemoved - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array} Array of objects representing clients matching search criteria. Empty array when no matching clients found.
    * @example <caption>Get all clients</caption>
    * server.getClients().then(data => console.log(data));
@@ -421,10 +423,10 @@ class UrbackupServer {
 
         return returnValue;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -438,7 +440,7 @@ class UrbackupServer {
    */
   async addClient({ clientName } = {}) {
     if (typeof clientName === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -453,10 +455,10 @@ class UrbackupServer {
       if (addClientResponse?.ok === true) {
         return addClientResponse.added_new_client === true;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -474,7 +476,7 @@ class UrbackupServer {
    */
   async #removeClientCommon({ clientId, clientName, stopRemove } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof stopRemove === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -506,10 +508,10 @@ class UrbackupServer {
           client.id === (clientId ?? mappedClientId)
         )?.delete_pending === (stopRemove === true ? '0' : '1');
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -563,10 +565,10 @@ class UrbackupServer {
       if (Array.isArray(statusResponse?.extra_clients)) {
         return statusResponse.extra_clients;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -581,7 +583,7 @@ class UrbackupServer {
    */
   async addClientHint({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     const login = await this.#login();
@@ -596,10 +598,10 @@ class UrbackupServer {
           extraClient.hostname === address
         );
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -613,7 +615,7 @@ class UrbackupServer {
    */
   async removeClientHint({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     let returnValue = false;
@@ -633,16 +635,16 @@ class UrbackupServer {
               returnValue = true;
             }
           } else {
-            throw new Error('API response error: missing values');
+            throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
           }
         }
 
         return returnValue;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -650,9 +652,9 @@ class UrbackupServer {
    * Retrieves client settings.
    * Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
    * Clients marked for removal are not excluded from the results.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
+   * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @returns {Array} An array with objects representing client settings. Returns an empty array if no matching client is found.
    * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
@@ -662,7 +664,7 @@ class UrbackupServer {
    */
   async getClientSettings({ clientId, clientName } = {}) {
     if (clientId <= 0) {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     const returnValue = [];
@@ -678,7 +680,7 @@ class UrbackupServer {
       const allClients = await this.getClients({ includeRemoved: true });
 
       if (allClients.some((client) => typeof client.id === 'undefined')) {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
 
       if (typeof clientId === 'undefined') {
@@ -693,7 +695,8 @@ class UrbackupServer {
           }
         }
       } else {
-        // NOTE: need to make sure that given clientId really exists bacause 'clientsettings' API call returns settings even when called with invalid ID.
+        // NOTE: need to make sure that given clientId really exists bacause 'clientsettings' API call
+        // returns settings even when called with invalid ID.
         if (allClients.some((client) => client.id === clientId)) {
           clientIds.push(clientId);
         }
@@ -705,13 +708,13 @@ class UrbackupServer {
         if (typeof settingsResponse?.settings === 'object') {
           returnValue.push(settingsResponse.settings);
         } else {
-          throw new Error('API response error: missing values');
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
         }
       }
 
       return returnValue;
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -732,7 +735,7 @@ class UrbackupServer {
   async setClientSettings({ clientId, clientName, key, newValue } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof key === 'undefined' || typeof newValue === 'undefined') {
       throw new Error(
-        'The API call has failed due to missing or invalid parameters.'
+        'Syntax error: missing or invalid parameters.'
       );
     }
 
@@ -759,16 +762,16 @@ class UrbackupServer {
           if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
             returnValue = saveSettingsResponse.saved_ok === true;
           } else {
-            throw new Error('API response error: missing values');
+            throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
           }
         }
 
         return returnValue;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -785,7 +788,7 @@ class UrbackupServer {
    */
   async getClientAuthkey({ clientId, clientName } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0) {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     let returnValue = '';
@@ -808,10 +811,10 @@ class UrbackupServer {
 
         return returnValue;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -819,10 +822,10 @@ class UrbackupServer {
    * Retrieves backup status.
    * Matches all clients by default, including clients marked for removal.
    * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
-   * @param {boolean} [params.includeRemoved] - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
+   * @param {boolean} params.includeRemoved - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array} Array of objects with status info for matching clients. Empty array when no matching clients found.
    * @example <caption>Get status for all clients</caption>
    * server.getStatus().then(data => console.log(data));
@@ -865,10 +868,10 @@ class UrbackupServer {
           }
         }
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -876,9 +879,9 @@ class UrbackupServer {
    * Retrieves storage usage.
    * By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
    * The use of client ID is preferred over client name for repeated method calls.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @returns {Array} Array of objects with storage usage info for each client. Empty array when no matching clients found.
    * @example <caption>Get usage for all clients</caption>
    * server.getUsage().then(data => console.log(data));
@@ -914,10 +917,10 @@ class UrbackupServer {
           ) ?? defaultReturnValue;
         }
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -925,11 +928,11 @@ class UrbackupServer {
    * Retrieves a list of current and/or past activities.
    * Matches all clients by default, but ```clientName``` or ```clientId``` can be used to request activities for one particular client.
    * By default this method returns only activities that are currently in progress and skips last activities.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
-   * @param {boolean} [params.includeCurrent] - (Optional) Whether or not currently running activities should be included. Defaults to true.
-   * @param {boolean} [params.includePast] - (Optional) Whether or not past activities should be included. Defaults to false.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {number} params.clientId - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
+   * @param {boolean} params.includeCurrent - (Optional) Whether or not currently running activities should be included. Defaults to true.
+   * @param {boolean} params.includePast - (Optional) Whether or not past activities should be included. Defaults to false.
    * @returns {object} Object with activities info in two separate arrays (one for current and one for past activities). Object with empty arrays when no matching clients/activities found.
    * @example <caption>Get current (in progress) activities for all clients</caption>
    * server.getActivities().then(data => console.log(data));
@@ -985,10 +988,10 @@ class UrbackupServer {
 
         return returnValue;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -1007,7 +1010,7 @@ class UrbackupServer {
    */
   async stopActivity({ clientId, clientName, activityId } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0) {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -1028,13 +1031,13 @@ class UrbackupServer {
         if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
           return true;
         } else {
-          throw new Error('API response error: missing values');
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
         }
       } else {
         return false;
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -1044,8 +1047,8 @@ class UrbackupServer {
    * @param {object} params - (Required) An object containing parameters.
    * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
-   * @param {boolean} [params.includeFileBackups] - (Optional) Whether or not file backups should be included. Defaults to true.
-   * @param {boolean} [params.includeImageBackups] - (Optional) Whether or not image backups should be included. Defaults to true.
+   * @param {boolean} params.includeFileBackups - (Optional) Whether or not file backups should be included. Defaults to true.
+   * @param {boolean} params.includeImageBackups - (Optional) Whether or not image backups should be included. Defaults to true.
    * @returns {object} Object with backups info. Object with empty arrays when no matching clients/backups found.
    * @example <caption>Get all backups for a specific client</caption>
    * server.getBackups({clientName: 'laptop1'}).then(data => console.log(data));
@@ -1057,7 +1060,7 @@ class UrbackupServer {
    */
   async getBackups({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || (includeFileBackups === false && includeImageBackups === false)) {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     const returnValue = { file: [], image: [] };
@@ -1089,13 +1092,13 @@ class UrbackupServer {
 
           return returnValue;
         } else {
-          throw new Error('API response error: missing values');
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
         }
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -1115,7 +1118,7 @@ class UrbackupServer {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || !backupTypes.includes(backupType)) {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     if (clientName === '') {
@@ -1136,13 +1139,13 @@ class UrbackupServer {
         if (Array.isArray(backupResponse.result) && backupResponse.result.filter((element) => Object.keys(element).includes('start_ok')).length !== 1) {
           return !!backupResponse.result[0].start_ok;
         } else {
-          throw new Error('API response error: missing values');
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
         }
       } else {
         return false;
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -1232,10 +1235,10 @@ class UrbackupServer {
    * Instance property is being used internally to keep track of log entries that were previously requested.
    * When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
    * The use of client ID is preferred over client name for repeated method calls.
-   * @param {object} [params] - (Optional) An object containing parameters.
-   * @param {number} [params.clientId] - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined.
-   * @param {string} [params.clientName] - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientName``` is also undefined.
-   * @param {boolean} [params.recentOnly] - (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false.
+   * @param {object} params - (Optional) An object containing parameters.
+   * @param {number} params.clientId - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined.
+   * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientName``` is also undefined.
+   * @param {boolean} params.recentOnly - (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false.
    * @returns {Array} Array of objects representing log entries. Empty array when no matching clients or logs found.
    * @example <caption>Get server logs</caption>
    * server.getLiveLog().then(data => console.log(data));
@@ -1283,7 +1286,7 @@ class UrbackupServer {
 
           returnValue = logResponse.logdata;
         } else {
-          throw new Error('API response error: missing values');
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
         }
       } finally {
         release();
@@ -1291,7 +1294,7 @@ class UrbackupServer {
 
       return returnValue;
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -1310,10 +1313,10 @@ class UrbackupServer {
       if (typeof settingsResponse?.settings === 'object') {
         return settingsResponse.settings;
       } else {
-        throw new Error('API response error: missing values');
+        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 
@@ -1329,7 +1332,7 @@ class UrbackupServer {
    */
   async setGeneralSettings({ key, newValue } = {}) {
     if (typeof key === 'undefined' || typeof newValue === 'undefined') {
-      throw new Error('The API call has failed due to missing or invalid parameters.');
+      throw new Error('Syntax error: missing or invalid parameters.');
     }
 
     const login = await this.#login();
@@ -1346,13 +1349,13 @@ class UrbackupServer {
         if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
           return saveSettingsResponse.saved_ok;
         } else {
-          throw new Error('API response error: missing values');
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
         }
       } else {
         return false;
       }
     } else {
-      throw new Error('Login failed: unknown reason');
+      throw new Error('Login failed: unknown reason.');
     }
   }
 }
