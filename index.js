@@ -239,6 +239,28 @@ class UrbackupServer {
   }
 
   /**
+   * This method is intended for internal use only and should not be called outside the class.
+   * It is used to map group ID to group name.
+   * WARNING: The return value can potentially conflict with the default group name, which is also set to '' (empty string).
+   * @param {string} groupId - Group ID. Must have a value different from 0, which is the default group ID.
+   * @returns {string} Group name. When no matching groups are found returns '' (empty string), which may conflict with the default group name.
+   * @example
+   * groupId = await this.#getGroupName(2);
+   */
+  async #getGroupName(groupId) {
+    if (typeof groupId === 'undefined' || groupId === 0) {
+      throw new Error('Syntax error: missing or invalid parameters.');
+    }
+
+    // TODO: Resolve conflicts
+    const defaultReturnValue = '';
+    const groups = await this.getGroups();
+    const groupName = groups.find((group) => group.id === groupId)?.name;
+
+    return typeof groupName === 'undefined' ? defaultReturnValue : groupName;
+  }
+
+  /**
    * Retrieves server identity.
    * @returns {string} Server identity.
    * @example <caption>Get server identity</caption>
