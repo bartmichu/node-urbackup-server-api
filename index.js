@@ -161,12 +161,12 @@ class UrbackupServer {
             this.#isLoggedIn = true;
             return true;
           } else {
-            // NOTE: invalid password
+            // NOTE: Invalid password
             this.#clearLoginStatus();
             throw new Error('Login failed: invalid username or password.');
           }
         } else {
-          // NOTE: invalid username
+          // NOTE: Invalid username
           this.#clearLoginStatus();
           throw new Error('Login failed: invalid username or password.');
         }
@@ -221,7 +221,7 @@ class UrbackupServer {
    * It is used to map group name to group ID.
    * WARNING: The return value can potentially conflict with the default group ID, which is also set to 0 (zero).
    * @param {string} groupName - Group name. Must have a value different from an empty string, which is the default group name.
-   * @returns {number} Group ID. When no matching clients are found, the group ID defaults to 0 (zero), which may conflict with the default group ID.
+   * @returns {number} Group ID. When no matching groups are found returns 0 (zero), which may conflict with the default group ID.
    * @example
    * groupId = await this.#getGroupId('hr');
    */
@@ -230,7 +230,7 @@ class UrbackupServer {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    // TODO: resolve conflicts (compare with length?)
+    // TODO: Resolve conflicts (compare with length?)
     const defaultReturnValue = 0;
     const groups = await this.getGroups();
     const groupId = groups.find((group) => group.name === groupName)?.id;
@@ -284,7 +284,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of groups.
-   * By default, UrBackup clients are added to a group ID 0 with empty name (empty string).
+   * By default, UrBackup are added to a group ID 0 with empty name (empty string).
    * @returns {Array} An array of objects representing groups. If no groups are found, it returns an empty array.
    * @example <caption>Get all groups</caption>
    * server.getGroups().then(data => console.log(data));
@@ -308,7 +308,7 @@ class UrbackupServer {
   /**
    * Adds a new group.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {string} params.groupName - (Required) The group name, case-sensitive. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
+   * @param {string} params.groupName - (Required) The group name, case-sensitive. Must be unique and and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
    * @returns {boolean} When successful, a Boolean value of true is returned. If the group already exists, or adding the group was not successful for any reason, then a Boolean value of false is returned.
    * @example <caption>Add new group</caption>
    * server.addGroup({groupName: 'prod'}).then(data => console.log(data));
@@ -318,8 +318,8 @@ class UrbackupServer {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    // TODO: Possible UrBackup bug: server does not allow adding multiple groups with the same name,
-    // but allows '' (empty string) which is the same as default group name.
+    // NOTE: Fail early due to a possible UrBackup bug (server does not allow adding multiple groups with the same name,
+    // but allows '' (empty string) which is the same as default group name)
     if (groupName === '') {
       return false;
     }
@@ -375,7 +375,7 @@ class UrbackupServer {
       const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
 
       // TODO: There is a possible UrBackup bug where the server returns delete_ok:true even when
-      // attempting to delete a non-existent group ID.
+      // attempting to delete a non-existent group ID
       return response?.delete_ok === true;
     } else {
       throw new Error('Login failed: unknown reason.');
@@ -695,8 +695,8 @@ class UrbackupServer {
           }
         }
       } else {
-        // NOTE: need to make sure that given clientId really exists bacause 'clientsettings' API call
-        // returns settings even when called with invalid ID.
+        // NOTE: Need to make sure that given clientId really exists bacause 'clientsettings' API call
+        // settings even when called with invalid ID
         if (allClients.some((client) => client.id === clientId)) {
           clientIds.push(clientId);
         }
@@ -907,7 +907,7 @@ class UrbackupServer {
         } else {
           let mappedClientName;
           if (typeof clientId !== 'undefined') {
-            // usage response does not contain a property with client ID so translation to client name is needed
+            // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
             mappedClientName = await this.#getClientName(clientId);
           }
           return usageResponse.usage.find((client) =>
@@ -1265,11 +1265,12 @@ class UrbackupServer {
       }
 
       if (clientId === 0 || mappedClientId === 0) {
-        // fail early to distinguish this case bacause 0 (zero) is a valid parameter value for 'livelog' call which should be used when both clientId and clientName are undefined
+        // NOTE: Fail early to distinguish this case bacause 0 (zero) is a valid parameter value
+        // for 'livelog' call which should be used when both clientId and clientName are undefined
         return returnValue;
       }
 
-      // Use semaphore to prevent race condition with this.#lastLogId
+      // NOTE: Use semaphore to prevent race condition with this.#lastLogId
       // eslint-disable-next-line no-unused-vars
       const [value, release] = await this.#semaphore.acquire();
       try {
