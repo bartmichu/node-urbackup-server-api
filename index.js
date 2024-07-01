@@ -368,7 +368,7 @@ class UrbackupServer {
    * @param {object} params - (Required) An object containing parameters.
    * @param {number} params.groupId - (Required if groupName is undefined) Group ID. Must be greater than 0. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
    * @param {string} params.groupName - (Required if groupId is undefined) Group name, case sensitive. Must be different than '' (empty string). Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
-   * @returns {boolean} When the removal is successful, the method returns a Boolean value of true. If the removal is not successful, the method returns a Boolean value of false. However, there is a known UrBackup bug where it returns true even when called with a non-existent groupId.
+   * @returns {boolean} When the removal is successful, the method returns a Boolean value of true. If the removal is not successful, the method returns a Boolean value of false.
    * @example <caption>Remove group</caption>
    * server.removeGroup({groupId: 1}).then(data => console.log(data));
    * server.removeGroup({groupName: 'prod'}).then(data => console.log(data));
@@ -392,12 +392,16 @@ class UrbackupServer {
         if (mappedGroupId === 0) {
           return false;
         }
+      } else {
+        // NOTE: Fail early due to a possible UrBackup bug where the server returns delete_ok:true even when
+        // attempting to delete a non-existent group ID
+        let mappedGroupName = await this.#getGroupName(groupId);
+        if (mappedGroupName === '') {
+          return false;
+        }
       }
 
       const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
-
-      // TODO: There is a possible UrBackup bug where the server returns delete_ok:true even when
-      // attempting to delete a non-existent group ID
       return response?.delete_ok === true;
     } else {
       throw new Error('Login failed: unknown reason.');
