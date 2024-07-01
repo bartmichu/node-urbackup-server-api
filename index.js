@@ -306,7 +306,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of groups.
-   * By default, UrBackup are added to a group ID 0 with empty name (empty string).
+   * By default, UrBackup clients are added to a group ID 0 with empty name (empty string).
    * @returns {Array} An array of objects representing groups. If no groups are found, it returns an empty array.
    * @example <caption>Get all groups</caption>
    * server.getGroups().then(data => console.log(data));
@@ -330,7 +330,7 @@ class UrbackupServer {
   /**
    * Adds a new group.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {string} params.groupName - (Required) The group name, case-sensitive. Must be unique and and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
+   * @param {string} params.groupName - (Required) The group name, case-sensitive. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
    * @returns {boolean} When successful, a Boolean value of true is returned. If the group already exists, or adding the group was not successful for any reason, then a Boolean value of false is returned.
    * @example <caption>Add new group</caption>
    * server.addGroup({groupName: 'prod'}).then(data => console.log(data));

@@ -46,7 +46,7 @@ const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'ad
 ## UrbackupServer
 Represents a UrBackup Server.
 
-**Kind**: global class
+**Kind**: global class  
 
 * [UrbackupServer](#UrbackupServer)
     * [new UrbackupServer(params)](#new_UrbackupServer_new)
@@ -148,7 +148,7 @@ Adds a new group.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.groupName | <code>string</code> | (Required) The group name, case-sensitive. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined. |
+| params.groupName | <code>string</code> | (Required) The group name, case-sensitive. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined. |
 
 **Example** *(Add new group)*  
 ```js
@@ -162,7 +162,7 @@ All clients in this group will be re-assigned to the default group.
 The use of group ID is preferred over group name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>boolean</code> - When the removal is successful, the method returns a Boolean value of true. If the removal is not successful, the method returns a Boolean value of false. However, there is a known UrBackup bug where it returns true even when called with a non-existent groupId.  
+**Returns**: <code>boolean</code> - When the removal is successful, the method returns a Boolean value of true. If the removal is not successful, the method returns a Boolean value of false.  
 
 | Param | Type | Description |
 | --- | --- | --- |
