@@ -4,7 +4,7 @@ Node.js wrapper for [UrBackup](https://www.urbackup.org/) server web API.
 
 You can use it to interact with UrBackup server installed locally or over the network. It allows you to view and modify settings, add or remove clients, get information about running tasks, clients status, backup jobs, start or stop backups and more.
 
-*Please note that this code is still a work in progress - some functionality is missing, but non-private method signatures are unlikely to change.*
+*Please note that this code is still a work in progress - some functionality is missing. Non-private method signatures are unlikely to change but it is possible. Please read the CHANGELOG.txt before updating to prepare for possible breaking changes.*
 
 Requirements:
 - Active LTS or Maintenance LTS version of Node.js (<https://nodejs.org/en/about/previous-releases>)
@@ -157,8 +157,8 @@ server.addGroup({groupName: 'prod'}).then(data => console.log(data));
 <a name="UrbackupServer+removeGroup"></a>
 
 ### urbackupServer.removeGroup(params) ⇒ <code>boolean</code>
-Removes group.
-All clients in this group will be re-assigned to the default group.
+Removes the group.
+All clients in this group will be reassigned to the default group. Does not allow removal of the default group (ID: 0, name: '').
 The use of group ID is preferred over group name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
@@ -233,7 +233,7 @@ WARNING: Removing clients will also delete all their backups stored on the UrBac
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID, which must be greater than 0. If both clientId and clientName are defined, the ID takes precedence. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. If both clientId and clientName are defined, the ID takes precedence. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Remove client)*  
@@ -253,7 +253,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Stop the server from removing a client by ID)*  
@@ -323,7 +323,7 @@ Clients marked for removal are not excluded from the results.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Optional) An object containing parameters. |
-| params.clientId | <code>number</code> | (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
+| params.clientId | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 | params.clientName | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 
 **Example** *(Get settings for all clients)*  
@@ -348,7 +348,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.key | <code>string</code> | (Required) Settings element to change. Defaults to undefined. |
 | params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | (Required) New value for settings element. Defaults to undefined. |
@@ -370,7 +370,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Get authentication key for a specific client)*  
@@ -391,7 +391,7 @@ Client name or client ID can be passed as an argument in which case only that on
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Optional) An object containing parameters. |
-| params.clientId | <code>number</code> | (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| params.clientId | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 | params.clientName | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 | params.includeRemoved | <code>boolean</code> | (Optional) Whether or not clients pending deletion should be included. Defaults to true. |
 
@@ -421,7 +421,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Optional) An object containing parameters. |
-| params.clientId | <code>number</code> | (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
+| params.clientId | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined. |
 | params.clientName | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined. |
 
 **Example** *(Get usage for all clients)*  
@@ -482,7 +482,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.activityId | <code>number</code> | (Required) Activity ID. Defaults to undefined. |
 
@@ -503,7 +503,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.includeFileBackups | <code>boolean</code> | (Optional) Whether or not file backups should be included. Defaults to true. |
 | params.includeImageBackups | <code>boolean</code> | (Optional) Whether or not image backups should be included. Defaults to true. |
@@ -533,7 +533,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -553,7 +553,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -573,7 +573,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -593,7 +593,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Required) An object containing parameters. |
-| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
+| params.clientId | <code>number</code> | (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 | params.clientName | <code>string</code> | (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined. |
 
 **Example** *(Start backup)*  
@@ -616,7 +616,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | (Optional) An object containing parameters. |
-| params.clientId | <code>number</code> | (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined. |
+| params.clientId | <code>number</code> | (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined. |
 | params.clientName | <code>string</code> | (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientName``` is also undefined. |
 | params.recentOnly | <code>boolean</code> | (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false. |
 
