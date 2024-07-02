@@ -55,6 +55,7 @@ Represents a UrBackup Server.
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Array</code>
     * [.addGroup(params)](#UrbackupServer+addGroup) ⇒ <code>boolean</code>
     * [.removeGroup(params)](#UrbackupServer+removeGroup) ⇒ <code>boolean</code>
+    * [.getGroupMembers(params)](#UrbackupServer+getGroupMembers) ⇒ <code>Array</code>
     * [.getClients(params)](#UrbackupServer+getClients) ⇒ <code>Array</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>boolean</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>boolean</code>
@@ -174,6 +175,30 @@ The use of group ID is preferred over group name for repeated method calls.
 ```js
 server.removeGroup({groupId: 1}).then(data => console.log(data));
 server.removeGroup({groupName: 'prod'}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getGroupMembers"></a>
+
+### urbackupServer.getGroupMembers(params) ⇒ <code>Array</code>
+Retrieves a list of clients who are members of a given group.
+This is only a convenienance method that wraps the getClients() method.
+The use of group name is preferred over group name for repeated method calls.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Array</code> - Array of objects representing clients matching search criteria. Empty array when no matching clients found.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>object</code> | (Required) An object containing parameters. |
+| params.groupId | <code>number</code> | (Required if groupName is undefined) Group ID. Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined. |
+| params.groupName | <code>string</code> | (Required if groupId is undefined) Group name, case sensitive. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined. |
+
+**Example** *(Get members of default group)*  
+```js
+server.get>GroupMembers({groupId: 0}).then(data => console.log(data));
+```
+**Example** *(Get all clients belonging to a specific group)*  
+```js
+server.getGroupMembers({groupName: 'office'}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getClients"></a>
 

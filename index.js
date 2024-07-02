@@ -408,6 +408,38 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of clients who are members of a given group.
+   * This is only a convenienance method that wraps the getClients() method.
+   * The use of group name is preferred over group name for repeated method calls.
+   * @param {object} params - (Required) An object containing parameters.
+   * @param {number} params.groupId - (Required if groupName is undefined) Group ID. Ignored if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
+   * @param {string} params.groupName - (Required if groupId is undefined) Group name, case sensitive. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
+   * @returns {Array} Array of objects representing clients matching search criteria. Empty array when no matching clients found.
+   * @example <caption>Get members of default group</caption>
+   * server.get>GroupMembers({groupId: 0}).then(data => console.log(data));
+   * @example <caption>Get all clients belonging to a specific group</caption>
+   * server.getGroupMembers({groupName: 'office'}).then(data => console.log(data));
+   */
+  async getGroupMembers({ groupId, groupName } = {}) {
+    if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
+      throw new Error('Syntax error: missing or invalid parameters.');
+    }
+
+    const fallbackReturnValue = [];
+    let mappedGroupName;
+    if (typeof groupName === 'undefined') {
+      mappedGroupName = await this.#getGroupName(groupId);
+      if (mappedGroupName === null) {
+        return fallbackReturnValue;
+      }
+    }
+
+    const returnValue = await this.getClients({ groupName: groupName ?? mappedGroupName });
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves a list of clients.
    * By default, this method matches all clients, including those marked for removal.
    * @param {object} params - (Optional) An object containing parameters.
