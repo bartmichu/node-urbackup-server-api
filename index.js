@@ -829,8 +829,8 @@ class UrbackupServer {
 
       if (Array.isArray(clientSettings)) {
         if (clientSettings.length > 0) {
-          if (typeof clientSettings[0]?.internet_authkey === 'string') {
-            returnValue = clientSettings[0].internet_authkey.toString();
+          if (typeof clientSettings[0]?.internet_authkey?.value === 'string') {
+            returnValue = clientSettings[0].internet_authkey.value.toString();
           }
         }
 
