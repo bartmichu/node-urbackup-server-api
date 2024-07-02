@@ -180,84 +180,83 @@ class UrbackupServer {
    * This method is intended for internal use only and should not be called outside the class.
    * It is used to map client name to client ID.
    * @param {string} clientName - The client's name.
-   * @returns {number} The client's ID. Numeric 0 (zero) if no matching clients are found.
+   * @returns {number | null} The client's ID or null. Null if no matching clients are found.
    * @example
    * clientId = await this.#getClientId('dbserver');
    */
   async #getClientId(clientName) {
-    if (typeof clientName === 'undefined') {
+    if (typeof clientName !== 'string') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    const defaultReturnValue = 0;
+    const fallbackReturnValue = null;
     const clients = await this.getClients({ includeRemoved: true });
     const clientId = clients.find((client) => client.name === clientName)?.id;
 
-    return typeof clientId === 'undefined' ? defaultReturnValue : clientId;
+    return typeof clientId === 'undefined' ? fallbackReturnValue : clientId;
   }
 
   /**
    * This method is intended for internal use only and should not be called outside the class.
    * It is used to map client ID to client name.
-   * @param {string} clientId - The client's ID.
-   * @returns {string} The client's name. Empty string if no matching clients are found.
+   * @param {number} clientId - The client's ID.
+   * @returns {string | null} The client's name or null. Null if no matching clients are found.
    * @example
    * clientName = await this.#getClientName('42');
    */
   async #getClientName(clientId) {
-    if (typeof clientId === 'undefined') {
+    if (typeof clientId !== 'number') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    const defaultReturnValue = '';
+    const fallbackReturnValue = null;
+
     const clients = await this.getClients({ includeRemoved: true });
     const clientName = clients.find((client) => client.id === clientId)?.name;
 
-    return typeof clientName === 'undefined' ? defaultReturnValue : clientName;
+    return typeof clientName === 'undefined' ? fallbackReturnValue : clientName;
   }
 
   /**
    * This method is intended for internal use only and should not be called outside the class.
    * It is used to map group name to group ID.
-   * WARNING: The return value can potentially conflict with the default group ID, which is also set to 0 (zero).
-   * @param {string} groupName - Group name. Must have a value different from an empty string, which is the default group name.
-   * @returns {number} Group ID. When no matching groups are found returns 0 (zero), which may conflict with the default group ID.
+   * @param {string} groupName - Group name.
+   * @returns {number | null} Group ID or null. When no matching groups are found, it returns null.
    * @example
    * groupId = await this.#getGroupId('hr');
    */
   async #getGroupId(groupName) {
-    if (typeof groupName === 'undefined' || groupName === '') {
+    if (typeof groupName !== 'string') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    // TODO: Resolve conflicts (compare with length?)
-    const defaultReturnValue = 0;
+    const fallbackReturnValue = null;
+
     const groups = await this.getGroups();
     const groupId = groups.find((group) => group.name === groupName)?.id;
 
-    return typeof groupId === 'undefined' ? defaultReturnValue : groupId;
+    return typeof groupId === 'undefined' ? fallbackReturnValue : groupId;
   }
 
   /**
    * This method is intended for internal use only and should not be called outside the class.
    * It is used to map group ID to group name.
-   * WARNING: The return value can potentially conflict with the default group name, which is also set to '' (empty string).
-   * @param {string} groupId - Group ID. Must have a value different from 0, which is the default group ID.
-   * @returns {string} Group name. When no matching groups are found returns '' (empty string), which may conflict with the default group name.
+   * @param {number} groupId - Group ID.
+   * @returns {string | null} Group name or null. When no matching groups are found, it returns null.
    * @example
    * groupId = await this.#getGroupName(2);
    */
   async #getGroupName(groupId) {
-    if (typeof groupId === 'undefined' || groupId === 0) {
+    if (typeof groupId !== 'number') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
-    // TODO: Resolve conflicts
-    const defaultReturnValue = '';
+    const fallbackReturnValue = null;
+
     const groups = await this.getGroups();
     const groupName = groups.find((group) => group.id === groupId)?.name;
 
-    return typeof groupName === 'undefined' ? defaultReturnValue : groupName;
+    return typeof groupName === 'undefined' ? fallbackReturnValue : groupName;
   }
 
   /**
@@ -362,8 +361,8 @@ class UrbackupServer {
   }
 
   /**
-   * Removes group.
-   * All clients in this group will be re-assigned to the default group.
+   * Removes the group.
+   * All clients in this group will be reassigned to the default group. Does not allow removal of the default group (ID: 0, name: '').
    * The use of group ID is preferred over group name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
    * @param {number} params.groupId - (Required if groupName is undefined) Group ID. Must be greater than 0. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
@@ -389,14 +388,14 @@ class UrbackupServer {
 
       if (typeof groupId === 'undefined') {
         mappedGroupId = await this.#getGroupId(groupName);
-        if (mappedGroupId === 0) {
+        if (mappedGroupId === 0 || mappedGroupId === null) {
           return false;
         }
       } else {
         // NOTE: Fail early due to a possible UrBackup bug where the server returns delete_ok:true even when
         // attempting to delete a non-existent group ID
         let mappedGroupName = await this.#getGroupName(groupId);
-        if (mappedGroupName === '') {
+        if (mappedGroupName === null) {
           return false;
         }
       }
@@ -493,7 +492,7 @@ class UrbackupServer {
    * It is used to mark/unmark client as ready for removal.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {boolean} params.stopRemove - {Required) Whether it's 'remove' or 'cancel remove' operation.
    * @returns {boolean} When successful, the method returns a Boolean value of true. If the operation to stop the removal was not successful, it returns false.
@@ -501,7 +500,7 @@ class UrbackupServer {
    * const removeStatus = await this.#removeClientCommon({ clientId: clientId, clientName: clientName, stopRemove: true });
    */
   async #removeClientCommon({ clientId, clientName, stopRemove } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof stopRemove === 'undefined') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || typeof stopRemove === 'undefined') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
@@ -517,7 +516,7 @@ class UrbackupServer {
 
       if (typeof clientId === 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
-        if (mappedClientId === 0) {
+        if (mappedClientId === null) {
           return returnValue;
         }
       }
@@ -547,7 +546,7 @@ class UrbackupServer {
    * The use of client ID is preferred over client name for repeated method calls.
    * WARNING: Removing clients will also delete all their backups stored on the UrBackup server.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID, which must be greater than 0. If both clientId and clientName are defined, the ID takes precedence. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. If both clientId and clientName are defined, the ID takes precedence. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, returns Boolean true. Returns Boolean false when removing was not successful.
    * @example <caption>Remove client</caption>
@@ -563,7 +562,7 @@ class UrbackupServer {
    * Unmarks the client as ready for removal.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, returns a Boolean value of true. Returns Boolean false when the stopping process was not successful.
    * @example <caption>Stop the server from removing a client by ID</caption>
@@ -679,7 +678,7 @@ class UrbackupServer {
    * Matches all clients by default, but ```clientId``` or ```clientName``` can be used to request settings for one particular client.
    * Clients marked for removal are not excluded from the results.
    * @param {object} params - (Optional) An object containing parameters.
-   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
+   * @param {number} params.clientId - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @returns {Array} An array with objects representing client settings. Returns an empty array if no matching client is found.
    * @example <caption>Get settings for all clients</caption>
@@ -689,7 +688,7 @@ class UrbackupServer {
    * server.getClientSettings({clientId: 3}).then(data => console.log(data));
    */
   async getClientSettings({ clientId, clientName } = {}) {
-    if (clientId <= 0) {
+    if (typeof clientId !== 'undefined' && typeof clientId !== 'number') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
@@ -749,7 +748,7 @@ class UrbackupServer {
    * A list of settings can be obtained with ```getClientSettings``` method.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.key - (Required) Settings element to change. Defaults to undefined.
    * @param {string|number|boolean} params.newValue - (Required) New value for settings element. Defaults to undefined.
@@ -759,7 +758,7 @@ class UrbackupServer {
    * server.setClientSettings({clientId: 3, key: 'backup_dirs_optional', newValue: true}).then(data => console.log(data));
    */
   async setClientSettings({ clientId, clientName, key, newValue } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof key === 'undefined' || typeof newValue === 'undefined') {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || typeof key === 'undefined' || typeof newValue === 'undefined') {
       throw new Error(
         'Syntax error: missing or invalid parameters.'
       );
@@ -805,7 +804,7 @@ class UrbackupServer {
    * Retrieves authentication key for a specified client.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {string} Client's authentication key. Empty string if no matching clients are found.
    * @example <caption>Get authentication key for a specific client</caption>
@@ -813,7 +812,7 @@ class UrbackupServer {
    * server.getClientAuthkey({clientId: 3}).then(data => console.log(data));
    */
   async getClientAuthkey({ clientId, clientName } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0) {
+    if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
@@ -849,7 +848,7 @@ class UrbackupServer {
    * Matches all clients by default, including clients marked for removal.
    * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
    * @param {object} params - (Optional) An object containing parameters.
-   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {number} params.clientId - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @param {boolean} params.includeRemoved - (Optional) Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Array} Array of objects with status info for matching clients. Empty array when no matching clients found.
@@ -906,7 +905,7 @@ class UrbackupServer {
    * By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Optional) An object containing parameters.
-   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
+   * @param {number} params.clientId - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientId``` is also undefined.
    * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which matches all clients if ```clientName``` is also undefined.
    * @returns {Array} Array of objects with storage usage info for each client. Empty array when no matching clients found.
    * @example <caption>Get usage for all clients</caption>
@@ -916,11 +915,7 @@ class UrbackupServer {
    * server.getUsage({clientId: 3}).then(data => console.log(data));
    */
   async getUsage({ clientId, clientName } = {}) {
-    const defaultReturnValue = [];
-
-    if (clientName === '') {
-      return defaultReturnValue;
-    }
+    const fallbackReturnValue = [];
 
     const login = await this.#login();
 
@@ -935,12 +930,15 @@ class UrbackupServer {
           if (typeof clientId !== 'undefined') {
             // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
             mappedClientName = await this.#getClientName(clientId);
+            if (mappedClientName === null) {
+              return fallbackReturnValue;
+            }
           }
           return usageResponse.usage.find((client) =>
             typeof clientId !== 'undefined'
               ? client.name === mappedClientName
               : client.name === clientName
-          ) ?? defaultReturnValue;
+          ) ?? fallbackReturnValue;
         }
       } else {
         throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
@@ -1026,7 +1024,7 @@ class UrbackupServer {
    * A list of current activities can be obtained with ```getActivities``` method.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {number} params.activityId - (Required) Activity ID. Defaults to undefined.
    * @returns {boolean} When successful, Boolean true. Boolean false when stopping was not successful.
@@ -1035,7 +1033,7 @@ class UrbackupServer {
    * server.stopActivity({clientId: 3, activityId: 42}).then(data => console.log(data));
    */
   async stopActivity({ clientId, clientName, activityId } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || typeof activityId === 'undefined' || activityId <= 0) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || typeof activityId === 'undefined' || activityId <= 0) {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
@@ -1051,7 +1049,7 @@ class UrbackupServer {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+      if ((typeof clientId !== 'undefined') || (typeof mappedClientId !== 'undefined' && mappedClientId !== null)) {
         const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? mappedClientId, stop_id: activityId });
 
         if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
@@ -1071,7 +1069,7 @@ class UrbackupServer {
    * Retrieves a list of file and/or image backups for a specific client.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {boolean} params.includeFileBackups - (Optional) Whether or not file backups should be included. Defaults to true.
    * @param {boolean} params.includeImageBackups - (Optional) Whether or not image backups should be included. Defaults to true.
@@ -1085,7 +1083,7 @@ class UrbackupServer {
    * server.getBackups({clientName: 'laptop1', includeImageBackups: false}).then(data => console.log(data));
    */
   async getBackups({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || (includeFileBackups === false && includeImageBackups === false)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (includeFileBackups === false && includeImageBackups === false)) {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
@@ -1104,7 +1102,7 @@ class UrbackupServer {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+      if ((typeof clientId !== 'undefined') || (typeof mappedClientId !== 'undefined' && mappedClientId !== null)) {
         const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId ?? mappedClientId });
 
         if (Array.isArray(backupsResponse?.backup_images) && Array.isArray(backupsResponse?.backups)) {
@@ -1133,7 +1131,7 @@ class UrbackupServer {
    * Starts a backup job.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.backupType - (Required) backup type, case sensitive. Defaults to undefined.
    * @returns {boolean} When successful, Boolean true. Boolean false when starting was not successful.
@@ -1143,7 +1141,7 @@ class UrbackupServer {
   async #startBackupCommon({ clientId, clientName, backupType } = {}) {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || clientId <= 0 || !backupTypes.includes(backupType)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || !backupTypes.includes(backupType)) {
       throw new Error('Syntax error: missing or invalid parameters.');
     }
 
@@ -1159,7 +1157,7 @@ class UrbackupServer {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if ((typeof clientId !== 'undefined' && clientId > 0) || (typeof mappedClientId !== 'undefined' && mappedClientId > 0)) {
+      if ((typeof clientId !== 'undefined') || (typeof mappedClientId !== 'undefined' && mappedClientId !== null)) {
         const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId ?? mappedClientId, start_type: backupType });
 
         if (Array.isArray(backupResponse.result) && backupResponse.result.filter((element) => Object.keys(element).includes('start_ok')).length !== 1) {
@@ -1179,7 +1177,7 @@ class UrbackupServer {
    * Starts full file backup.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, Boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1199,7 +1197,7 @@ class UrbackupServer {
    * Starts incremental file backup.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, Boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1219,7 +1217,7 @@ class UrbackupServer {
    * Starts full image backup.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, Boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1239,7 +1237,7 @@ class UrbackupServer {
    * Starts incremental image backup.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Required) An object containing parameters.
-   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Must be greater than 0. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
+   * @param {number} params.clientId - (Required if clientName is undefined) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @param {string} params.clientName - (Required if clientId is undefined) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined.
    * @returns {boolean} When successful, Boolean true. Boolean false when starting was not successful.
    * @example <caption>Start backup</caption>
@@ -1262,7 +1260,7 @@ class UrbackupServer {
    * When ```recentOnly``` is set to true, then only recent (unfetched) logs are requested.
    * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - (Optional) An object containing parameters.
-   * @param {number} params.clientId - (Optional) Client's ID. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined.
+   * @param {number} params.clientId - (Optional) Client's ID. Must be greater than zero. Takes precedence if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientId``` is also undefined.
    * @param {string} params.clientName - (Optional) Client's name, case sensitive. Ignored if both ```clientId``` and ```clientName``` are defined. Defaults to undefined, which means server logs will be requested if ```clientName``` is also undefined.
    * @param {boolean} params.recentOnly - (Optional) Whether or not only recent (unfetched) entries should be requested. Defaults to false.
    * @returns {Array} Array of objects representing log entries. Empty array when no matching clients or logs found.
@@ -1290,7 +1288,7 @@ class UrbackupServer {
         mappedClientId = await this.#getClientId(clientName);
       }
 
-      if (clientId === 0 || mappedClientId === 0) {
+      if (clientId === 0 || mappedClientId === null) {
         // NOTE: Fail early to distinguish this case bacause 0 (zero) is a valid parameter value
         // for 'livelog' call which should be used when both clientId and clientName are undefined
         return returnValue;
