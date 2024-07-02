@@ -416,7 +416,7 @@ class UrbackupServer {
    * @param {string} params.groupName - (Required if groupId is undefined) Group name, case sensitive. Takes precedence if both ```groupId``` and ```groupName``` are defined. Defaults to undefined.
    * @returns {Array} Array of objects representing clients matching search criteria. Empty array when no matching clients found.
    * @example <caption>Get members of default group</caption>
-   * server.get>GroupMembers({groupId: 0}).then(data => console.log(data));
+   * server.getGroupMembers({groupId: 0}).then(data => console.log(data));
    * @example <caption>Get all clients belonging to a specific group</caption>
    * server.getGroupMembers({groupName: 'office'}).then(data => console.log(data));
    */

@@ -194,7 +194,7 @@ The use of group name is preferred over group name for repeated method calls.
 
 **Example** *(Get members of default group)*  
 ```js
-server.get>GroupMembers({groupId: 0}).then(data => console.log(data));
+server.getGroupMembers({groupId: 0}).then(data => console.log(data));
 ```
 **Example** *(Get all clients belonging to a specific group)*  
 ```js
