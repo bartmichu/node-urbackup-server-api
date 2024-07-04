@@ -20,7 +20,7 @@ export default [
       "jsdoc/match-description": 1,
       "jsdoc/no-bad-blocks": 1,
       "jsdoc/no-blank-block-descriptions": 1,
-      "jsdoc/no-defaults": 1,
+      "jsdoc/no-defaults": 0,
       // "jsdoc/no-missing-syntax": 1,
       // "jsdoc/no-restricted-syntax": 1,
       // "jsdoc/no-types": 1,
