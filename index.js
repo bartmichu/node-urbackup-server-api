@@ -1013,35 +1013,35 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves a list of current and/or past activities.
+   * Retrieves a list of current and/or last activities.
    * Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
-   * By default, this method returns only activities that are currently in progress and skips past activities.
+   * By default, this method returns both current and last activities.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {boolean} [params.includeCurrent=true] - Whether or not currently running activities should be included. Defaults to true.
-   * @param {boolean} [params.includePast=false] - Whether or not past activities should be included. Defaults to false.
-   * @returns {Promise<object>} An object with activities info in two separate arrays (one for current and one for past activities). Returns an object with empty arrays when no matching clients/activities are found.
+   * @param {boolean} [params.includeLast=true] - Whether or not last activities should be included. Defaults to true.
+   * @returns {Promise<object>} An object with activities info in two separate arrays (one for current and one for last activities). Returns an object with empty arrays when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get current (in progress) activities for all clients</caption>
-   * server.getActivities().then(data => console.log(data));
-   * @example <caption>Get past activities for all clients</caption>
-   * server.getActivities({ includeCurrent: false, includePast: true }).then(data => console.log(data));
+   * server.getActivities({ includeLast: false }).then(data => console.log(data));
+   * @example <caption>Get last activities for all clients</caption>
+   * server.getActivities({ includeCurrent: false }).then(data => console.log(data));
    * @example <caption>Get current (in progress) activities for a specific client only</caption>
+   * server.getActivities({ clientName: 'laptop1', includeLast: false }).then(data => console.log(data));
+   * server.getActivities({ clientId: 3, includeLast: false }).then(data => console.log(data));
+   * @example <caption>Get all activities for a specific client only</caption>
    * server.getActivities({ clientName: 'laptop1' }).then(data => console.log(data));
    * server.getActivities({ clientId: 3 }).then(data => console.log(data));
-   * @example <caption>Get all activities for a specific client only</caption>
-   * server.getActivities({ clientName: 'laptop1', includeCurrent: true, includePast: true }).then(data => console.log(data));
-   * server.getActivities({ clientId: 3, includeCurrent: true, includePast: true }).then(data => console.log(data));
    */
-  async getActivities({ clientId, clientName, includeCurrent = true, includePast = false } = {}) {
-    const returnValue = { current: [], past: [] };
+  async getActivities({ clientId, clientName, includeCurrent = true, includeLast = true } = {}) {
+    const returnValue = { current: [], last: [] };
 
     if (clientName === '') {
       return returnValue;
     }
 
-    if (includeCurrent === false && includePast === false) {
+    if (includeCurrent === false && includeLast === false) {
       return returnValue;
     }
 
@@ -1063,11 +1063,11 @@ class UrbackupServer {
           }
         }
 
-        if (includePast === true) {
+        if (includeLast === true) {
           if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
-            returnValue.past = activitiesResponse.lastacts;
+            returnValue.last = activitiesResponse.lastacts;
           } else {
-            returnValue.past = activitiesResponse.lastacts.filter((activity) =>
+            returnValue.last = activitiesResponse.lastacts.filter((activity) =>
               typeof clientId !== 'undefined'
                 ? activity.clientid === clientId
                 : activity.name === clientName
@@ -1100,28 +1100,28 @@ class UrbackupServer {
    * server.getCurrentActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getCurrentActivities({ clientId, clientName } = {}) {
-    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: true, includePast: false });
+    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: true, includeLast: false });
     return returnValue.current;
   }
 
   /**
-   * Retrieves a list of past activities.
+   * Retrieves a list of last activities.
    * This is only a convenience method that wraps the `getActivities()` method.
    * Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @returns {Promise<Array>} A promise that resolves to an array of past activities. Returns an empty array when no matching clients/activities are found.
+   * @returns {Promise<Array>} A promise that resolves to an array of last activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
-   * @example <caption>Get past activities for all clients</caption>
-   * server.getPastActivities().then(data => console.log(data));
-   * @example <caption>Get past activities for a specific client only</caption>
-   * server.getPastActivities({ clientName: 'laptop1' }).then(data => console.log(data));
-   * server.getPastActivities({ clientId: 3 }).then(data => console.log(data));
+   * @example <caption>Get last activities for all clients</caption>
+   * server.getLastActivities().then(data => console.log(data));
+   * @example <caption>Get last activities for a specific client only</caption>
+   * server.getLastActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+   * server.getLastActivities({ clientId: 3 }).then(data => console.log(data));
    */
-  async getPastActivities({ clientId, clientName } = {}) {
-    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: false, includePast: true });
-    return returnValue.past;
+  async getLastActivities({ clientId, clientName } = {}) {
+    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: false, includeLast: true });
+    return returnValue.last;
   }
 
   /**
