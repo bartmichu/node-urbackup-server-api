@@ -1085,6 +1085,46 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of current (in progress) activities.
+   * This is only a convenience method that wraps the `getActivities()` method.
+   * Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
+   * @param {object} [params={}] - An object containing parameters.
+   * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @returns {Promise<Array>} A promise that resolves to an array of current activities. Returns an empty array when no matching clients/activities are found.
+   * @throws {Error} If the API response is missing values or if login fails.
+   * @example <caption>Get current activities for all clients</caption>
+   * server.getCurrentActivities().then(data => console.log(data));
+   * @example <caption>Get current activities for a specific client only</caption>
+   * server.getCurrentActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+   * server.getCurrentActivities({ clientId: 3 }).then(data => console.log(data));
+   */
+  async getCurrentActivities({ clientId, clientName } = {}) {
+    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: true, includePast: false });
+    return returnValue.current;
+  }
+
+  /**
+   * Retrieves a list of past activities.
+   * This is only a convenience method that wraps the `getActivities()` method.
+   * Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
+   * @param {object} [params={}] - An object containing parameters.
+   * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @returns {Promise<Array>} A promise that resolves to an array of past activities. Returns an empty array when no matching clients/activities are found.
+   * @throws {Error} If the API response is missing values or if login fails.
+   * @example <caption>Get past activities for all clients</caption>
+   * server.getPastActivities().then(data => console.log(data));
+   * @example <caption>Get past activities for a specific client only</caption>
+   * server.getPastActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+   * server.getPastActivities({ clientId: 3 }).then(data => console.log(data));
+   */
+  async getPastActivities({ clientId, clientName } = {}) {
+    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: false, includePast: true });
+    return returnValue.past;
+  }
+
+  /**
    * Stops one activity.
    * A list of current activities can be obtained with the `getActivities` method.
    * The use of client ID is preferred over client name for repeated method calls.
@@ -1403,6 +1443,37 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves server settings of the given category.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {string} category - Name of the settings category.
+   * @returns {Promise<object>} A promise that resolves to an object with the settings of the specified category.
+   * @throws {Error} If there is a syntax error, API response error, or login failure.
+   * @example <caption>Get general settings</caption>
+   * this.#getServerSettings('general').then(data => console.log(data));
+   */
+  async #getServerSettings(category) {
+    const validCategories = ['general', 'ldap', 'mail'];
+
+    if (typeof category === 'string' && validCategories.includes(category)) {
+      const login = await this.#login();
+
+      if (login === true) {
+        const settingsResponse = await this.#fetchJson('settings', { sa: category });
+
+        if (typeof settingsResponse?.settings === 'object') {
+          return settingsResponse.settings;
+        } else {
+          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        }
+      } else {
+        throw new Error('Login failed: unknown reason.');
+      }
+    } else {
+      throw new Error('Syntax error: invalid category name.');
+    }
+  }
+
+  /**
    * Retrieves general settings.
    * @returns {Promise<object>} A promise that resolves to an object with general settings.
    * @throws {Error} If there is an API response error or login failure.
@@ -1410,19 +1481,32 @@ class UrbackupServer {
    * server.getGeneralSettings().then(data => console.log(data));
    */
   async getGeneralSettings() {
-    const login = await this.#login();
+    const returnValue = this.#getServerSettings('general');
+    return returnValue;
+  }
 
-    if (login === true) {
-      const settingsResponse = await this.#fetchJson('settings', { sa: 'general' });
+  /**
+   * Retrieves mail settings.
+   * @returns {Promise<object>} A promise that resolves to an object with mail settings.
+   * @throws {Error} If there is an API response error or login failure.
+   * @example <caption>Get mail settings</caption>
+   * server.getMailSettings().then(data => console.log(data));
+   */
+  async getMailSettings() {
+    const returnValue = this.#getServerSettings('mail');
+    return returnValue;
+  }
 
-      if (typeof settingsResponse?.settings === 'object') {
-        return settingsResponse.settings;
-      } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
-      }
-    } else {
-      throw new Error('Login failed: unknown reason.');
-    }
+  /**
+   * Retrieves LDAP settings.
+   * @returns {Promise<object>} A promise that resolves to an object with LDAP settings.
+   * @throws {Error} If there is an API response error or login failure.
+   * @example <caption>Get LDAP settings</caption>
+   * server.getLdapSettings().then(data => console.log(data));
+   */
+  async getLdapSettings() {
+    const returnValue = this.#getServerSettings('ldap');
+    return returnValue;
   }
 
   /**

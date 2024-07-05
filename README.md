@@ -86,6 +86,8 @@ Represents a UrBackup Server.
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Promise.&lt;object&gt;</code>
+    * [.getCurrentActivities([params])](#UrbackupServer+getCurrentActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
+    * [.getPastActivities([params])](#UrbackupServer+getPastActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.stopActivity(params)](#UrbackupServer+stopActivity) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.startFullFileBackup(params)](#UrbackupServer+startFullFileBackup) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -94,6 +96,8 @@ Represents a UrBackup Server.
     * [.startIncrementalImageBackup(params)](#UrbackupServer+startIncrementalImageBackup) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getLiveLog([params])](#UrbackupServer+getLiveLog) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.getGeneralSettings()](#UrbackupServer+getGeneralSettings) ⇒ <code>Promise.&lt;object&gt;</code>
+    * [.getMailSettings()](#UrbackupServer+getMailSettings) ⇒ <code>Promise.&lt;object&gt;</code>
+    * [.getLdapSettings()](#UrbackupServer+getLdapSettings) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.setGeneralSettings(params)](#UrbackupServer+setGeneralSettings) ⇒ <code>Promise.&lt;boolean&gt;</code>
 
 <a name="new_UrbackupServer_new"></a>
@@ -590,6 +594,64 @@ server.getActivities({ clientId: 3 }).then(data => console.log(data));
 server.getActivities({ clientName: 'laptop1', includeCurrent: true, includePast: true }).then(data => console.log(data));
 server.getActivities({ clientId: 3, includeCurrent: true, includePast: true }).then(data => console.log(data));
 ```
+<a name="UrbackupServer+getCurrentActivities"></a>
+
+### urbackupServer.getCurrentActivities([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
+Retrieves a list of current (in progress) activities.
+This is only a convenience method that wraps the `getActivities()` method.
+Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array&gt;</code> - A promise that resolves to an array of current activities. Returns an empty array when no matching clients/activities are found.  
+**Throws**:
+
+- <code>Error</code> If the API response is missing values or if login fails.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
+| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+
+**Example** *(Get current activities for all clients)*  
+```js
+server.getCurrentActivities().then(data => console.log(data));
+```
+**Example** *(Get current activities for a specific client only)*  
+```js
+server.getCurrentActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+server.getCurrentActivities({ clientId: 3 }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getPastActivities"></a>
+
+### urbackupServer.getPastActivities([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
+Retrieves a list of past activities.
+This is only a convenience method that wraps the `getActivities()` method.
+Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array&gt;</code> - A promise that resolves to an array of past activities. Returns an empty array when no matching clients/activities are found.  
+**Throws**:
+
+- <code>Error</code> If the API response is missing values or if login fails.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
+| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+
+**Example** *(Get past activities for all clients)*  
+```js
+server.getPastActivities().then(data => console.log(data));
+```
+**Example** *(Get past activities for a specific client only)*  
+```js
+server.getPastActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+server.getPastActivities({ clientId: 3 }).then(data => console.log(data));
+```
 <a name="UrbackupServer+stopActivity"></a>
 
 ### urbackupServer.stopActivity(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -808,6 +870,36 @@ Retrieves general settings.
 **Example** *(Get general settings)*  
 ```js
 server.getGeneralSettings().then(data => console.log(data));
+```
+<a name="UrbackupServer+getMailSettings"></a>
+
+### urbackupServer.getMailSettings() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves mail settings.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to an object with mail settings.  
+**Throws**:
+
+- <code>Error</code> If there is an API response error or login failure.
+
+**Example** *(Get mail settings)*  
+```js
+server.getMailSettings().then(data => console.log(data));
+```
+<a name="UrbackupServer+getLdapSettings"></a>
+
+### urbackupServer.getLdapSettings() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves LDAP settings.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to an object with LDAP settings.  
+**Throws**:
+
+- <code>Error</code> If there is an API response error or login failure.
+
+**Example** *(Get LDAP settings)*  
+```js
+server.getLdapSettings().then(data => console.log(data));
 ```
 <a name="UrbackupServer+setGeneralSettings"></a>
 

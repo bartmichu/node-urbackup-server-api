@@ -8,6 +8,9 @@ Breaking Changes
 
 Notable Changes
 
+  - 0.22.0
+    - Added following methods: `getCurrentActivities()`, `getPastActivities()`, `getMailSettings()`, `getLdapSettings()`.
+
   - 0.21.0
     - Added `getGroupMembers()` method.
 
