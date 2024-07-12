@@ -431,7 +431,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} [params.groupId] - Group ID. Ignored if both `groupId` and `groupName` are defined.
    * @param {string} [params.groupName] - Group name. Takes precedence if both `groupId` and `groupName` are defined.
-   * @returns {Promise<Array<object>>} An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
    * @throws {Error} If both `groupId` and `groupName` are missing or invalid.
    * @example <caption>Get members of default group</caption>
    * server.getGroupMembers({ groupId: 0 }).then(data => console.log(data));
@@ -463,7 +463,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.groupName] - Group name. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
-   * @returns {Promise<Array<object>>} An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all clients</caption>
    * server.getClients().then(data => console.log(data));
@@ -508,7 +508,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of clients marked for removal.
-   * @returns {Promise<Array<object>>} An array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get clients marked for removal</caption>
    * server.getRemovedClients().then(data => console.log(data));
