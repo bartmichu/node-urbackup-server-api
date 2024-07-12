@@ -507,6 +507,26 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of clients marked for removal.
+   * @returns {Promise<Array<object>>} An array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get clients marked for removal</caption>
+   * server.getRemovedClients().then(data => console.log(data));
+   */
+  async getRemovedClients() {
+    const removedClients = [];
+    const allClients = await this.getClients({ includeRemoved: true });
+
+    allClients.forEach(client => {
+      if (client.deletePending === '1') {
+        removedClients.push(client);
+      }
+    });
+
+    return removedClients;
+  }
+
+  /**
    * Adds a new client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.clientName - The client's name.
