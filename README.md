@@ -33,6 +33,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ### Notable Changes
 
+  - 0.31.0
+    - Added following methods: `getOnlineClients()`, `getOfflineClients()`, `getRemovedClients()`, `getPausedActivities()`.
+
   - 0.30.0
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
     - Defaults change for `getActivities()` method: previously, it returned only current activities by default. Now, both current and last activities are included.
@@ -103,6 +106,9 @@ Represents a UrBackup Server.
     * [.removeGroup(params)](#UrbackupServer+removeGroup) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getGroupMembers(params)](#UrbackupServer+getGroupMembers) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getRemovedClients()](#UrbackupServer+getRemovedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getOnlineClients([params])](#UrbackupServer+getOnlineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getOfflineClients([params])](#UrbackupServer+getOfflineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -117,6 +123,7 @@ Represents a UrBackup Server.
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getCurrentActivities([params])](#UrbackupServer+getCurrentActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.getLastActivities([params])](#UrbackupServer+getLastActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
+    * [.getPausedActivities([params])](#UrbackupServer+getPausedActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.stopActivity(params)](#UrbackupServer+stopActivity) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getBackups(params)](#UrbackupServer+getBackups) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.startFullFileBackup(params)](#UrbackupServer+startFullFileBackup) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -252,7 +259,7 @@ Retrieves a list of clients who are members of a given group.
 This is only a convenience method that wraps the `getClients()` method.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.  
 **Throws**:
 
 - <code>Error</code> If both `groupId` and `groupName` are missing or invalid.
@@ -279,7 +286,7 @@ Retrieves a list of clients.
 By default, this method matches all clients, including those marked for removal.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.  
 **Throws**:
 
 - <code>Error</code> If the login fails or the API response is missing expected values.
@@ -302,6 +309,67 @@ server.getClients({ includeRemoved: false }).then(data => console.log(data));
 **Example** *(Get all clients belonging to a specific group)*  
 ```js
 server.getClients({ groupName: 'office' }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getRemovedClients"></a>
+
+### urbackupServer.getRemovedClients() ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of clients marked for removal.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+**Example** *(Get clients marked for removal)*  
+```js
+server.getRemovedClients().then(data => console.log(data));
+```
+<a name="UrbackupServer+getOnlineClients"></a>
+
+### urbackupServer.getOnlineClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of online clients.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(Get all online clients)*  
+```js
+server.getOnlineClients().then(data => console.log(data));
+```
+<a name="UrbackupServer+getOfflineClients"></a>
+
+### urbackupServer.getOfflineClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of offline clients.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(Get all offline clients)*  
+```js
+server.getOfflineClients().then(data => console.log(data));
+```
+**Example** *(Get offline clients, skip clients marked for removal)*  
+```js
+server.getOfflineClients({includeRemoved: false}).then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClient"></a>
 
@@ -552,7 +620,7 @@ server.getStatus({ clientId: 3 }).then(data => console.log(data));
 
 ### urbackupServer.getUsage([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
 Retrieves storage usage.
-By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
+By default, it matches all clients, but you can use `clientName` or `clientId` to request usage for one particular client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;Array&gt;</code> - A promise that resolves to an array of objects with storage usage info for each client. Resolves to an empty array if no matching clients are found.  
@@ -673,6 +741,34 @@ server.getLastActivities().then(data => console.log(data));
 ```js
 server.getLastActivities({ clientName: 'laptop1' }).then(data => console.log(data));
 server.getLastActivities({ clientId: 3 }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getPausedActivities"></a>
+
+### urbackupServer.getPausedActivities([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
+Retrieves a list of paused activities.
+Matches all clients by default, but `clientName` or `clientId` can be used to request paused activities for a particular client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array&gt;</code> - A promise that resolves to an array of paused activities. Returns an empty array when no matching clients/activities are found.  
+**Throws**:
+
+- <code>Error</code> If the API response is missing values or if login fails.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
+| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+
+**Example** *(Get all paused activities)*  
+```js
+server.getPausedActivities().then(data => console.log(data));
+```
+**Example** *(Get paused activities for a specific client only)*  
+```js
+server.getPausedActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+server.getPausedActivities({ clientId: 3 }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+stopActivity"></a>
 
@@ -840,7 +936,7 @@ server.startIncrementalImageBackup({ clientId: 3 }).then(data => console.log(dat
 
 ### urbackupServer.getLiveLog([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
 Retrieves live logs.
-Server logs are requested by default, but `clientName` or `clientId` can be used to request logs for a particular client.
+Server logs are requested by default, but `clientName` or `clientId` can be used to request logs for one particular client.
 Instance property is used internally to keep track of log entries that were previously requested.
 When `recentOnly` is set to true, only recent (unfetched) logs are requested.
 
