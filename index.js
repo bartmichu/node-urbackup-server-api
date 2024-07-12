@@ -958,7 +958,7 @@ class UrbackupServer {
 
   /**
    * Retrieves storage usage.
-   * By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
+   * By default, it matches all clients, but you can use `clientName` or `clientId` to request usage for one particular client.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
@@ -1114,6 +1114,33 @@ class UrbackupServer {
   async getLastActivities({ clientId, clientName } = {}) {
     const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: false, includeLast: true });
     return returnValue.last;
+  }
+
+  /**
+   * Retrieves a list of paused activities.
+   * Matches all clients by default, but `clientName` or `clientId` can be used to request paused activities for a particular client.
+   * @param {object} [params={}] - An object containing parameters.
+   * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @returns {Promise<Array>} A promise that resolves to an array of paused activities. Returns an empty array when no matching clients/activities are found.
+   * @throws {Error} If the API response is missing values or if login fails.
+   * @example <caption>Get all paused activities</caption>
+   * server.getPausedActivities().then(data => console.log(data));
+   * @example <caption>Get paused activities for a specific client only</caption>
+   * server.getPausedActivities({ clientName: 'laptop1' }).then(data => console.log(data));
+   * server.getPausedActivities({ clientId: 3 }).then(data => console.log(data));
+   */
+  async getPausedActivities({ clientId, clientName } = {}) {
+    const pausedActivities = [];
+    const activities = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: true, includeLast: false });
+
+    activities.current.forEach(activity => {
+      if (activity.paused === true) {
+        pausedActivities.push(activity);
+      }
+    });
+
+    return pausedActivities;
   }
 
   /**
@@ -1358,7 +1385,7 @@ class UrbackupServer {
 
   /**
    * Retrieves live logs.
-   * Server logs are requested by default, but `clientName` or `clientId` can be used to request logs for a particular client.
+   * Server logs are requested by default, but `clientName` or `clientId` can be used to request logs for one particular client.
    * Instance property is used internally to keep track of log entries that were previously requested.
    * When `recentOnly` is set to true, only recent (unfetched) logs are requested.
    * @param {object} [params] - An object containing parameters.
