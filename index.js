@@ -527,6 +527,34 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of online clients.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get all online clients</caption>
+   * server.getOnlineClients().then(data => console.log(data));
+   */
+  async getOnlineClients({ includeRemoved = true } = {}) {
+    return (await this.getStatus({ includeRemoved })).filter(client => client.online === true);
+  }
+
+  /**
+   * Retrieves a list of offline clients.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get all offline clients</caption>
+   * server.getOfflineClients().then(data => console.log(data));
+   * @example <caption>Get offline clients, skip clients marked for removal</caption>
+   * server.getOfflineClients({includeRemoved: false}).then(data => console.log(data));
+   */
+  async getOfflineClients({ includeRemoved = true } = {}) {
+    return (await this.getStatus({ includeRemoved })).filter(client => client.online === false);
+  }
+
+  /**
    * Adds a new client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.clientName - The client's name.
