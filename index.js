@@ -346,7 +346,7 @@ class UrbackupServer {
   /**
    * Adds a new group.
    * @param {object} params - An object containing parameters.
-   * @param {string} params.groupName - The group name, case-sensitive. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
+   * @param {string} params.groupName - The group name. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined.
    * @returns {Promise<boolean>} When successful, returns true. If the group already exists, or adding the group was not successful for any reason, returns false.
    * @throws {Error} If the groupName is missing or invalid, or if the API response is missing expected values.
    * @example <caption>Add new group</caption>
@@ -381,10 +381,9 @@ class UrbackupServer {
   /**
    * Removes a group.
    * All clients in this group will be reassigned to the default group. Does not allow removal of the default group (ID: 0, name: '').
-   * The use of group ID is preferred over group name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.groupId] - Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined.
-   * @param {string} [params.groupName] - Group name, case-sensitive. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined.
+   * @param {string} [params.groupName] - Group name. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined.
    * @returns {Promise<boolean>} When the removal is successful, the method returns true. If the removal is not successful, the method returns false.
    * @throws {Error} If both `groupId` and `groupName` are missing or invalid, or if the login fails.
    * @example <caption>Remove group</caption>
@@ -429,10 +428,9 @@ class UrbackupServer {
   /**
    * Retrieves a list of clients who are members of a given group.
    * This is only a convenience method that wraps the `getClients()` method.
-   * The use of group name is preferred over group name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.groupId] - Group ID. Ignored if both `groupId` and `groupName` are defined.
-   * @param {string} [params.groupName] - Group name, case-sensitive. Takes precedence if both `groupId` and `groupName` are defined.
+   * @param {string} [params.groupName] - Group name. Takes precedence if both `groupId` and `groupName` are defined.
    * @returns {Promise<Array<object>>} An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
    * @throws {Error} If both `groupId` and `groupName` are missing or invalid.
    * @example <caption>Get members of default group</caption>
@@ -463,7 +461,7 @@ class UrbackupServer {
    * Retrieves a list of clients.
    * By default, this method matches all clients, including those marked for removal.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name, case-sensitive. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups.
+   * @param {string} [params.groupName] - Group name. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Promise<Array<object>>} An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
@@ -511,7 +509,7 @@ class UrbackupServer {
   /**
    * Adds a new client.
    * @param {object} params - An object containing parameters.
-   * @param {string} params.clientName - The client's name, case-sensitive.
+   * @param {string} params.clientName - The client's name.
    * @returns {Promise<boolean>} When successful, returns true. If adding the client was not successful, for example if the client already exists, returns false.
    * @throws {Error} If the clientName is missing or invalid, if the login fails, or if the API response is missing expected values.
    * @example <caption>Add new client</caption>
@@ -544,10 +542,9 @@ class UrbackupServer {
   /**
    * Marks or unmarks a client as ready for removal.
    * This method is intended for internal use only and should not be called outside the class.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
    * @param {boolean} params.stopRemove - Whether it's a 'remove' or 'cancel remove' operation.
    * @returns {Promise<boolean>} When successful, the method returns true. If the operation to stop the removal was not successful, it returns false.
    * @throws {Error} If parameters are missing or invalid, or if API response is incorrect.
@@ -598,11 +595,10 @@ class UrbackupServer {
   /**
    * Marks the client for removal.
    * Actual removal occurs during the cleanup time window. Until then, this operation can be reversed with the `cancelRemoveClient` method.
-   * The use of client ID is preferred over client name for repeated method calls.
    * **WARNING:** Removing clients will also delete all their backups stored on the UrBackup server.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Defaults to undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
    * @returns {Promise<boolean>} When successful, returns true. Returns false if the removal was not successful.
    * @throws {Error} If parameters are missing or invalid.
    * @example <caption>Remove client by ID</caption>
@@ -617,10 +613,9 @@ class UrbackupServer {
 
   /**
    * Unmarks the client as ready for removal.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
    * @returns {Promise<boolean>} When successful, returns true. Returns false if the stopping process was not successful.
    * @throws {Error} If parameters are missing or invalid.
    * @example <caption>Stop the server from removing a client by ID</caption>
@@ -660,7 +655,7 @@ class UrbackupServer {
    * Adds a new client discovery hint, also known as an extra client.
    * Discovery hints are a way of improving client discovery in local area networks.
    * @param {object} params - An object containing parameters.
-   * @param {string} params.address - Client's IP address or hostname, case sensitive.
+   * @param {string} params.address - Client's IP address or hostname.
    * @returns {Promise<boolean>} When successful, returns true. Returns false when adding was not successful.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Add new extra client</caption>
@@ -693,7 +688,7 @@ class UrbackupServer {
   /**
    * Removes a specific client discovery hint, also known as an extra client.
    * @param {object} params - An object containing parameters.
-   * @param {string} params.address - Client's IP address or hostname, case sensitive.
+   * @param {string} params.address - Client's IP address or hostname.
    * @returns {Promise<boolean>} When successful, returns true. Returns false when removing was not successful.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Remove extra client</caption>
@@ -740,7 +735,7 @@ class UrbackupServer {
    * Clients marked for removal are not excluded from the results.
    * @param {object} [params] - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @returns {Promise<Array>} An array with objects representing client settings. Returns an empty array if no matching client is found.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Get settings for all clients</caption>
@@ -808,10 +803,9 @@ class UrbackupServer {
   /**
    * Changes one specific element of client settings.
    * A list of settings can be obtained with the `getClientSettings` method.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
    * @param {string} params.key - Settings element to change.
    * @param {string|number|boolean} params.newValue - New value for settings element.
    * @returns {Promise<boolean>} When successful, returns true. Returns false when the save request was unsuccessful or if the key/value is invalid.
@@ -863,10 +857,9 @@ class UrbackupServer {
 
   /**
    * Retrieves the authentication key for a specified client.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined.
    * @returns {Promise<string>} Client's authentication key. Returns an empty string if no matching clients are found.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Get authentication key for a specific client</caption>
@@ -911,7 +904,7 @@ class UrbackupServer {
    * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
    * @param {object} [params] - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @param {string} [params.clientName] - Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
+   * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Promise<Array>} Array of objects with status info for matching clients. Returns an empty array if no matching clients are found.
    * @throws {Error} If the API response is incorrect or if login fails.
@@ -966,10 +959,9 @@ class UrbackupServer {
   /**
    * Retrieves storage usage.
    * By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @returns {Promise<Array>} A promise that resolves to an array of objects with storage usage info for each client. Resolves to an empty array if no matching clients are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get usage for all clients</caption>
@@ -1018,7 +1010,7 @@ class UrbackupServer {
    * By default, this method returns both current and last activities.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {boolean} [params.includeCurrent=true] - Whether or not currently running activities should be included. Defaults to true.
    * @param {boolean} [params.includeLast=true] - Whether or not last activities should be included. Defaults to true.
    * @returns {Promise<object>} An object with activities info in two separate arrays (one for current and one for last activities). Returns an object with empty arrays when no matching clients/activities are found.
@@ -1090,7 +1082,7 @@ class UrbackupServer {
    * Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @returns {Promise<Array>} A promise that resolves to an array of current activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get current activities for all clients</caption>
@@ -1110,7 +1102,7 @@ class UrbackupServer {
    * Matches all clients by default, but `clientName` or `clientId` can be used to request activities for one particular client.
    * @param {object} [params={}] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @returns {Promise<Array>} A promise that resolves to an array of last activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get last activities for all clients</caption>
@@ -1127,10 +1119,9 @@ class UrbackupServer {
   /**
    * Stops one activity.
    * A list of current activities can be obtained with the `getActivities` method.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {number} params.activityId - The activity ID. Required.
    * @returns {Promise<boolean>} A promise that resolves to true if the activity was stopped successfully, or false if stopping was not successful.
    * @throws {Error} If there are missing or invalid parameters, if the API response is missing values, or if login fails.
@@ -1173,10 +1164,9 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of file and/or image backups for a specific client.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be included. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be included. Defaults to true.
    * @returns {Promise<object>} A promise that resolves to an object with backups info. Returns an object with empty arrays when no matching clients/backups are found.
@@ -1236,11 +1226,10 @@ class UrbackupServer {
   /**
    * Starts a backup job.
    * This method is intended for internal use only and should not be called outside the class.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @param {string} params.backupType - The backup type, case sensitive. Must be one of `full_file`, `incr_file`, `full_image`, or `incr_image`. Required.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} params.backupType - The backup type. Must be one of `full_file`, `incr_file`, `full_image`, or `incr_image`. Required.
    * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
    * @throws {Error} If there are missing or invalid parameters, if the API response is missing values, or if login fails.
    * @example
@@ -1285,10 +1274,9 @@ class UrbackupServer {
 
   /**
    * Starts a full file backup.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start a full file backup by client name</caption>
@@ -1307,10 +1295,9 @@ class UrbackupServer {
 
   /**
    * Starts an incremental file backup.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start an incremental file backup by client name</caption>
@@ -1329,10 +1316,9 @@ class UrbackupServer {
 
   /**
    * Starts a full image backup.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start a full image backup by client name</caption>
@@ -1351,10 +1337,9 @@ class UrbackupServer {
 
   /**
    * Starts an incremental image backup.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start an incremental image backup by client name</caption>
@@ -1376,10 +1361,9 @@ class UrbackupServer {
    * Server logs are requested by default, but `clientName` or `clientId` can be used to request logs for a particular client.
    * Instance property is used internally to keep track of log entries that were previously requested.
    * When `recentOnly` is set to true, only recent (unfetched) logs are requested.
-   * The use of client ID is preferred over client name for repeated method calls.
    * @param {object} [params] - An object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Must be greater than zero. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientId` is also undefined.
-   * @param {string} [params.clientName] - The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientName` is also undefined.
+   * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientName` is also undefined.
    * @param {boolean} [params.recentOnly=false] - Whether only recent (unfetched) entries should be requested. Defaults to false.
    * @returns {Promise<Array>} A promise that resolves to an array of objects representing log entries. Returns an empty array when no matching clients or logs are found.
    * @throws {Error} If there is an API response error or login failure.

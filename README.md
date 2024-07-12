@@ -13,14 +13,41 @@ This module provides a Node.js interface for interacting with the UrBackup serve
 
 The module aims to simplify the integration of UrBackup server management into Node.js applications, making it easier to automate and control backup operations programmatically.
 
-*Please note that this module is still under active development. While most public method signatures are stable, some functionality might be missing or subject to change. Always check the CHANGELOG.md file before updating to understand any potential breaking changes.*
+*Please note that this module is still under active development. While most public method signatures are stable, some functionality might be missing or subject to change. Always check the changelog before updating to understand any potential breaking changes.*
 
 ## Requirements
 
 To use this module, ensure you have the following:
 
-  - Node.js: An Active LTS or Maintenance LTS version (https://nodejs.org/en/about/previous-releases)
-  - UrBackup Server: A current release of the UrBackup Server
+  - An Active LTS or Maintenance LTS version (https://nodejs.org/en/about/previous-releases)
+  - A current release of the UrBackup Server
+
+## CHANGELOG
+
+This changelog starts at version `0.20.0` and includes a selection of significant changes.
+
+### Breaking Changes
+
+  - 0.30.0
+    - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
+
+### Notable Changes
+
+  - 0.30.0
+    - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
+    - Defaults change for `getActivities()` method: previously, it returned only current activities by default. Now, both current and last activities are included.
+
+  - 0.22.0
+    - Added following methods: `getCurrentActivities()`, `getPastActivities()`, `getMailSettings()`, `getLdapSettings()`.
+
+  - 0.21.0
+    - Added `getGroupMembers()` method.
+
+  - 0.20.1
+    - Fixed `getClientAuthKey()` method. Previously, due to changes introduced by a UrBackup Server update, it was always returning an empty string.
+
+  - 0.20.0
+    - Fixed returned type inconsistencies for the following methods: `getClientId()`, `getClientName()`, `getGroupId()`, `getGroupName()`.
 
 ## Installation
 
@@ -188,7 +215,7 @@ Adds a new group.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| params.groupName | <code>string</code> | The group name, case-sensitive. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined. |
+| params.groupName | <code>string</code> | The group name. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined. |
 
 **Example** *(Add new group)*  
 ```js
@@ -199,7 +226,6 @@ server.addGroup({ groupName: 'prod' }).then(data => console.log(data));
 ### urbackupServer.removeGroup(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Removes a group.
 All clients in this group will be reassigned to the default group. Does not allow removal of the default group (ID: 0, name: '').
-The use of group ID is preferred over group name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - When the removal is successful, the method returns true. If the removal is not successful, the method returns false.  
@@ -212,7 +238,7 @@ The use of group ID is preferred over group name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.groupId] | <code>number</code> | Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined. |
-| [params.groupName] | <code>string</code> | Group name, case-sensitive. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined. |
+| [params.groupName] | <code>string</code> | Group name. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined. |
 
 **Example** *(Remove group)*  
 ```js
@@ -224,7 +250,6 @@ server.removeGroup({ groupName: 'prod' }).then(data => console.log(data));
 ### urbackupServer.getGroupMembers(params) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
 Retrieves a list of clients who are members of a given group.
 This is only a convenience method that wraps the `getClients()` method.
-The use of group name is preferred over group name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - An array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.  
@@ -237,7 +262,7 @@ The use of group name is preferred over group name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.groupId] | <code>number</code> | Group ID. Ignored if both `groupId` and `groupName` are defined. |
-| [params.groupName] | <code>string</code> | Group name, case-sensitive. Takes precedence if both `groupId` and `groupName` are defined. |
+| [params.groupName] | <code>string</code> | Group name. Takes precedence if both `groupId` and `groupName` are defined. |
 
 **Example** *(Get members of default group)*  
 ```js
@@ -263,7 +288,7 @@ By default, this method matches all clients, including those marked for removal.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An optional object containing parameters. |
-| [params.groupName] | <code>string</code> |  | Group name, case-sensitive. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups. |
+| [params.groupName] | <code>string</code> |  | Group name. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all clients)*  
@@ -293,7 +318,7 @@ Adds a new client.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| params.clientName | <code>string</code> | The client's name, case-sensitive. |
+| params.clientName | <code>string</code> | The client's name. |
 
 **Example** *(Add new client)*  
 ```js
@@ -304,7 +329,6 @@ server.addClient({ clientName: 'laptop2' }).then(data => console.log(data));
 ### urbackupServer.removeClient(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Marks the client for removal.
 Actual removal occurs during the cleanup time window. Until then, this operation can be reversed with the `cancelRemoveClient` method.
-The use of client ID is preferred over client name for repeated method calls.
 **WARNING:** Removing clients will also delete all their backups stored on the UrBackup server.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
@@ -318,7 +342,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
 
 **Example** *(Remove client by ID)*  
 ```js
@@ -332,7 +356,6 @@ server.removeClient({ clientName: 'laptop2' }).then(data => console.log(data));
 
 ### urbackupServer.cancelRemoveClient(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Unmarks the client as ready for removal.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - When successful, returns true. Returns false if the stopping process was not successful.  
@@ -345,7 +368,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
 
 **Example** *(Stop the server from removing a client by ID)*  
 ```js
@@ -386,7 +409,7 @@ Discovery hints are a way of improving client discovery in local area networks.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| params.address | <code>string</code> | Client's IP address or hostname, case sensitive. |
+| params.address | <code>string</code> | Client's IP address or hostname. |
 
 **Example** *(Add new extra client)*  
 ```js
@@ -407,7 +430,7 @@ Removes a specific client discovery hint, also known as an extra client.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| params.address | <code>string</code> | Client's IP address or hostname, case sensitive. |
+| params.address | <code>string</code> | Client's IP address or hostname. |
 
 **Example** *(Remove extra client)*  
 ```js
@@ -431,7 +454,7 @@ Clients marked for removal are not excluded from the results.
 | --- | --- | --- |
 | [params] | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get settings for all clients)*  
 ```js
@@ -447,7 +470,6 @@ server.getClientSettings({ clientId: 3 }).then(data => console.log(data));
 ### urbackupServer.setClientSettings(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Changes one specific element of client settings.
 A list of settings can be obtained with the `getClientSettings` method.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - When successful, returns true. Returns false when the save request was unsuccessful or if the key/value is invalid.  
@@ -460,7 +482,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
 | params.key | <code>string</code> | Settings element to change. |
 | params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. |
 
@@ -473,7 +495,6 @@ server.setClientSettings({ clientId: 3, key: 'backup_dirs_optional', newValue: t
 
 ### urbackupServer.getClientAuthkey(params) ⇒ <code>Promise.&lt;string&gt;</code>
 Retrieves the authentication key for a specified client.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;string&gt;</code> - Client's authentication key. Returns an empty string if no matching clients are found.  
@@ -486,7 +507,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
 
 **Example** *(Get authentication key for a specific client)*  
 ```js
@@ -511,7 +532,7 @@ Client name or client ID can be passed as an argument in which case only that on
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | Client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
+| [params.clientName] | <code>string</code> |  | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get status for all clients)*  
@@ -532,7 +553,6 @@ server.getStatus({ clientId: 3 }).then(data => console.log(data));
 ### urbackupServer.getUsage([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
 Retrieves storage usage.
 By default, it matches all clients, but you can use clientName or clientId to request usage for a particular client.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;Array&gt;</code> - A promise that resolves to an array of objects with storage usage info for each client. Resolves to an empty array if no matching clients are found.  
@@ -545,7 +565,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- | --- |
 | [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get usage for all clients)*  
 ```js
@@ -574,7 +594,7 @@ By default, this method returns both current and last activities.
 | --- | --- | --- | --- |
 | [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 | [params.includeCurrent] | <code>boolean</code> | <code>true</code> | Whether or not currently running activities should be included. Defaults to true. |
 | [params.includeLast] | <code>boolean</code> | <code>true</code> | Whether or not last activities should be included. Defaults to true. |
 
@@ -614,7 +634,7 @@ Matches all clients by default, but `clientName` or `clientId` can be used to re
 | --- | --- | --- | --- |
 | [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get current activities for all clients)*  
 ```js
@@ -643,7 +663,7 @@ Matches all clients by default, but `clientName` or `clientId` can be used to re
 | --- | --- | --- | --- |
 | [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get last activities for all clients)*  
 ```js
@@ -659,7 +679,6 @@ server.getLastActivities({ clientId: 3 }).then(data => console.log(data));
 ### urbackupServer.stopActivity(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Stops one activity.
 A list of current activities can be obtained with the `getActivities` method.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the activity was stopped successfully, or false if stopping was not successful.  
@@ -672,7 +691,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 | params.activityId | <code>number</code> | The activity ID. Required. |
 
 **Example** *(Stop activity)*  
@@ -684,7 +703,6 @@ server.stopActivity({ clientId: 3, activityId: 42 }).then(data => console.log(da
 
 ### urbackupServer.getBackups(params) ⇒ <code>Promise.&lt;object&gt;</code>
 Retrieves a list of file and/or image backups for a specific client.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to an object with backups info. Returns an object with empty arrays when no matching clients/backups are found.  
@@ -697,7 +715,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- | --- |
 | params | <code>object</code> |  | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 | [params.includeFileBackups] | <code>boolean</code> | <code>true</code> | Whether or not file backups should be included. Defaults to true. |
 | [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be included. Defaults to true. |
 
@@ -718,7 +736,6 @@ server.getBackups({ clientName: 'laptop1', includeImageBackups: false }).then(da
 
 ### urbackupServer.startFullFileBackup(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Starts a full file backup.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.  
@@ -731,7 +748,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Start a full file backup by client name)*  
 ```js
@@ -745,7 +762,6 @@ server.startFullFileBackup({clientId: 3}).then(data => console.log(data));
 
 ### urbackupServer.startIncrementalFileBackup(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Starts an incremental file backup.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.  
@@ -758,7 +774,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Start an incremental file backup by client name)*  
 ```js
@@ -772,7 +788,6 @@ server.startIncrementalFileBackup({clientId: 3}).then(data => console.log(data))
 
 ### urbackupServer.startFullImageBackup(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Starts a full image backup.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.  
@@ -785,7 +800,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Start a full image backup by client name)*  
 ```js
@@ -799,7 +814,6 @@ server.startFullImageBackup({clientId: 3}).then(data => console.log(data));
 
 ### urbackupServer.startIncrementalImageBackup(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
 Starts an incremental image backup.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.  
@@ -812,7 +826,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
 | [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Start an incremental image backup by client name)*  
 ```js
@@ -829,7 +843,6 @@ Retrieves live logs.
 Server logs are requested by default, but `clientName` or `clientId` can be used to request logs for a particular client.
 Instance property is used internally to keep track of log entries that were previously requested.
 When `recentOnly` is set to true, only recent (unfetched) logs are requested.
-The use of client ID is preferred over client name for repeated method calls.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;Array&gt;</code> - A promise that resolves to an array of objects representing log entries. Returns an empty array when no matching clients or logs are found.  
@@ -842,7 +855,7 @@ The use of client ID is preferred over client name for repeated method calls.
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Must be greater than zero. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name, case sensitive. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientName` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientName` is also undefined. |
 | [params.recentOnly] | <code>boolean</code> | <code>false</code> | Whether only recent (unfetched) entries should be requested. Defaults to false. |
 
 **Example** *(Get server logs)*  
