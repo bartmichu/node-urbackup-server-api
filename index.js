@@ -1045,6 +1045,41 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves the server version in both number and string representation.
+   * @returns {Promise<object>} An object containing the server version number and string.
+   * @throws {Error} If the API response is missing required values or if the login fails.
+   * @example <caption>Get server version number</caption>
+   * server.getServerVersion().then(data => console.log(data.number));
+   * @example <caption>Get server version string</caption>
+   * server.getServerVersion().then(data => console.log(data.string));
+   */
+  async getServerVersion() {
+    const login = await this.#login();
+
+    if (login === true) {
+      const serverVersion = { number: 0, string: '' };
+
+      const statusResponse = await this.#fetchJson('status');
+
+      if (typeof statusResponse?.curr_version_num === 'number') {
+        serverVersion.number = statusResponse.curr_version_num;
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+
+      if (typeof statusResponse?.curr_version_str === 'string') {
+        serverVersion.string = statusResponse.curr_version_str;
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+
+      return serverVersion;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
    * Retrieves storage usage.
    * By default, it matches all clients, but you can use `clientName` or `clientId` to request usage for one particular client.
    * @param {object} [params={}] - An object containing parameters.
