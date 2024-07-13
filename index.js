@@ -15,6 +15,23 @@ class UrbackupServer {
   #sessionId = '';
   #url;
   #username;
+  #messages = {
+    failedAnonymousLogin: 'Anonymous login failed.',
+    failedFetch: 'Fetch request failed: response status is not in the range 200-299.',
+    failedLogin: 'Login failed: invalid username or password.',
+    failedLoginUnknown: 'Login failed: unknown reason.',
+    invalidCategory: 'Syntax error: invalid category name.',
+    missingClientData: 'API response error: missing client data. Make sure the UrBackup user has appropriate rights.',
+    missingGroupData: 'API response error: missing group data. Make sure the UrBackup user has appropriate rights.',
+    missingParameters: 'Syntax error: missing or invalid parameters.',
+    missingServerIdentity: 'API response error: missing server identity. Make sure the UrBackup user has appropriate rights.',
+    missingUserData: 'API response error: missing user data. Make sure the UrBackup user has appropriate rights.',
+    missingValues: 'API response error: some values are missing. Make sure the UrBackup user has appropriate rights.',
+    syntaxClientId: 'Syntax error: clientId must be a number.',
+    syntaxClientName: 'Syntax error: clientName must be a string.',
+    syntaxGroupId: 'Syntax error: groupId must be a number.',
+    syntaxGroupName: 'Syntax error: groupName must be a string.'
+  };
 
   /**
    * This is a constructor.
@@ -49,6 +66,28 @@ class UrbackupServer {
   }
 
   /**
+   * Normalizes the client object.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {object} statusResponseItem - An object representing a client as returned by the `status` API call.
+   * @returns {object} Normalized client object.
+   * @private
+   * @example
+   * const data = (await this.#fetchJson('status')).map(client => this.#normalizeClient(client));
+   */
+  #normalizeClient(statusResponseItem) {
+    return (function ({
+      delete_pending, groupname, id, name
+    }) {
+      return {
+        id: id,
+        name: name,
+        group: groupname,
+        deletePending: delete_pending
+      };
+    })(statusResponseItem);
+  }
+
+  /**
    * Makes an API call to the server.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string} action - The action to perform.
@@ -78,7 +117,7 @@ class UrbackupServer {
     if (response?.ok === true) {
       return response.json();
     } else {
-      throw new Error('Fetch request failed: response status is not in the range 200-299.');
+      throw new Error(this.#messages.failedFetch);
     }
   }
 
@@ -153,7 +192,7 @@ class UrbackupServer {
           return true;
         } else {
           this.#clearLoginStatus();
-          throw new Error('Anonymous login failed.');
+          throw new Error(this.#messages.failedAnonymousLogin);
         }
       } else {
         const saltResponse = await this.#fetchJson('salt', { username: this.#username });
@@ -169,12 +208,12 @@ class UrbackupServer {
           } else {
             // NOTE: Invalid password
             this.#clearLoginStatus();
-            throw new Error('Login failed: invalid username or password.');
+            throw new Error(this.#messages.failedLogin);
           }
         } else {
           // NOTE: Invalid username
           this.#clearLoginStatus();
-          throw new Error('Login failed: invalid username or password.');
+          throw new Error(this.#messages.failedLogin);
         }
       }
     } finally {
@@ -194,7 +233,7 @@ class UrbackupServer {
    */
   async #getClientId(clientName) {
     if (typeof clientName !== 'string') {
-      throw new Error('Syntax error: clientName must be a string.');
+      throw new Error(this.#messages.syntaxClientName);
     }
 
     const fallbackReturnValue = null;
@@ -216,7 +255,7 @@ class UrbackupServer {
    */
   async #getClientName(clientId) {
     if (typeof clientId !== 'number') {
-      throw new Error('Syntax error: clientId must be a number.');
+      throw new Error(this.#messages.syntaxClientId);
     }
 
     const fallbackReturnValue = null;
@@ -239,7 +278,7 @@ class UrbackupServer {
    */
   async #getGroupId(groupName) {
     if (typeof groupName !== 'string') {
-      throw new Error('Syntax error: groupName must be a string.');
+      throw new Error(this.#messages.syntaxGroupName);
     }
 
     const fallbackReturnValue = null;
@@ -262,7 +301,7 @@ class UrbackupServer {
    */
   async #getGroupName(groupId) {
     if (typeof groupId !== 'number') {
-      throw new Error('Syntax error: groupId must be a number.');
+      throw new Error(this.#messages.syntaxGroupId);
     }
 
     const fallbackReturnValue = null;
@@ -289,10 +328,10 @@ class UrbackupServer {
       if (typeof statusResponse?.server_identity === 'string') {
         return statusResponse.server_identity;
       } else {
-        throw new Error('API response error: missing server identity. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingServerIdentity);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -312,10 +351,10 @@ class UrbackupServer {
       if (Array.isArray(usersResponse?.users)) {
         return usersResponse.users;
       } else {
-        throw new Error('API response error: missing user data. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingUserData);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -336,10 +375,10 @@ class UrbackupServer {
       if (Array.isArray(settingsResponse?.navitems?.groups)) {
         return settingsResponse.navitems.groups;
       } else {
-        throw new Error('API response error: missing group data. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingGroupData);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -354,7 +393,7 @@ class UrbackupServer {
    */
   async addGroup({ groupName } = {}) {
     if (typeof groupName === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     // NOTE: Fail early due to a possible UrBackup bug (server does not allow adding multiple groups with the same name,
@@ -371,10 +410,10 @@ class UrbackupServer {
       if ('add_ok' in response || 'already_exists' in response) {
         return response?.add_ok === true;
       } else {
-        throw new Error('API response error: missing group data. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingGroupData);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -392,7 +431,7 @@ class UrbackupServer {
    */
   async removeGroup({ groupId, groupName } = {}) {
     if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     if (groupId === 0 || groupName === '') {
@@ -421,7 +460,7 @@ class UrbackupServer {
       const response = await this.#fetchJson('settings', { sa: 'groupremove', id: groupId ?? mappedGroupId });
       return response?.delete_ok === true;
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -440,7 +479,7 @@ class UrbackupServer {
    */
   async getGroupMembers({ groupId, groupName } = {}) {
     if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     const fallbackReturnValue = [];
@@ -452,9 +491,9 @@ class UrbackupServer {
       }
     }
 
-    const returnValue = await this.getClients({ groupName: groupName ?? mappedGroupName });
+    const groupMembers = await this.getClients({ groupName: groupName ?? mappedGroupName });
 
-    return returnValue;
+    return groupMembers;
   }
 
   /**
@@ -473,7 +512,7 @@ class UrbackupServer {
    * server.getClients({ groupName: 'office' }).then(data => console.log(data));
    */
   async getClients({ groupName, includeRemoved = true } = {}) {
-    const returnValue = [];
+    const clients = [];
     const login = await this.#login();
 
     if (login === true) {
@@ -489,20 +528,15 @@ class UrbackupServer {
             continue;
           }
 
-          returnValue.push({
-            id: client.id,
-            name: client.name,
-            group: client.groupname,
-            deletePending: client.delete_pending
-          });
+          clients.push(this.#normalizeClient(client));
         }
 
-        return returnValue;
+        return clients;
       } else {
-        throw new Error('API response error: missing client data. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingClientData);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -565,7 +599,7 @@ class UrbackupServer {
    */
   async addClient({ clientName } = {}) {
     if (typeof clientName === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     if (clientName === '') {
@@ -580,10 +614,10 @@ class UrbackupServer {
       if (addClientResponse?.ok === true) {
         return addClientResponse.added_new_client === true;
       } else {
-        throw new Error('API response error: missing client data. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingClientData);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -597,18 +631,18 @@ class UrbackupServer {
    * @returns {Promise<boolean>} When successful, the method returns true. If the operation to stop the removal was not successful, it returns false.
    * @throws {Error} If parameters are missing or invalid, or if API response is incorrect.
    * @example
-   * const removeStatus = await this.#removeClientCommon({ clientId: 123, stopRemove: true });
+   * const operationStatus = await this.#removeClientCommon({ clientId: 123, stopRemove: true });
    */
   async #removeClientCommon({ clientId, clientName, stopRemove } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || typeof stopRemove === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     if (clientName === '') {
       return false;
     }
 
-    const returnValue = false;
+    const fallbackReturnValue = false;
     const login = await this.#login();
 
     if (login === true) {
@@ -617,7 +651,7 @@ class UrbackupServer {
       if (typeof clientId === 'undefined') {
         mappedClientId = await this.#getClientId(clientName);
         if (mappedClientId === null) {
-          return returnValue;
+          return fallbackReturnValue;
         }
       }
 
@@ -633,10 +667,10 @@ class UrbackupServer {
           client.id === (clientId ?? mappedClientId)
         )?.delete_pending === (stopRemove === true ? '0' : '1');
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -655,8 +689,8 @@ class UrbackupServer {
    * server.removeClient({ clientName: 'laptop2' }).then(data => console.log(data));
    */
   async removeClient({ clientId, clientName } = {}) {
-    const returnValue = await this.#removeClientCommon({ clientId, clientName, stopRemove: false });
-    return returnValue;
+    const operationStatus = await this.#removeClientCommon({ clientId, clientName, stopRemove: false });
+    return operationStatus;
   }
 
   /**
@@ -672,8 +706,8 @@ class UrbackupServer {
    * server.cancelRemoveClient({ clientName: 'laptop2' }).then(data => console.log(data));
    */
   async cancelRemoveClient({ clientId, clientName } = {}) {
-    const returnValue = await this.#removeClientCommon({ clientId: clientId, clientName: clientName, stopRemove: true });
-    return returnValue;
+    const operationStatus = await this.#removeClientCommon({ clientId, clientName, stopRemove: true });
+    return operationStatus;
   }
 
   /**
@@ -692,10 +726,10 @@ class UrbackupServer {
       if (Array.isArray(statusResponse?.extra_clients)) {
         return statusResponse.extra_clients;
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -711,7 +745,7 @@ class UrbackupServer {
    */
   async addClientHint({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     const login = await this.#login();
@@ -726,10 +760,10 @@ class UrbackupServer {
           extraClient.hostname === address
         );
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -744,10 +778,10 @@ class UrbackupServer {
    */
   async removeClientHint({ address } = {}) {
     if (typeof address === 'undefined' || address === '') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
-    let returnValue = false;
+    let operationStatus = false;
     const login = await this.#login();
 
     if (login === true) {
@@ -761,19 +795,19 @@ class UrbackupServer {
 
           if (Array.isArray(statusResponse?.extra_clients)) {
             if (typeof statusResponse.extra_clients.find((extraClient) => extraClient.hostname === address) === 'undefined') {
-              returnValue = true;
+              operationStatus = true;
             }
           } else {
-            throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+            throw new Error(this.#messages.missingValues);
           }
         }
 
-        return returnValue;
+        return operationStatus;
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -794,13 +828,13 @@ class UrbackupServer {
    */
   async getClientSettings({ clientId, clientName } = {}) {
     if (typeof clientId !== 'undefined' && typeof clientId !== 'number') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
-    const returnValue = [];
+    const clientSettings = [];
 
     if (clientName === '') {
-      return returnValue;
+      return clientSettings;
     }
 
     const login = await this.#login();
@@ -810,7 +844,7 @@ class UrbackupServer {
       const allClients = await this.getClients({ includeRemoved: true });
 
       if (allClients.some((client) => typeof client.id === 'undefined')) {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
 
       if (typeof clientId === 'undefined') {
@@ -836,15 +870,15 @@ class UrbackupServer {
         const settingsResponse = await this.#fetchJson('settings', { sa: 'clientsettings', t_clientid: id });
 
         if (typeof settingsResponse?.settings === 'object') {
-          returnValue.push(settingsResponse.settings);
+          clientSettings.push(settingsResponse.settings);
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       }
 
-      return returnValue;
+      return clientSettings;
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -864,13 +898,13 @@ class UrbackupServer {
    */
   async setClientSettings({ clientId, clientName, key, newValue } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || typeof key === 'undefined' || typeof newValue === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
-    let returnValue = false;
+    let operationStatus = false;
 
     if (clientName === '') {
-      return returnValue;
+      return operationStatus;
     }
 
     const login = await this.#login();
@@ -888,18 +922,18 @@ class UrbackupServer {
           const saveSettingsResponse = await this.#fetchJson('settings', clientSettings[0]);
 
           if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
-            returnValue = saveSettingsResponse.saved_ok === true;
+            operationStatus = saveSettingsResponse.saved_ok === true;
           } else {
-            throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+            throw new Error(this.#messages.missingValues);
           }
         }
 
-        return returnValue;
+        return operationStatus;
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -916,13 +950,13 @@ class UrbackupServer {
    */
   async getClientAuthkey({ clientId, clientName } = {}) {
     if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
-    let returnValue = '';
+    let authKey = '';
 
     if (clientName === '') {
-      return returnValue;
+      return authKey;
     }
 
     const login = await this.#login();
@@ -933,16 +967,16 @@ class UrbackupServer {
       if (Array.isArray(clientSettings)) {
         if (clientSettings.length > 0) {
           if (typeof clientSettings[0]?.internet_authkey?.value === 'string') {
-            returnValue = clientSettings[0].internet_authkey.value.toString();
+            authKey = clientSettings[0].internet_authkey.value.toString();
           }
         }
 
-        return returnValue;
+        return authKey;
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -997,10 +1031,10 @@ class UrbackupServer {
           }
         }
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1045,10 +1079,10 @@ class UrbackupServer {
           ) ?? fallbackReturnValue;
         }
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1075,14 +1109,14 @@ class UrbackupServer {
    * server.getActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getActivities({ clientId, clientName, includeCurrent = true, includeLast = true } = {}) {
-    const returnValue = { current: [], last: [] };
+    const activities = { current: [], last: [] };
 
     if (clientName === '') {
-      return returnValue;
+      return activities;
     }
 
     if (includeCurrent === false && includeLast === false) {
-      return returnValue;
+      return activities;
     }
 
     const login = await this.#login();
@@ -1093,9 +1127,9 @@ class UrbackupServer {
       if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
         if (includeCurrent === true) {
           if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
-            returnValue.current = activitiesResponse.progress;
+            activities.current = activitiesResponse.progress;
           } else {
-            returnValue.current = activitiesResponse.progress.filter((activity) =>
+            activities.current = activitiesResponse.progress.filter((activity) =>
               typeof clientId !== 'undefined'
                 ? activity.clientid === clientId
                 : activity.name === clientName
@@ -1105,9 +1139,9 @@ class UrbackupServer {
 
         if (includeLast === true) {
           if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
-            returnValue.last = activitiesResponse.lastacts;
+            activities.last = activitiesResponse.lastacts;
           } else {
-            returnValue.last = activitiesResponse.lastacts.filter((activity) =>
+            activities.last = activitiesResponse.lastacts.filter((activity) =>
               typeof clientId !== 'undefined'
                 ? activity.clientid === clientId
                 : activity.name === clientName
@@ -1115,12 +1149,12 @@ class UrbackupServer {
           }
         }
 
-        return returnValue;
+        return activities;
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1140,8 +1174,8 @@ class UrbackupServer {
    * server.getCurrentActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getCurrentActivities({ clientId, clientName } = {}) {
-    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: true, includeLast: false });
-    return returnValue.current;
+    const currentActivities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false });
+    return currentActivities.current;
   }
 
   /**
@@ -1160,8 +1194,8 @@ class UrbackupServer {
    * server.getLastActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getLastActivities({ clientId, clientName } = {}) {
-    const returnValue = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: false, includeLast: true });
-    return returnValue.last;
+    const lastActivities = await this.getActivities({ clientId, clientName, includeCurrent: false, includeLast: true });
+    return lastActivities.last;
   }
 
   /**
@@ -1180,7 +1214,7 @@ class UrbackupServer {
    */
   async getPausedActivities({ clientId, clientName } = {}) {
     const pausedActivities = [];
-    const activities = await this.getActivities({ clientId: clientId, clientName: clientName, includeCurrent: true, includeLast: false });
+    const activities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false });
 
     activities.current.forEach(activity => {
       if (activity.paused === true) {
@@ -1206,7 +1240,7 @@ class UrbackupServer {
    */
   async stopActivity({ clientId, clientName, activityId } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || typeof activityId === 'undefined' || activityId <= 0) {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     if (clientName === '') {
@@ -1227,13 +1261,13 @@ class UrbackupServer {
         if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
           return true;
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       } else {
         return false;
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1256,13 +1290,13 @@ class UrbackupServer {
    */
   async getBackups({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (includeFileBackups === false && includeImageBackups === false)) {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
-    const returnValue = { file: [], image: [] };
+    const backups = { file: [], image: [] };
 
     if (clientName === '') {
-      return returnValue;
+      return backups;
     }
 
     const login = await this.#login();
@@ -1279,22 +1313,22 @@ class UrbackupServer {
 
         if (Array.isArray(backupsResponse?.backup_images) && Array.isArray(backupsResponse?.backups)) {
           if (includeFileBackups === true) {
-            returnValue.file = backupsResponse.backups;
+            backups.file = backupsResponse.backups;
           }
 
           if (includeImageBackups === true) {
-            returnValue.image = backupsResponse.backup_images;
+            backups.image = backupsResponse.backup_images;
           }
 
-          return returnValue;
+          return backups;
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       } else {
-        throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+        throw new Error(this.#messages.missingValues);
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1316,7 +1350,7 @@ class UrbackupServer {
     const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
 
     if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || !backupTypes.includes(backupType)) {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     if (clientName === '') {
@@ -1337,13 +1371,13 @@ class UrbackupServer {
         if (Array.isArray(backupResponse.result) && backupResponse.result.filter((element) => Object.keys(element).includes('start_ok')).length !== 1) {
           return !!backupResponse.result[0].start_ok;
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       } else {
         return false;
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1360,12 +1394,12 @@ class UrbackupServer {
    * server.startFullFileBackup({clientId: 3}).then(data => console.log(data));
    */
   async startFullFileBackup({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({
+    const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
       backupType: 'full_file'
     });
-    return returnValue;
+    return operationStatus;
   }
 
   /**
@@ -1381,12 +1415,12 @@ class UrbackupServer {
    * server.startIncrementalFileBackup({clientId: 3}).then(data => console.log(data));
    */
   async startIncrementalFileBackup({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({
+    const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
       backupType: 'incr_file'
     });
-    return returnValue;
+    return operationStatus;
   }
 
   /**
@@ -1402,12 +1436,12 @@ class UrbackupServer {
    * server.startFullImageBackup({clientId: 3}).then(data => console.log(data));
    */
   async startFullImageBackup({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({
+    const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
       backupType: 'full_image'
     });
-    return returnValue;
+    return operationStatus;
   }
 
   /**
@@ -1423,12 +1457,12 @@ class UrbackupServer {
    * server.startIncrementalImageBackup({ clientId: 3 }).then(data => console.log(data));
    */
   async startIncrementalImageBackup({ clientId, clientName } = {}) {
-    const returnValue = await this.#startBackupCommon({
+    const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
       backupType: 'incr_image'
     });
-    return returnValue;
+    return operationStatus;
   }
 
   /**
@@ -1451,10 +1485,10 @@ class UrbackupServer {
    * server.getLiveLog({ clientName: 'laptop1', recentOnly: true }).then(data => console.log(data));
    */
   async getLiveLog({ clientId, clientName, recentOnly = false } = {}) {
-    let returnValue = [];
+    let livelog = [];
 
     if (clientName === '') {
-      return returnValue;
+      return livelog;
     }
 
     const login = await this.#login();
@@ -1469,7 +1503,7 @@ class UrbackupServer {
       if (clientId === 0 || mappedClientId === null) {
         // NOTE: Fail early to distinguish this case because 0 (zero) is a valid parameter value
         // for 'livelog' call which should be used when both clientId and clientName are undefined
-        return returnValue;
+        return livelog;
       }
 
       // NOTE: Use semaphore to prevent race condition with this.#lastLogId
@@ -1487,17 +1521,17 @@ class UrbackupServer {
             this.#lastLogId.set(clientId, lastId);
           }
 
-          returnValue = logResponse.logdata;
+          livelog = logResponse.logdata;
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       } finally {
         release();
       }
 
-      return returnValue;
+      return livelog;
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 
@@ -1522,13 +1556,13 @@ class UrbackupServer {
         if (typeof settingsResponse?.settings === 'object') {
           return settingsResponse.settings;
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       } else {
-        throw new Error('Login failed: unknown reason.');
+        throw new Error(this.#messages.failedLoginUnknown);
       }
     } else {
-      throw new Error('Syntax error: invalid category name.');
+      throw new Error(this.#messages.invalidCategory);
     }
   }
 
@@ -1540,8 +1574,8 @@ class UrbackupServer {
    * server.getGeneralSettings().then(data => console.log(data));
    */
   async getGeneralSettings() {
-    const returnValue = this.#getServerSettings('general');
-    return returnValue;
+    const generalSettings = this.#getServerSettings('general');
+    return generalSettings;
   }
 
   /**
@@ -1552,8 +1586,8 @@ class UrbackupServer {
    * server.getMailSettings().then(data => console.log(data));
    */
   async getMailSettings() {
-    const returnValue = this.#getServerSettings('mail');
-    return returnValue;
+    const mailSettings = this.#getServerSettings('mail');
+    return mailSettings;
   }
 
   /**
@@ -1564,8 +1598,8 @@ class UrbackupServer {
    * server.getLdapSettings().then(data => console.log(data));
    */
   async getLdapSettings() {
-    const returnValue = this.#getServerSettings('ldap');
-    return returnValue;
+    const ldapSettings = this.#getServerSettings('ldap');
+    return ldapSettings;
   }
 
   /**
@@ -1581,7 +1615,7 @@ class UrbackupServer {
    */
   async setGeneralSettings({ key, newValue } = {}) {
     if (typeof key === 'undefined' || typeof newValue === 'undefined') {
-      throw new Error('Syntax error: missing or invalid parameters.');
+      throw new Error(this.#messages.missingParameters);
     }
 
     const login = await this.#login();
@@ -1598,13 +1632,13 @@ class UrbackupServer {
         if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
           return saveSettingsResponse.saved_ok;
         } else {
-          throw new Error('API response error: some values are missing. Make sure the UrBackup user has appropriate rights.');
+          throw new Error(this.#messages.missingValues);
         }
       } else {
         return false;
       }
     } else {
-      throw new Error('Login failed: unknown reason.');
+      throw new Error(this.#messages.failedLoginUnknown);
     }
   }
 }
