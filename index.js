@@ -591,16 +591,7 @@ class UrbackupServer {
    * server.getRemovedClients().then(data => console.log(data));
    */
   async getRemovedClients() {
-    const removedClients = [];
-    const allClients = await this.getClients({ includeRemoved: true });
-
-    allClients.forEach(client => {
-      if (client.deletePending === '1') {
-        removedClients.push(client);
-      }
-    });
-
-    return removedClients;
+    return (await this.getClients({ includeRemoved: true })).filter(client => client.deletePending === '1');
   }
 
   /**
