@@ -13,7 +13,7 @@ This module provides a Node.js interface for interacting with the UrBackup serve
 
 The module aims to simplify the integration of UrBackup server management into Node.js applications, making it easier to automate and control backup operations programmatically.
 
-*Please note that this module is still under active development. While most public method signatures are stable, some functionality might be missing or subject to change. Always check the changelog before updating to understand any potential breaking changes.*
+*Please note that this module is still in a pre-1.0.0 release. Some functionality is missing. All implemented methods are working and considered stable, but public method signatures occasionally change. Always check the changelog before updating to understand any potential breaking changes.*
 
 ## Requirements
 
@@ -28,10 +28,23 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ### Breaking Changes
 
+  - 0.40.0
+    - Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.
+
   - 0.30.0
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ### Notable Changes
+
+  - 0.42.0
+    - Added following methods: `getServerVersion()`, `getUserRights()`, `getRawStatus()`, `getRawUsage()`, `getRawProgress()`, `getActiverClients()`.
+    - Added following properties to objects returned by `getClients()` method: `status`
+
+  - 0.41.0
+    - Added following properties to objects returned by `getClients()` method: `online`, `uid`, `ip`, `clientVersion`, `osFamily`, `osVersion`. This affects the `getClients()`, `getGroupMembers()`, `getRemovedClients()`, `getOnlineClients()`, `getOfflineClients()`.
+
+  - 0.40.0
+    - Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.
 
   - 0.31.0
     - Added following methods: `getOnlineClients()`, `getOfflineClients()`, `getRemovedClients()`, `getPausedActivities()`.
@@ -101,6 +114,7 @@ Represents a UrBackup Server.
     * [new UrbackupServer([params])](#new_UrbackupServer_new)
     * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>Promise.&lt;string&gt;</code>
     * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getUserRights([params])](#UrbackupServer+getUserRights) ⇒ <code>Promise.&lt;(Array\|null)&gt;</code>
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addGroup(params)](#UrbackupServer+addGroup) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeGroup(params)](#UrbackupServer+removeGroup) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -109,6 +123,7 @@ Represents a UrBackup Server.
     * [.getRemovedClients()](#UrbackupServer+getRemovedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOnlineClients([params])](#UrbackupServer+getOnlineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOfflineClients([params])](#UrbackupServer+getOfflineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getActiveClients([params])](#UrbackupServer+getActiveClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -119,6 +134,7 @@ Represents a UrBackup Server.
     * [.setClientSettings(params)](#UrbackupServer+setClientSettings) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>Promise.&lt;string&gt;</code>
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Promise.&lt;Array&gt;</code>
+    * [.getServerVersion()](#UrbackupServer+getServerVersion) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getCurrentActivities([params])](#UrbackupServer+getCurrentActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
@@ -135,6 +151,9 @@ Represents a UrBackup Server.
     * [.getMailSettings()](#UrbackupServer+getMailSettings) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getLdapSettings()](#UrbackupServer+getLdapSettings) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.setGeneralSettings(params)](#UrbackupServer+setGeneralSettings) ⇒ <code>Promise.&lt;boolean&gt;</code>
+    * [.getRawStatus()](#UrbackupServer+getRawStatus) ⇒ <code>Promise.&lt;object&gt;</code>
+    * [.getRawUsage()](#UrbackupServer+getRawUsage) ⇒ <code>Promise.&lt;object&gt;</code>
+    * [.getRawProgress()](#UrbackupServer+getRawProgress) ⇒ <code>Promise.&lt;object&gt;</code>
 
 <a name="new_UrbackupServer_new"></a>
 
@@ -190,6 +209,36 @@ Retrieves a list of users.
 **Example** *(Get all users)*  
 ```js
 server.getUsers().then(data => console.log(data));
+```
+<a name="UrbackupServer+getUserRights"></a>
+
+### urbackupServer.getUserRights([params]) ⇒ <code>Promise.&lt;(Array\|null)&gt;</code>
+Retrieves the rights of a specific user.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;(Array\|null)&gt;</code> - A promise that resolves to an array of user rights, or null if the user is not found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
+| [params.userId] | <code>string</code> |  | The user's ID. Takes precedence if both `userId` and `userName` are defined. |
+| [params.userName] | <code>string</code> | <code>&quot;this.#username&quot;</code> | The user's name. Ignored if `userId` is defined. Defaults to the username of the current session. |
+
+**Example** *(Get user rights of the current session user)*  
+```js
+server.getUserRights().then(data => console.log(data));
+```
+**Example** *(Get user rights by user ID)*  
+```js
+server.getUserRights({ userId: '12345' }).then(data => console.log(data));
+```
+**Example** *(Get user rights by user name)*  
+```js
+server.getUserRights({ userName: 'john_doe' }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getGroups"></a>
 
@@ -370,6 +419,27 @@ server.getOfflineClients().then(data => console.log(data));
 **Example** *(Get offline clients, skip clients marked for removal)*  
 ```js
 server.getOfflineClients({includeRemoved: false}).then(data => console.log(data));
+```
+<a name="UrbackupServer+getActiveClients"></a>
+
+### urbackupServer.getActiveClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of active clients.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(Get all active clients)*  
+```js
+server.getActiveClients().then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClient"></a>
 
@@ -615,6 +685,25 @@ server.getStatus({ includeRemoved: false }).then(data => console.log(data));
 ```js
 server.getStatus({ clientName: 'laptop1' }).then(data => console.log(data));
 server.getStatus({ clientId: 3 }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getServerVersion"></a>
+
+### urbackupServer.getServerVersion() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves the server version in both number and string representation.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - An object containing the server version number and string.  
+**Throws**:
+
+- <code>Error</code> If the API response is missing required values or if the login fails.
+
+**Example** *(Get server version number)*  
+```js
+server.getServerVersion().then(data => console.log(data.number));
+```
+**Example** *(Get server version string)*  
+```js
+server.getServerVersion().then(data => console.log(data.string));
 ```
 <a name="UrbackupServer+getUsage"></a>
 
@@ -1034,4 +1123,52 @@ A list of settings can be obtained with the `getGeneralSettings` method.
 **Example** *(Disable image backups)*  
 ```js
 server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getRawStatus"></a>
+
+### urbackupServer.getRawStatus() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves the raw response from the 'status' API call.
+Property names and values are left unaltered.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to the raw status response object.  
+**Throws**:
+
+- <code>Error</code> If the login fails.
+
+**Example**  
+```js
+urbackup.getRawStatus().then(data => console.log(data));
+```
+<a name="UrbackupServer+getRawUsage"></a>
+
+### urbackupServer.getRawUsage() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves the raw response from the 'usage' API call.
+Property names and values are left unaltered.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to the raw usage response object.  
+**Throws**:
+
+- <code>Error</code> If the login fails.
+
+**Example**  
+```js
+const data = await urbackup.getRawUsage();
+```
+<a name="UrbackupServer+getRawProgress"></a>
+
+### urbackupServer.getRawProgress() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves the raw response from the 'progress' API call.
+Property names and values are left unaltered.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to the raw progress response object.  
+**Throws**:
+
+- <code>Error</code> If the login fails.
+
+**Example**  
+```js
+const data = await urbackup.getRawProgress();
 ```
