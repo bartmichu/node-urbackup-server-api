@@ -76,7 +76,7 @@ class UrbackupServer {
    */
   #normalizeClient(statusResponseItem) {
     return (function ({
-      delete_pending, groupname, id, name, online, uid, ip, client_version_string, os_simple, os_version_string
+      delete_pending, groupname, id, name, online, uid, ip, client_version_string, os_simple, os_version_string, status
     }) {
       return {
         clientId: id,
@@ -84,6 +84,7 @@ class UrbackupServer {
         groupName: groupname,
         deletePending: delete_pending,
         online: online,
+        status: status,
         uid: uid,
         ip: ip,
         clientVersion: client_version_string,
@@ -628,6 +629,19 @@ class UrbackupServer {
    */
   async getOfflineClients({ includeRemoved = true } = {}) {
     return (await this.getClients({ includeRemoved })).filter(client => client.online === false);
+  }
+
+  /**
+   * Retrieves a list of active clients.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get all active clients</caption>
+   * server.getActiveClients().then(data => console.log(data));
+   */
+  async getActiveClients({ includeRemoved = true } = {}) {
+    return (await this.getClients({ includeRemoved })).filter(client => client.status !== 0);
   }
 
   /**
