@@ -365,6 +365,42 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves the rights of a specific user.
+   * @param {object} [params={}] - An object containing parameters.
+   * @param {string} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined.
+   * @param {string} [params.userName=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session.
+   * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or null if the user is not found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get user rights of the current session user</caption>
+   * server.getUserRights().then(data => console.log(data));
+   * @example <caption>Get user rights by user ID</caption>
+   * server.getUserRights({ userId: '12345' }).then(data => console.log(data));
+   * @example <caption>Get user rights by user name</caption>
+   * server.getUserRights({ userName: 'john_doe' }).then(data => console.log(data));
+   */
+  async getUserRights({ userId, userName = this.#username } = {}) {
+    const login = await this.#login();
+
+    if (login === true) {
+      const fallbackReturnValue = null;
+      const allUsers = await this.getUsers();
+
+      let userRights;
+      if (typeof userId === 'string') {
+        userRights = allUsers.find(user => user.id === userId)?.rights;
+      } else if (typeof userName === 'string') {
+        userRights = allUsers.find(user => user.name === userName)?.rights;
+      } else {
+        return fallbackReturnValue;
+      }
+
+      return Array.isArray(userRights) ? userRights : fallbackReturnValue;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
    * Retrieves a list of groups.
    * By default, UrBackup clients are added to a group with ID 0 and an empty name (empty string).
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing groups. If no groups are found, it returns an empty array.
