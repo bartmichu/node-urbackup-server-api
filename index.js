@@ -1723,6 +1723,63 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
   }
+
+  /**
+   * Retrieves the raw response from the 'status' API call.
+   * Property names and values are left unaltered.
+   * @returns {Promise<object>} A promise that resolves to the raw status response object.
+   * @throws {Error} If the login fails.
+   * @example
+   * urbackup.getRawStatus().then(data => console.log(data));
+   */
+  async getRawStatus() {
+    const login = await this.#login();
+
+    if (login === true) {
+      const statusResponse = await this.#fetchJson('status');
+      return statusResponse;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
+   * Retrieves the raw response from the 'usage' API call.
+   * Property names and values are left unaltered.
+   * @returns {Promise<object>} A promise that resolves to the raw usage response object.
+   * @throws {Error} If the login fails.
+   * @example
+   * const data = await urbackup.getRawUsage();
+   */
+  async getRawUsage() {
+    const login = await this.#login();
+
+    if (login === true) {
+      const usageResponse = await this.#fetchJson('usage');
+      return usageResponse;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
+   * Retrieves the raw response from the 'progress' API call.
+   * Property names and values are left unaltered.
+   * @returns {Promise<object>} A promise that resolves to the raw progress response object.
+   * @throws {Error} If the login fails.
+   * @example
+   * const data = await urbackup.getRawProgress();
+   */
+  async getRawProgress() {
+    const login = await this.#login();
+
+    if (login === true) {
+      const progressResponse = await this.#fetchJson('progress');
+      return progressResponse;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
 }
 
 module.exports.UrbackupServer = UrbackupServer;
