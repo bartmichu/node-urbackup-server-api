@@ -79,6 +79,10 @@ class UrbackupServer {
       delete_pending, groupname, id, name
     }) {
       return {
+        clientId: id,
+        clientName: name,
+        groupName: groupname,
+        deletePending: delete_pending,
         id: id,
         name: name,
         group: groupname,
@@ -238,7 +242,7 @@ class UrbackupServer {
 
     const fallbackReturnValue = null;
     const clients = await this.getClients({ includeRemoved: true });
-    const clientId = clients.find((client) => client.name === clientName)?.id;
+    const clientId = clients.find((client) => client.clientName === clientName)?.clientId;
 
     return typeof clientId === 'undefined' ? fallbackReturnValue : clientId;
   }
@@ -261,7 +265,7 @@ class UrbackupServer {
     const fallbackReturnValue = null;
 
     const clients = await this.getClients({ includeRemoved: true });
-    const clientName = clients.find((client) => client.id === clientId)?.name;
+    const clientName = clients.find((client) => client.clientId === clientId)?.clientName;
 
     return typeof clientName === 'undefined' ? fallbackReturnValue : clientName;
   }
@@ -843,17 +847,17 @@ class UrbackupServer {
       const clientIds = [];
       const allClients = await this.getClients({ includeRemoved: true });
 
-      if (allClients.some((client) => typeof client.id === 'undefined')) {
+      if (allClients.some((client) => typeof client.clientId === 'undefined')) {
         throw new Error(this.#messages.missingValues);
       }
 
       if (typeof clientId === 'undefined') {
         for (const client of allClients) {
           if (typeof clientName === 'undefined') {
-            clientIds.push(client.id);
+            clientIds.push(client.clientId);
           } else {
-            if (client.name === clientName) {
-              clientIds.push(client.id);
+            if (client.clientName === clientName) {
+              clientIds.push(client.clientId);
               break;
             }
           }
@@ -861,7 +865,7 @@ class UrbackupServer {
       } else {
         // NOTE: Need to make sure that given clientId really exists because 'clientsettings' API call
         // returns settings even when called with an invalid ID
-        if (allClients.some((client) => client.id === clientId)) {
+        if (allClients.some((client) => client.clientId === clientId)) {
           clientIds.push(clientId);
         }
       }
