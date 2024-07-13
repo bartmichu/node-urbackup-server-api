@@ -76,17 +76,19 @@ class UrbackupServer {
    */
   #normalizeClient(statusResponseItem) {
     return (function ({
-      delete_pending, groupname, id, name
+      delete_pending, groupname, id, name, online, uid, ip, client_version_string, os_simple, os_version_string
     }) {
       return {
         clientId: id,
         clientName: name,
         groupName: groupname,
         deletePending: delete_pending,
-        id: id,
-        name: name,
-        group: groupname,
-        deletePending: delete_pending
+        online: online,
+        uid: uid,
+        ip: ip,
+        clientVersion: client_version_string,
+        osFamily: os_simple,
+        osVersion: os_version_string
       };
     })(statusResponseItem);
   }
@@ -574,7 +576,7 @@ class UrbackupServer {
    * server.getOnlineClients().then(data => console.log(data));
    */
   async getOnlineClients({ includeRemoved = true } = {}) {
-    return (await this.getStatus({ includeRemoved })).filter(client => client.online === true);
+    return (await this.getClients({ includeRemoved })).filter(client => client.online === true);
   }
 
   /**
@@ -589,7 +591,7 @@ class UrbackupServer {
    * server.getOfflineClients({includeRemoved: false}).then(data => console.log(data));
    */
   async getOfflineClients({ includeRemoved = true } = {}) {
-    return (await this.getStatus({ includeRemoved })).filter(client => client.online === false);
+    return (await this.getClients({ includeRemoved })).filter(client => client.online === false);
   }
 
   /**
