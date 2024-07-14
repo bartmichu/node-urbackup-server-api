@@ -81,12 +81,20 @@ class UrbackupServer {
       groupName: statusResponseItem.groupname,
       deletePending: statusResponseItem.delete_pending,
       online: statusResponseItem.online,
-      status: statusResponseItem.status,
       uid: statusResponseItem.uid,
       ip: statusResponseItem.ip,
+      seen: statusResponseItem.lastseen,
       clientVersion: statusResponseItem.client_version_string,
       osFamily: statusResponseItem.os_simple,
-      osVersion: statusResponseItem.os_version_string
+      osVersion: statusResponseItem.os_version_string,
+      status: statusResponseItem.status,
+      processes: statusResponseItem.processes,
+      imageBackupDisabled: statusResponseItem.image_disabled,
+      imageBackupOk: statusResponseItem.image_ok,
+      lastImageBackup: statusResponseItem.lastbackup_image,
+      fileBackupOk: statusResponseItem.file_ok,
+      lastFileBackup: statusResponseItem.lastbackup,
+      lastFileBackupIssues: statusResponseItem.last_filebackup_issues,
     }
   }
 
@@ -630,6 +638,22 @@ class UrbackupServer {
   async getActiveClients({ includeRemoved = true } = {}) {
     return (await this.getClients({ includeRemoved })).filter(client => client.status !== 0);
   }
+
+  /**
+   * Retrieves a list of blank clients, i.e., clients without any finished file or image backups.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get all blank clients</caption>
+   * server.getBlankClients().then(data => console.log(data));
+   * @example <caption>Get blank clients, skip clients marked for removal</caption>
+   * server.getBlankClients({ includeRemoved: false }).then(data => console.log(data));
+   */
+  async getBlankClients({ includeRemoved = true } = {}) {
+    return (await this.getClients({ includeRemoved })).filter(client => client.lastFileBackup === 0 && client.lastImageBackup === 0);
+  }
+
 
   /**
    * Adds a new client.
