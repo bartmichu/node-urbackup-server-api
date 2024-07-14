@@ -91,7 +91,7 @@ const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'ad
 
     console.log('Clients with failed file backups:');
 
-    allClients.filter(client => client.file_ok === false)
+    allClients.filter(client => client.fileBackupOk === false)
       .forEach(client => console.log(client.name));
   } catch (error) {
     // Deal with it
