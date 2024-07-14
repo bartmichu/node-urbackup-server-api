@@ -75,23 +75,19 @@ class UrbackupServer {
    * const data = (await this.#fetchJson('status')).map(client => this.#normalizeClient(client));
    */
   #normalizeClient(statusResponseItem) {
-    return (function ({
-      delete_pending, groupname, id, name, online, uid, ip, client_version_string, os_simple, os_version_string, status
-    }) {
-      return {
-        clientId: id,
-        clientName: name,
-        groupName: groupname,
-        deletePending: delete_pending,
-        online: online,
-        status: status,
-        uid: uid,
-        ip: ip,
-        clientVersion: client_version_string,
-        osFamily: os_simple,
-        osVersion: os_version_string
-      };
-    })(statusResponseItem);
+    return {
+      clientId: statusResponseItem.id,
+      clientName: statusResponseItem.name,
+      groupName: statusResponseItem.groupname,
+      deletePending: statusResponseItem.delete_pending,
+      online: statusResponseItem.online,
+      status: statusResponseItem.status,
+      uid: statusResponseItem.uid,
+      ip: statusResponseItem.ip,
+      clientVersion: statusResponseItem.client_version_string,
+      osFamily: statusResponseItem.os_simple,
+      osVersion: statusResponseItem.os_version_string
+    }
   }
 
   /**
