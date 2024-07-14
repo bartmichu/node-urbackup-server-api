@@ -37,8 +37,8 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 ### Notable Changes
 
   - 0.42.0
-    - Added following methods: `getServerVersion()`, `getUserRights()`, `getRawStatus()`, `getRawUsage()`, `getRawProgress()`, `getActiverClients()`.
-    - Added following properties to objects returned by `getClients()` method: `status`
+    - Added following methods: `getServerVersion()`, `getUserRights()`, `getRawStatus()`, `getRawUsage()`, `getRawProgress()`, `getActiveClients()`, `getBlankClients()`.
+    - Added following properties to objects returned by `getClients()` method: `status`, `seen`, `processes`, `imageBackupDisabled`, `imageBackupOk`, `lastImageBackup`, `fileBackupOk`, `lastFileBackup`, `lastFileBackupIssues`.
 
   - 0.41.0
     - Added following properties to objects returned by `getClients()` method: `online`, `uid`, `ip`, `clientVersion`, `osFamily`, `osVersion`. This affects the `getClients()`, `getGroupMembers()`, `getRemovedClients()`, `getOnlineClients()`, `getOfflineClients()`.
@@ -124,6 +124,7 @@ Represents a UrBackup Server.
     * [.getOnlineClients([params])](#UrbackupServer+getOnlineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOfflineClients([params])](#UrbackupServer+getOfflineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getActiveClients([params])](#UrbackupServer+getActiveClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getBlankClients([params])](#UrbackupServer+getBlankClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -440,6 +441,31 @@ Retrieves a list of active clients.
 **Example** *(Get all active clients)*  
 ```js
 server.getActiveClients().then(data => console.log(data));
+```
+<a name="UrbackupServer+getBlankClients"></a>
+
+### urbackupServer.getBlankClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of blank clients, i.e., clients without any finished file or image backups.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(Get all blank clients)*  
+```js
+server.getBlankClients().then(data => console.log(data));
+```
+**Example** *(Get blank clients, skip clients marked for removal)*  
+```js
+server.getBlankClients({ includeRemoved: false }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClient"></a>
 
