@@ -19,7 +19,7 @@ The module aims to simplify the integration of UrBackup server management into N
 
 To use this module, ensure you have the following:
 
-  - An Active LTS or Maintenance LTS version (https://nodejs.org/en/about/previous-releases)
+  - An Active LTS or Maintenance LTS version of Node.js (https://nodejs.org/en/about/previous-releases)
   - A current release of the UrBackup Server
 
 ## CHANGELOG
@@ -28,13 +28,19 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ### Breaking Changes
 
+  - 0.50.0
+    - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
+
   - 0.40.0
-    - Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.
+    - ~~Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.~~
 
   - 0.30.0
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ### Notable Changes
+
+  - 0.50.0
+    - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
 
   - 0.42.0
     - Added following methods: `getServerVersion()`, `getUserRights()`, `getRawStatus()`, `getRawUsage()`, `getRawProgress()`, `getActiveClients()`, `getBlankClients()`.
@@ -44,7 +50,7 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Added following properties to objects returned by `getClients()` method: `online`, `uid`, `ip`, `clientVersion`, `osFamily`, `osVersion`. This affects the `getClients()`, `getGroupMembers()`, `getRemovedClients()`, `getOnlineClients()`, `getOfflineClients()`.
 
   - 0.40.0
-    - Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.
+    - ~~Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.~~
 
   - 0.31.0
     - Added following methods: `getOnlineClients()`, `getOfflineClients()`, `getRemovedClients()`, `getPausedActivities()`.
@@ -91,7 +97,7 @@ const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'ad
 
     console.log('Clients with failed file backups:');
 
-    allClients.filter(client => client.fileBackupOk === false)
+    allClients.filter(client => client.file_ok === false)
       .forEach(client => console.log(client.name));
   } catch (error) {
     // Deal with it
