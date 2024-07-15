@@ -677,11 +677,46 @@ class UrbackupServer {
     return blankClients;
   }
 
+  /**
+   * Retrieves a list of failed clients, i.e., clients with failed backup status.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.includeBlankClients=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get clients with failed file or image backups</caption>
+   * server.getFailedClients().then(data => console.log(data));
+   * @example <caption>Get failed clients, skip clients marked for removal</caption>
+   * server.getFailedClients({ includeRemoved: false }).then(data => console.log(data));
+   * @example <caption>Get clients with failed file backups</caption>
+   * server.getFailedClients({ includeImageBackups: false }).then(data => console.log(data));
+   * @example <caption>Get clients with failed image backups</caption>
+   * server.getFailedClients({ includeFileBackups: false }).then(data => console.log(data));
    */
-  async getBlankClients({ includeRemoved = true } = {}) {
-    return (await this.getClients({ includeRemoved })).filter(client => client.lastFileBackup === 0 && client.lastImageBackup === 0);
-  }
+  async getFailedClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true, includeBlankClients = true } = {}) {
+    const clients = await this.getClients({ includeRemoved });
+    const failedClients = [];
 
+    for (const client of clients) {
+      if (includeFileBackups) {
+        if ((includeBlankClients || (!includeBlankClients && client.lastbackup !== 0)) && client.file_ok !== true) {
+          failedClients.push(client);
+          continue;
+        }
+      }
+
+      if (includeImageBackups) {
+        if ((includeBlankClients || (!includeBlankClients && client.lastbackup_image !== 0)) && client.image_ok !== true) {
+          failedClients.push(client);
+          continue;
+        }
+      }
+    }
+
+    return failedClients;
+  }
 
   /**
    * Adds a new client.
