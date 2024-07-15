@@ -66,14 +66,16 @@ class UrbackupServer {
   }
 
   /**
-   * Normalizes the client object.
+   * DEPRECATED. Normalizes the client object.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {object} statusResponseItem - An object representing a client as returned by the `status` API call.
    * @returns {object} Normalized client object.
    * @private
    * @example
    * const data = (await this.#fetchJson('status')).map(client => this.#normalizeClient(client));
+   * @deprecated Since 0.50.0.
    */
+  // eslint-disable-next-line no-unused-private-class-members
   #normalizeClient(statusResponseItem) {
     return {
       clientId: statusResponseItem.id,
@@ -249,7 +251,7 @@ class UrbackupServer {
 
     const fallbackReturnValue = null;
     const clients = await this.getClients({ includeRemoved: true });
-    const clientId = clients.find((client) => client.clientName === clientName)?.clientId;
+    const clientId = clients.find((client) => client.name === clientName)?.id;
 
     return typeof clientId === 'undefined' ? fallbackReturnValue : clientId;
   }
@@ -272,7 +274,7 @@ class UrbackupServer {
     const fallbackReturnValue = null;
 
     const clients = await this.getClients({ includeRemoved: true });
-    const clientName = clients.find((client) => client.clientId === clientId)?.clientName;
+    const clientName = clients.find((client) => client.id === clientId)?.name;
 
     return typeof clientName === 'undefined' ? fallbackReturnValue : clientName;
   }
@@ -575,7 +577,7 @@ class UrbackupServer {
             continue;
           }
 
-          clients.push(this.#normalizeClient(client));
+          clients.push(client);
         }
 
         return clients;
@@ -595,7 +597,7 @@ class UrbackupServer {
    * server.getRemovedClients().then(data => console.log(data));
    */
   async getRemovedClients() {
-    return (await this.getClients({ includeRemoved: true })).filter(client => client.deletePending === '1');
+    return (await this.getClients({ includeRemoved: true })).filter(client => client.delete_pending === '1');
   }
 
   /**
@@ -651,7 +653,7 @@ class UrbackupServer {
    * server.getBlankClients({ includeRemoved: false }).then(data => console.log(data));
    */
   async getBlankClients({ includeRemoved = true } = {}) {
-    return (await this.getClients({ includeRemoved })).filter(client => client.lastFileBackup === 0 && client.lastImageBackup === 0);
+    return (await this.getClients({ includeRemoved })).filter(client => client.lastbackup === 0 && client.lastbackup_image === 0);
   }
 
 
@@ -910,17 +912,17 @@ class UrbackupServer {
       const clientIds = [];
       const allClients = await this.getClients({ includeRemoved: true });
 
-      if (allClients.some((client) => typeof client.clientId === 'undefined')) {
+      if (allClients.some((client) => typeof client.id === 'undefined')) {
         throw new Error(this.#messages.missingValues);
       }
 
       if (typeof clientId === 'undefined') {
         for (const client of allClients) {
           if (typeof clientName === 'undefined') {
-            clientIds.push(client.clientId);
+            clientIds.push(client.id);
           } else {
-            if (client.clientName === clientName) {
-              clientIds.push(client.clientId);
+            if (client.name === clientName) {
+              clientIds.push(client.id);
               break;
             }
           }
@@ -928,7 +930,7 @@ class UrbackupServer {
       } else {
         // NOTE: Need to make sure that given clientId really exists because 'clientsettings' API call
         // returns settings even when called with an invalid ID
-        if (allClients.some((client) => client.clientId === clientId)) {
+        if (allClients.some((client) => client.id === clientId)) {
           clientIds.push(clientId);
         }
       }
