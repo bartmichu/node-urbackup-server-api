@@ -642,15 +642,41 @@ class UrbackupServer {
   }
 
   /**
-   * Retrieves a list of blank clients, i.e., clients without any finished file or image backups.
+   * Retrieves a list of blank clients, i.e., clients without any finished file and/or image backups.
+   * By default, it matches clients without both file and image backups.
    * @param {object} [params] - An optional object containing parameters.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
-   * @example <caption>Get all blank clients</caption>
+   * @example <caption>Get all blank clients, i.e., clients without both file and image backups</caption>
    * server.getBlankClients().then(data => console.log(data));
    * @example <caption>Get blank clients, skip clients marked for removal</caption>
    * server.getBlankClients({ includeRemoved: false }).then(data => console.log(data));
+   * @example <caption>Get clients without any file backups</caption>
+   * server.getBlankClients({ includeImageBackups: false }).then(data => console.log(data));
+   * @example <caption>Get clients without any image backups</caption>
+   * server.getBlankClients({ includeFileBackups: false }).then(data => console.log(data));
+   */
+  async getBlankClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true } = {}) {
+    const clients = await this.getClients({ includeRemoved });
+    const blankClients = [];
+
+    clients.forEach(client => {
+      const isBlankFileBackup = includeFileBackups && client.lastbackup === 0;
+      const isBlankImageBackup = includeImageBackups && client.lastbackup_image === 0;
+
+      if (isBlankFileBackup && (!includeImageBackups || isBlankImageBackup)) {
+        blankClients.push(client);
+      } else if (isBlankImageBackup && !includeFileBackups) {
+        blankClients.push(client);
+      }
+    });
+
+    return blankClients;
+  }
+
    */
   async getBlankClients({ includeRemoved = true } = {}) {
     return (await this.getClients({ includeRemoved })).filter(client => client.lastFileBackup === 0 && client.lastImageBackup === 0);
