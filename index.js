@@ -719,6 +719,45 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of OK clients, i.e., clients with OK backup status.
+   * File backups finished with issues are treated as OK by default.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.failOnFileIssues=false] - Do not treat backups finished with issues as being OK. Defaults to false.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get OK clients, use default parameters</caption>
+   * server.getOkClients().then(data => console.log(data));
+   * @example <caption>Get OK clients, skip clients marked for removal</caption>
+   * server.getOkClients({ includeRemoved: false }).then(data => console.log(data));
+   * @example <caption>Get clients with OK file backup, skip image backup status</caption>
+   * server.getOkClients({ includeImageBackups: false }).then(data => console.log(data));
+   * @example <caption>Get clients with OK file backup but treat backup issues as a failure, skip image backup status</caption>
+   * server.getOkClients({ includeImageBackups: false, failOnFileIssues: true }).then(data => console.log(data));
+   */
+  async getOkClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true, failOnFileIssues = false } = {}) {
+    const clients = await this.getClients({ includeRemoved });
+    const okClients = [];
+
+    for (const client of clients) {
+      if (includeFileBackups && client.file_ok === true) {
+        if (!failOnFileIssues || (failOnFileIssues && client.last_filebackup_issues === 0)) {
+          okClients.push(client);
+          continue;
+        }
+      }
+
+      if (includeImageBackups && client.image_ok === true) {
+        okClients.push(client);
+      }
+    }
+
+    return okClients;
+  }
+
+  /**
    * Adds a new client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.clientName - The client's name.
