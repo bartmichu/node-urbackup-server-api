@@ -684,6 +684,7 @@ class UrbackupServer {
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeBlankClients=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.failOnFileIssues=false] - Whether or not to treat file backups finished with issues as being failed. Defaults to false.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get clients with failed file or image backups</caption>
@@ -695,13 +696,13 @@ class UrbackupServer {
    * @example <caption>Get clients with failed image backups</caption>
    * server.getFailedClients({ includeFileBackups: false }).then(data => console.log(data));
    */
-  async getFailedClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true, includeBlankClients = true } = {}) {
+  async getFailedClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true, includeBlankClients = true, failOnFileIssues = false } = {}) {
     const clients = await this.getClients({ includeRemoved });
     const failedClients = [];
 
     for (const client of clients) {
       if (includeFileBackups) {
-        if ((includeBlankClients || (!includeBlankClients && client.lastbackup !== 0)) && client.file_ok !== true) {
+        if ((failOnFileIssues && client.last_filebackup_issues !== 0) || ((includeBlankClients || (!includeBlankClients && client.lastbackup !== 0)) && client.file_ok !== true)) {
           failedClients.push(client);
           continue;
         }
@@ -710,7 +711,6 @@ class UrbackupServer {
       if (includeImageBackups) {
         if ((includeBlankClients || (!includeBlankClients && client.lastbackup_image !== 0)) && client.image_ok !== true) {
           failedClients.push(client);
-          continue;
         }
       }
     }
@@ -725,7 +725,7 @@ class UrbackupServer {
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
-   * @param {boolean} [params.failOnFileIssues=false] - Do not treat backups finished with issues as being OK. Defaults to false.
+   * @param {boolean} [params.failOnFileIssues=false] - Whether or not to treat file backups finished with issues as being failed. Defaults to false.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get OK clients, use default parameters</caption>
