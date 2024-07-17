@@ -66,41 +66,6 @@ class UrbackupServer {
   }
 
   /**
-   * DEPRECATED. Normalizes the client object.
-   * This method is intended for internal use only and should not be called outside the class.
-   * @param {object} statusResponseItem - An object representing a client as returned by the `status` API call.
-   * @returns {object} Normalized client object.
-   * @private
-   * @example
-   * const data = (await this.#fetchJson('status')).map(client => this.#normalizeClient(client));
-   * @deprecated Since 0.50.0.
-   */
-  // eslint-disable-next-line no-unused-private-class-members
-  #normalizeClient(statusResponseItem) {
-    return {
-      clientId: statusResponseItem.id,
-      clientName: statusResponseItem.name,
-      groupName: statusResponseItem.groupname,
-      deletePending: statusResponseItem.delete_pending,
-      online: statusResponseItem.online,
-      uid: statusResponseItem.uid,
-      ip: statusResponseItem.ip,
-      seen: statusResponseItem.lastseen,
-      clientVersion: statusResponseItem.client_version_string,
-      osFamily: statusResponseItem.os_simple,
-      osVersion: statusResponseItem.os_version_string,
-      status: statusResponseItem.status,
-      processes: statusResponseItem.processes,
-      imageBackupDisabled: statusResponseItem.image_disabled,
-      imageBackupOk: statusResponseItem.image_ok,
-      lastImageBackup: statusResponseItem.lastbackup_image,
-      fileBackupOk: statusResponseItem.file_ok,
-      lastFileBackup: statusResponseItem.lastbackup,
-      lastFileBackupIssues: statusResponseItem.last_filebackup_issues,
-    }
-  }
-
-  /**
    * Makes an API call to the server.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string} action - The action to perform.
@@ -235,55 +200,6 @@ class UrbackupServer {
   }
 
   /**
-   * DEPRECATED. Maps client name to client ID.
-   * This method is intended for internal use only and should not be called outside the class.
-   * @param {string} clientName - The client's name.
-   * @returns {Promise<number | null>} The client's ID or null if no matching clients are found.
-   * @throws {Error} If the clientName is not a string.
-   * @private
-   * @example
-   * const clientId = await this.#getClientId('dbserver');
-   * @deprecated Since 0.51.0.
-   */
-  // eslint-disable-next-line no-unused-private-class-members
-  async #getClientId(clientName) {
-    if (typeof clientName !== 'string') {
-      throw new Error(this.#messages.syntaxClientName);
-    }
-
-    const fallbackReturnValue = null;
-    const clients = await this.getClients({ includeRemoved: true });
-    const clientId = clients.find((client) => client.name === clientName)?.id;
-
-    return typeof clientId === 'undefined' ? fallbackReturnValue : clientId;
-  }
-
-  /**
-   * DEPRECATED. Maps client ID to client name.
-   * This method is intended for internal use only and should not be called outside the class.
-   * @param {number} clientId - The client's ID.
-   * @returns {Promise<string | null>} The client's name or null if no matching clients are found.
-   * @throws {Error} If the clientId is not a number.
-   * @private
-   * @example
-   * const clientName = await this.#getClientName(42);
-   * @deprecated Since 0.51.0.
-   */
-  // eslint-disable-next-line no-unused-private-class-members
-  async #getClientName(clientId) {
-    if (typeof clientId !== 'number') {
-      throw new Error(this.#messages.syntaxClientId);
-    }
-
-    const fallbackReturnValue = null;
-
-    const clients = await this.getClients({ includeRemoved: true });
-    const clientName = clients.find((client) => client.id === clientId)?.name;
-
-    return typeof clientName === 'undefined' ? fallbackReturnValue : clientName;
-  }
-
-  /**
    * Maps client name to client ID or client ID to client name.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string|number} inputIdentifier - The client's name or ID.
@@ -311,56 +227,6 @@ class UrbackupServer {
     }
 
     return typeof result === 'undefined' ? fallbackReturnValue : result;
-  }
-
-  /**
-   * DEPRECATED. Maps group name to group ID.
-   * This method is intended for internal use only and should not be called outside the class.
-   * @param {string} groupName - The group's name.
-   * @returns {Promise<number | null>} The group's ID or null if no matching groups are found.
-   * @throws {Error} If the groupName is not a string.
-   * @private
-   * @example
-   * const groupId = await this.#getGroupId('hr');
-   * @deprecated Since 0.51.0.
-   */
-  // eslint-disable-next-line no-unused-private-class-members
-  async #getGroupId(groupName) {
-    if (typeof groupName !== 'string') {
-      throw new Error(this.#messages.syntaxGroupName);
-    }
-
-    const fallbackReturnValue = null;
-
-    const groups = await this.getGroups();
-    const groupId = groups.find((group) => group.name === groupName)?.id;
-
-    return typeof groupId === 'undefined' ? fallbackReturnValue : groupId;
-  }
-
-  /**
-   * DEPRECATED. Maps group ID to group name.
-   * This method is intended for internal use only and should not be called outside the class.
-   * @param {number} groupId - The group's ID.
-   * @returns {Promise<string | null>} The group's name or null if no matching groups are found.
-   * @throws {Error} If the groupId is not a number.
-   * @private
-   * @example
-   * const groupName = await this.#getGroupName(2);
-   * @deprecated Since 0.51.0.
-   */
-  // eslint-disable-next-line no-unused-private-class-members
-  async #getGroupName(groupId) {
-    if (typeof groupId !== 'number') {
-      throw new Error(this.#messages.syntaxGroupId);
-    }
-
-    const fallbackReturnValue = null;
-
-    const groups = await this.getGroups();
-    const groupName = groups.find((group) => group.id === groupId)?.name;
-
-    return typeof groupName === 'undefined' ? fallbackReturnValue : groupName;
   }
 
   /**
