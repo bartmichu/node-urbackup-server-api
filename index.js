@@ -659,31 +659,37 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of clients marked for removal.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get clients marked for removal</caption>
    * server.getRemovedClients().then(data => console.log(data));
+   * @example <caption>Get clients marked for removal in a specific group</caption>
+   * server.getRemovedClients({ groupName: 'sales' }).then(data => console.log(data));
    */
-  async getRemovedClients() {
-    return (await this.getClients({ includeRemoved: true })).filter(client => client.delete_pending === '1');
+  async getRemovedClients({ groupName } = {}) {
+    return (await this.getClients({ groupName, includeRemoved: true })).filter(client => client.delete_pending === '1');
   }
 
   /**
    * Retrieves a list of online clients.
    * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all online clients</caption>
    * server.getOnlineClients().then(data => console.log(data));
    */
-  async getOnlineClients({ includeRemoved = true } = {}) {
-    return (await this.getClients({ includeRemoved })).filter(client => client.online === true);
+  async getOnlineClients({ groupName, includeRemoved = true } = {}) {
+    return (await this.getClients({ groupName, includeRemoved })).filter(client => client.online === true);
   }
 
   /**
    * Retrieves a list of offline clients.
    * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
@@ -692,27 +698,29 @@ class UrbackupServer {
    * @example <caption>Get offline clients, skip clients marked for removal</caption>
    * server.getOfflineClients({includeRemoved: false}).then(data => console.log(data));
    */
-  async getOfflineClients({ includeRemoved = true } = {}) {
-    return (await this.getClients({ includeRemoved })).filter(client => client.online === false);
+  async getOfflineClients({ groupName, includeRemoved = true } = {}) {
+    return (await this.getClients({ groupName, includeRemoved })).filter(client => client.online === false);
   }
 
   /**
    * Retrieves a list of active clients.
    * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all active clients</caption>
    * server.getActiveClients().then(data => console.log(data));
    */
-  async getActiveClients({ includeRemoved = true } = {}) {
-    return (await this.getClients({ includeRemoved })).filter(client => client.status !== 0);
+  async getActiveClients({ groupName, includeRemoved = true } = {}) {
+    return (await this.getClients({ groupName, includeRemoved })).filter(client => client.status !== 0);
   }
 
   /**
    * Retrieves a list of blank clients, i.e., clients without any finished file and/or image backups.
    * By default, it matches clients without both file and image backups.
    * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
@@ -727,8 +735,8 @@ class UrbackupServer {
    * @example <caption>Get clients without any image backups</caption>
    * server.getBlankClients({ includeFileBackups: false }).then(data => console.log(data));
    */
-  async getBlankClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true } = {}) {
-    const clients = await this.getClients({ includeRemoved });
+  async getBlankClients({ groupName, includeRemoved = true, includeFileBackups = true, includeImageBackups = true } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
     const blankClients = [];
 
     clients.forEach(client => {
@@ -748,6 +756,7 @@ class UrbackupServer {
   /**
    * Retrieves a list of failed clients, i.e., clients with failed backup status.
    * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
@@ -764,8 +773,8 @@ class UrbackupServer {
    * @example <caption>Get clients with failed image backups</caption>
    * server.getFailedClients({ includeFileBackups: false }).then(data => console.log(data));
    */
-  async getFailedClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true, includeBlankClients = true, failOnFileIssues = false } = {}) {
-    const clients = await this.getClients({ includeRemoved });
+  async getFailedClients({ groupName, includeRemoved = true, includeFileBackups = true, includeImageBackups = true, includeBlankClients = true, failOnFileIssues = false } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
     const failedClients = [];
 
     for (const client of clients) {
@@ -790,6 +799,7 @@ class UrbackupServer {
    * Retrieves a list of OK clients, i.e., clients with OK backup status.
    * File backups finished with issues are treated as OK by default.
    * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
@@ -805,8 +815,8 @@ class UrbackupServer {
    * @example <caption>Get clients with OK file backup but treat backup issues as a failure, skip image backup status</caption>
    * server.getOkClients({ includeImageBackups: false, failOnFileIssues: true }).then(data => console.log(data));
    */
-  async getOkClients({ includeRemoved = true, includeFileBackups = true, includeImageBackups = true, failOnFileIssues = false } = {}) {
-    const clients = await this.getClients({ includeRemoved });
+  async getOkClients({ groupName, includeRemoved = true, includeFileBackups = true, includeImageBackups = true, failOnFileIssues = false } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
     const okClients = [];
 
     for (const client of clients) {
