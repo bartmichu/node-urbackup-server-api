@@ -192,7 +192,7 @@ class UrbackupServer {
     // eslint-disable-next-line no-unused-vars
     const [value, release] = await this.#semaphore.acquire();
     try {
-      if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
+      if (this.#isLoggedIn && this.#sessionId.length > 0) {
         return true;
       }
 
@@ -235,7 +235,7 @@ class UrbackupServer {
   }
 
   /**
-   * Maps client name to client ID.
+   * DEPRECATED. Maps client name to client ID.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string} clientName - The client's name.
    * @returns {Promise<number | null>} The client's ID or null if no matching clients are found.
@@ -243,7 +243,9 @@ class UrbackupServer {
    * @private
    * @example
    * const clientId = await this.#getClientId('dbserver');
+   * @deprecated Since 0.51.0.
    */
+  // eslint-disable-next-line no-unused-private-class-members
   async #getClientId(clientName) {
     if (typeof clientName !== 'string') {
       throw new Error(this.#messages.syntaxClientName);
@@ -257,7 +259,7 @@ class UrbackupServer {
   }
 
   /**
-   * Maps client ID to client name.
+   * DEPRECATED. Maps client ID to client name.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {number} clientId - The client's ID.
    * @returns {Promise<string | null>} The client's name or null if no matching clients are found.
@@ -265,7 +267,9 @@ class UrbackupServer {
    * @private
    * @example
    * const clientName = await this.#getClientName(42);
+   * @deprecated Since 0.51.0.
    */
+  // eslint-disable-next-line no-unused-private-class-members
   async #getClientName(clientId) {
     if (typeof clientId !== 'number') {
       throw new Error(this.#messages.syntaxClientId);
@@ -280,7 +284,37 @@ class UrbackupServer {
   }
 
   /**
-   * Maps group name to group ID.
+   * Maps client name to client ID or client ID to client name.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {string|number} inputIdentifier - The client's name or ID.
+   * @param {string} outputIdentifierType - The type of target identifier ('name' or 'id').
+   * @returns {Promise<number|string|null>} The client's ID or name, or null if no matching clients are found.
+   * @throws {Error} If the `inputIdentifier` is not a string when `outputIdentifierType` is 'name' or not a number when `outputIdentifierType` is 'id'.
+   * @private
+   * @example
+   * const clientId = await this.#getClientIdentifier('dbserver', 'id');
+   * const clientName = await this.#getClientIdentifier(42, 'name');
+   */
+  async #getClientIdentifier(inputIdentifier, outputIdentifierType) {
+    if ((outputIdentifierType === 'id' && typeof inputIdentifier !== 'string') || (outputIdentifierType === 'name' && typeof inputIdentifier !== 'number')) {
+      throw new Error(outputIdentifierType === 'id' ? this.#messages.syntaxClientName : this.#messages.syntaxClientId);
+    }
+
+    const fallbackReturnValue = null;
+    const clients = await this.getClients({ includeRemoved: true });
+
+    let result;
+    if (outputIdentifierType === 'id') {
+      result = clients.find((client) => client.name === inputIdentifier)?.id;
+    } else if (outputIdentifierType === 'name') {
+      result = clients.find((client) => client.id === inputIdentifier)?.name;
+    }
+
+    return typeof result === 'undefined' ? fallbackReturnValue : result;
+  }
+
+  /**
+   * DEPRECATED. Maps group name to group ID.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string} groupName - The group's name.
    * @returns {Promise<number | null>} The group's ID or null if no matching groups are found.
@@ -288,7 +322,9 @@ class UrbackupServer {
    * @private
    * @example
    * const groupId = await this.#getGroupId('hr');
+   * @deprecated Since 0.51.0.
    */
+  // eslint-disable-next-line no-unused-private-class-members
   async #getGroupId(groupName) {
     if (typeof groupName !== 'string') {
       throw new Error(this.#messages.syntaxGroupName);
@@ -303,7 +339,7 @@ class UrbackupServer {
   }
 
   /**
-   * Maps group ID to group name.
+   * DEPRECATED. Maps group ID to group name.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {number} groupId - The group's ID.
    * @returns {Promise<string | null>} The group's name or null if no matching groups are found.
@@ -311,7 +347,9 @@ class UrbackupServer {
    * @private
    * @example
    * const groupName = await this.#getGroupName(2);
+   * @deprecated Since 0.51.0.
    */
+  // eslint-disable-next-line no-unused-private-class-members
   async #getGroupName(groupId) {
     if (typeof groupId !== 'number') {
       throw new Error(this.#messages.syntaxGroupId);
@@ -326,6 +364,36 @@ class UrbackupServer {
   }
 
   /**
+   * Maps group name to group ID or group ID to group name.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {string|number} inputIdentifier - The group's name or ID.
+   * @param {string} outputIdentifierType - The type of target identifier ('name' or 'id').
+   * @returns {Promise<number|string|null>} The group's ID or name, or null if no matching group are found.
+   * @throws {Error} If the `inputIdentifier` is not a string when `outputIdentifierType` is 'name' or not a number when `outputIdentifierType` is 'id'.
+   * @private
+   * @example
+   * const groupId = await this.#getGroupIdentifier('hr', 'id');
+   * const groupName = await this.#getGroupIdentifier(2, 'name');
+   */
+  async #getGroupIdentifier(inputIdentifier, outputIdentifierType) {
+    if ((outputIdentifierType === 'id' && typeof inputIdentifier !== 'string') || (outputIdentifierType === 'name' && typeof inputIdentifier !== 'number')) {
+      throw new Error(outputIdentifierType === 'id' ? this.#messages.syntaxGroupName : this.#messages.syntaxGroupId);
+    }
+
+    const fallbackReturnValue = null;
+    const groups = await this.getGroups();
+
+    let result;
+    if (outputIdentifierType === 'id') {
+      result = groups.find((group) => group.name === inputIdentifier)?.id;
+    } else if (outputIdentifierType === 'name') {
+      result = groups.find((group) => group.id === inputIdentifier)?.name;
+    }
+
+    return typeof result === 'undefined' ? fallbackReturnValue : result;
+  }
+
+  /**
    * Retrieves server identity.
    * @returns {Promise<string>} The server identity.
    * @throws {Error} If the API response is missing required values or if the login fails.
@@ -335,7 +403,7 @@ class UrbackupServer {
   async getServerIdentity() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const statusResponse = await this.#fetchJson('status');
 
       if (typeof statusResponse?.server_identity === 'string') {
@@ -358,7 +426,7 @@ class UrbackupServer {
   async getUsers() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const usersResponse = await this.#fetchJson('settings', { sa: 'listusers' });
 
       if (Array.isArray(usersResponse?.users)) {
@@ -388,7 +456,7 @@ class UrbackupServer {
   async getUserRights({ userId, userName = this.#username } = {}) {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const fallbackReturnValue = null;
       const allUsers = await this.getUsers();
 
@@ -418,7 +486,7 @@ class UrbackupServer {
   async getGroups() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const settingsResponse = await this.#fetchJson('settings');
 
       if (Array.isArray(settingsResponse?.navitems?.groups)) {
@@ -453,7 +521,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const response = await this.#fetchJson('settings', { sa: 'groupadd', name: groupName });
 
       if ('add_ok' in response || 'already_exists' in response) {
@@ -489,18 +557,18 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       let mappedGroupId;
 
       if (typeof groupId === 'undefined') {
-        mappedGroupId = await this.#getGroupId(groupName);
+        mappedGroupId = await this.#getGroupIdentifier(groupName, 'id');
         if (mappedGroupId === 0 || mappedGroupId === null) {
           return false;
         }
       } else {
         // NOTE: Fail early due to a possible UrBackup bug where the server returns delete_ok:true even when
         // attempting to delete a non-existent group ID
-        const mappedGroupName = await this.#getGroupName(groupId);
+        const mappedGroupName = await this.#getGroupIdentifier(groupId, 'name');
         if (mappedGroupName === null) {
           return false;
         }
@@ -534,7 +602,7 @@ class UrbackupServer {
     const fallbackReturnValue = [];
     let mappedGroupName;
     if (typeof groupName === 'undefined') {
-      mappedGroupName = await this.#getGroupName(groupId);
+      mappedGroupName = await this.#getGroupIdentifier(groupId, 'name');
       if (mappedGroupName === null) {
         return fallbackReturnValue;
       }
@@ -564,16 +632,16 @@ class UrbackupServer {
     const clients = [];
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const statusResponse = await this.#fetchJson('status');
 
       if (Array.isArray(statusResponse?.status)) {
         for (const client of statusResponse.status) {
-          if (typeof groupName !== 'undefined' && groupName !== client.groupname) {
+          if (typeof groupName === 'string' && groupName !== client.groupname) {
             continue;
           }
 
-          if (includeRemoved === false && client.delete_pending === '1') {
+          if (!includeRemoved && client.delete_pending === '1') {
             continue;
           }
 
@@ -777,7 +845,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const addClientResponse = await this.#fetchJson('add_client', { clientname: clientName });
 
       if (addClientResponse?.ok === true) {
@@ -814,18 +882,18 @@ class UrbackupServer {
     const fallbackReturnValue = false;
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       let mappedClientId;
 
       if (typeof clientId === 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
+        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
         if (mappedClientId === null) {
           return fallbackReturnValue;
         }
       }
 
       const apiCallParameters = { remove_client: clientId ?? mappedClientId };
-      if (stopRemove === true) {
+      if (stopRemove) {
         apiCallParameters.stop_remove_client = true;
       }
 
@@ -834,7 +902,7 @@ class UrbackupServer {
       if (Array.isArray(statusResponse?.status)) {
         return statusResponse.status.find((client) =>
           client.id === (clientId ?? mappedClientId)
-        )?.delete_pending === (stopRemove === true ? '0' : '1');
+        )?.delete_pending === (stopRemove ? '0' : '1');
       } else {
         throw new Error(this.#messages.missingValues);
       }
@@ -889,7 +957,7 @@ class UrbackupServer {
   async getClientHints() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const statusResponse = await this.#fetchJson('status');
 
       if (Array.isArray(statusResponse?.extra_clients)) {
@@ -919,7 +987,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const statusResponse = await this.#fetchJson('status', {
         hostname: address
       });
@@ -953,7 +1021,7 @@ class UrbackupServer {
     let operationStatus = false;
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const extraClients = await this.getClientHints();
 
       if (Array.isArray(extraClients)) {
@@ -996,10 +1064,6 @@ class UrbackupServer {
    * server.getClientSettings({ clientId: 3 }).then(data => console.log(data));
    */
   async getClientSettings({ clientId, clientName } = {}) {
-    if (typeof clientId !== 'undefined' && typeof clientId !== 'number') {
-      throw new Error(this.#messages.missingParameters);
-    }
-
     const clientSettings = [];
 
     if (clientName === '') {
@@ -1008,7 +1072,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const clientIds = [];
       const allClients = await this.getClients({ includeRemoved: true });
 
@@ -1078,7 +1142,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
 
       if (Array.isArray(clientSettings) && clientSettings.length > 0) {
@@ -1130,7 +1194,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const clientSettings = await this.getClientSettings(typeof clientId === 'undefined' ? { clientName: clientName } : { clientId: clientId });
 
       if (Array.isArray(clientSettings)) {
@@ -1176,23 +1240,23 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const statusResponse = await this.#fetchJson('status');
 
       if (Array.isArray(statusResponse?.status)) {
         if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
-          if (includeRemoved === false) {
+          if (!includeRemoved) {
             return statusResponse.status.filter((client) => client.delete_pending !== '1');
           } else {
             return statusResponse.status;
           }
         } else {
           const clientStatus = statusResponse.status.find((client) =>
-            typeof clientId !== 'undefined' ? client.id === clientId : client.name === clientName
+            typeof clientId === 'number' ? client.id === clientId : client.name === clientName
           );
 
           if (typeof clientStatus !== 'undefined') {
-            return (includeRemoved === false && clientStatus.delete_pending === '1')
+            return (!includeRemoved && clientStatus.delete_pending === '1')
               ? fallbackReturnValue
               : [clientStatus];
           } else {
@@ -1219,7 +1283,7 @@ class UrbackupServer {
   async getServerVersion() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const serverVersion = { number: 0, string: '' };
 
       const statusResponse = await this.#fetchJson('status');
@@ -1261,7 +1325,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const usageResponse = await this.#fetchJson('usage');
 
       if (Array.isArray(usageResponse?.usage)) {
@@ -1269,15 +1333,15 @@ class UrbackupServer {
           return usageResponse.usage;
         } else {
           let mappedClientName;
-          if (typeof clientId !== 'undefined') {
+          if (typeof clientId === 'number') {
             // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
-            mappedClientName = await this.#getClientName(clientId);
+            mappedClientName = await this.#getClientIdentifier(clientId, 'name');
             if (mappedClientName === null) {
               return fallbackReturnValue;
             }
           }
           return usageResponse.usage.find((client) =>
-            typeof clientId !== 'undefined'
+            typeof clientId === 'number'
               ? client.name === mappedClientName
               : client.name === clientName
           ) ?? fallbackReturnValue;
@@ -1319,34 +1383,34 @@ class UrbackupServer {
       return activities;
     }
 
-    if (includeCurrent === false && includeLast === false) {
+    if (!includeCurrent && !includeLast) {
       return activities;
     }
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const activitiesResponse = await this.#fetchJson('progress');
 
       if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
-        if (includeCurrent === true) {
+        if (includeCurrent) {
           if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
             activities.current = activitiesResponse.progress;
           } else {
             activities.current = activitiesResponse.progress.filter((activity) =>
-              typeof clientId !== 'undefined'
+              typeof clientId === 'number'
                 ? activity.clientid === clientId
                 : activity.name === clientName
             );
           }
         }
 
-        if (includeLast === true) {
+        if (includeLast) {
           if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
             activities.last = activitiesResponse.lastacts;
           } else {
             activities.last = activitiesResponse.lastacts.filter((activity) =>
-              typeof clientId !== 'undefined'
+              typeof clientId === 'number'
                 ? activity.clientid === clientId
                 : activity.name === clientName
             );
@@ -1453,13 +1517,13 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       let mappedClientId;
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
+      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
+        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
       }
 
-      if (typeof clientId !== 'undefined' || (typeof mappedClientId !== 'undefined' && mappedClientId !== null)) {
+      if (typeof clientId === 'number' || typeof mappedClientId === 'number') {
         const activitiesResponse = await this.#fetchJson('progress', { stop_clientid: clientId ?? mappedClientId, stop_id: activityId });
 
         if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
@@ -1493,7 +1557,7 @@ class UrbackupServer {
    * server.getBackups({ clientName: 'laptop1', includeImageBackups: false }).then(data => console.log(data));
    */
   async getBackups({ clientId, clientName, includeFileBackups = true, includeImageBackups = true } = {}) {
-    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (includeFileBackups === false && includeImageBackups === false)) {
+    if ((typeof clientId === 'undefined' && typeof clientName === 'undefined') || (!includeFileBackups && !includeImageBackups)) {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -1505,22 +1569,22 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
+      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
+        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
       }
 
-      if (typeof clientId !== 'undefined' || (typeof mappedClientId !== 'undefined' && mappedClientId !== null)) {
+      if (typeof clientId === 'string' || typeof mappedClientId === 'string') {
         const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId ?? mappedClientId });
 
         if (Array.isArray(backupsResponse?.backup_images) && Array.isArray(backupsResponse?.backups)) {
-          if (includeFileBackups === true) {
+          if (includeFileBackups) {
             backups.file = backupsResponse.backups;
           }
 
-          if (includeImageBackups === true) {
+          if (includeImageBackups) {
             backups.image = backupsResponse.backup_images;
           }
 
@@ -1563,13 +1627,13 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       let mappedClientId;
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
+      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
+        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
       }
 
-      if (typeof clientId !== 'undefined' || (typeof mappedClientId !== 'undefined' && mappedClientId !== null)) {
+      if (typeof clientId === 'number' || typeof mappedClientId === 'number') {
         const backupResponse = await this.#fetchJson('start_backup', { start_client: clientId ?? mappedClientId, start_type: backupType });
 
         if (Array.isArray(backupResponse.result) && backupResponse.result.filter((element) => Object.keys(element).includes('start_ok')).length !== 1) {
@@ -1697,11 +1761,11 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined' && typeof clientName !== 'undefined') {
-        mappedClientId = await this.#getClientId(clientName);
+      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
+        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
       }
 
       if (clientId === 0 || mappedClientId === null) {
@@ -1716,7 +1780,7 @@ class UrbackupServer {
       try {
         const logResponse = await this.#fetchJson('livelog', {
           clientid: clientId ?? mappedClientId ?? 0,
-          lastid: recentOnly === false ? 0 : this.#lastLogId.get(clientId)
+          lastid: !recentOnly ? 0 : this.#lastLogId.get(clientId)
         });
 
         if (Array.isArray(logResponse.logdata)) {
@@ -1754,7 +1818,7 @@ class UrbackupServer {
     if (typeof category === 'string' && validCategories.includes(category)) {
       const login = await this.#login();
 
-      if (login === true) {
+      if (login) {
         const settingsResponse = await this.#fetchJson('settings', { sa: category });
 
         if (typeof settingsResponse?.settings === 'object') {
@@ -1824,7 +1888,7 @@ class UrbackupServer {
 
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const settings = await this.getGeneralSettings();
 
       if (Object.keys(settings).includes(key)) {
@@ -1857,7 +1921,7 @@ class UrbackupServer {
   async getRawStatus() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const statusResponse = await this.#fetchJson('status');
       return statusResponse;
     } else {
@@ -1876,7 +1940,7 @@ class UrbackupServer {
   async getRawUsage() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const usageResponse = await this.#fetchJson('usage');
       return usageResponse;
     } else {
@@ -1895,7 +1959,7 @@ class UrbackupServer {
   async getRawProgress() {
     const login = await this.#login();
 
-    if (login === true) {
+    if (login) {
       const progressResponse = await this.#fetchJson('progress');
       return progressResponse;
     } else {
