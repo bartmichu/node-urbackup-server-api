@@ -22,6 +22,56 @@ To use this module, ensure you have the following:
   - An Active LTS or Maintenance LTS version of Node.js (https://nodejs.org/en/about/previous-releases)
   - A current release of the UrBackup Server
 
+## Installation
+
+To install the module, use npm:
+
+```shell
+npm install urbackup-server-api
+```
+
+## Usage Example
+
+Here's a basic example to get you started:
+
+```javascript
+const { UrbackupServer } = require('urbackup-server-api');
+
+// When troubleshooting TSL connections with self-signed certificates you may try to disable certificate validation. Keep in mind that it's strongly discouraged for production use.
+//process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'admin', password: 'secretpassword' });
+
+(async () => {
+  try {
+    // Check if server is currently busy
+    const activities = await urbackup.getCurrentActivities();
+    console.log(`Busy: ${activities.length > 0}`);
+
+    // Get a list of production clients
+    const prodClients = await urbackup.getGroupMembers({ groupName: 'prod' }).then(data => console.log(data));
+
+    // Get production clients with failed image backup
+    const failedClients = await urbackup.getFailedClients({ groupName: 'prod', includeFileBackups: false }).then(data => console.log(data));
+
+    // Get all clients without both file and image backups
+   const blankClients = await urbackup.getBlankClients().then(data => console.log(data));
+
+    // Get outdated clients
+    const allClients = await urbackup.getClients();
+    const currentVersion = 2525;
+    const outdateClients = allClients.filter(client => {
+      const version = Number(client.client_version_string.split('.').join(''));
+      return currentVersion > version;
+    });
+    console.log(outdateClients);
+
+  } catch (error) {
+    // Deal with it
+  }
+})();
+```
+
 ## CHANGELOG
 
 This changelog starts at version `0.20.0` and includes a selection of significant changes.
@@ -38,6 +88,11 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ### Notable Changes
+
+  - 0.51.0
+    - Added following methods: `getFailedClients()`, `getOkClients()`.
+    - Added following parameters to `getBlankClients()`: `includeFileBackups`, `includeImageBackups`, `groupName`.
+    - Added `groupName` parameter to the following methods: `getRemovedClients()`, `getOnlineClients()`, `getOfflineClients()`, `getActiveClients()`, `getBlankClients()`.
 
   - 0.50.0
     - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
@@ -71,40 +126,6 @@ This changelog starts at version `0.20.0` and includes a selection of significan
   - 0.20.0
     - Fixed returned type inconsistencies for the following methods: `getClientId()`, `getClientName()`, `getGroupId()`, `getGroupName()`.
 
-## Installation
-
-To install the module, use npm:
-
-```shell
-npm install urbackup-server-api
-```
-
-## Usage Example
-
-Here's a basic example to get you started. A script to display the names of clients with failed file backups:
-
-```javascript
-const { UrbackupServer } = require('urbackup-server-api');
-
-// When troubleshooting TSL connections with self-signed certificates you may try to disable certificate validation. Keep in mind that it's strongly discouraged for production use.
-//process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'admin', password: 'secretpassword' });
-
-(async () => {
-  try {
-    const allClients = await server.getStatus();
-
-    console.log('Clients with failed file backups:');
-
-    allClients.filter(client => client.file_ok === false)
-      .forEach(client => console.log(client.name));
-  } catch (error) {
-    // Deal with it
-  }
-})();
-```
-
 ---
 
 ## Below is an automatically generated reference from JSDoc.
@@ -126,11 +147,13 @@ Represents a UrBackup Server.
     * [.removeGroup(params)](#UrbackupServer+removeGroup) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getGroupMembers(params)](#UrbackupServer+getGroupMembers) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getClients([params])](#UrbackupServer+getClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
-    * [.getRemovedClients()](#UrbackupServer+getRemovedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getRemovedClients([params])](#UrbackupServer+getRemovedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOnlineClients([params])](#UrbackupServer+getOnlineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOfflineClients([params])](#UrbackupServer+getOfflineClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getActiveClients([params])](#UrbackupServer+getActiveClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getBlankClients([params])](#UrbackupServer+getBlankClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getFailedClients([params])](#UrbackupServer+getFailedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getOkClients([params])](#UrbackupServer+getOkClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -170,10 +193,10 @@ This is a constructor.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
-| [params.url] | <code>string</code> | <code>&quot;&#x27;http://127.0.0.1:55414&#x27;&quot;</code> | The URL of the server, must include the protocol, hostname, and port. If not specified, it will default to http://127.0.0.1:55414. |
-| [params.username] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | The username used for logging in. If empty, anonymous login method will be used. The default value is an empty string. |
-| [params.password] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | The password used to log in. The default value is an empty string. |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.url] | <code>string</code> | <code>&quot;&#x27;http://127.0.0.1:55414&#x27;&quot;</code> | The URL of the server, must include the protocol, hostname, and port. Defaults to `http://127.0.0.1:55414`. |
+| [params.username] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | The username used for logging in. If empty, anonymous login method will be used. Defaults to an empty string. |
+| [params.password] | <code>string</code> | <code>&quot;&#x27;&#x27;&quot;</code> | The password used to log in. Defaults to an empty string. |
 
 **Example** *(Connect to the built-in server locally without a password)*  
 ```js
@@ -231,9 +254,9 @@ Retrieves the rights of a specific user.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
-| [params.userId] | <code>string</code> |  | The user's ID. Takes precedence if both `userId` and `userName` are defined. |
-| [params.userName] | <code>string</code> | <code>&quot;this.#username&quot;</code> | The user's name. Ignored if `userId` is defined. Defaults to the username of the current session. |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.userId] | <code>string</code> |  | The user's ID. Takes precedence if both `userId` and `userName` are defined. Required if `clientName` is undefined. |
+| [params.userName] | <code>string</code> | <code>&quot;this.#username&quot;</code> | The user's name. Ignored if `userId` is defined. Defaults to the username of the current session. Required if `clientId` is undefined. |
 
 **Example** *(Get user rights of the current session user)*  
 ```js
@@ -278,7 +301,7 @@ Adds a new group.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| params.groupName | <code>string</code> | The group name. Must be unique and cannot be an empty string. By default, UrBackup clients are added to a group with ID 0 and name '' (empty string). Defaults to undefined. |
+| params.groupName | <code>string</code> | The group name. Must be unique and cannot be an empty string. |
 
 **Example** *(Add new group)*  
 ```js
@@ -300,8 +323,8 @@ All clients in this group will be reassigned to the default group. Does not allo
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| [params.groupId] | <code>number</code> | Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined. |
-| [params.groupName] | <code>string</code> | Group name. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined. |
+| [params.groupId] | <code>number</code> | Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined. |
+| [params.groupName] | <code>string</code> | Group name. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
 
 **Example** *(Remove group)*  
 ```js
@@ -324,8 +347,8 @@ This is only a convenience method that wraps the `getClients()` method.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| [params.groupId] | <code>number</code> | Group ID. Ignored if both `groupId` and `groupName` are defined. |
-| [params.groupName] | <code>string</code> | Group name. Takes precedence if both `groupId` and `groupName` are defined. |
+| [params.groupId] | <code>number</code> | Group ID. Ignored if both `groupId` and `groupName` are defined. Required if `groupName` is undefined. |
+| [params.groupName] | <code>string</code> | Group name. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
 
 **Example** *(Get members of default group)*  
 ```js
@@ -351,7 +374,7 @@ By default, this method matches all clients, including those marked for removal.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An optional object containing parameters. |
-| [params.groupName] | <code>string</code> |  | Group name. By default, UrBackup clients are added to group ID 0 with name '' (empty string). Defaults to undefined, which matches all groups. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all clients)*  
@@ -368,7 +391,7 @@ server.getClients({ groupName: 'office' }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getRemovedClients"></a>
 
-### urbackupServer.getRemovedClients() ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+### urbackupServer.getRemovedClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
 Retrieves a list of clients marked for removal.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
@@ -377,9 +400,19 @@ Retrieves a list of clients marked for removal.
 
 - <code>Error</code> If the login fails or the API response is missing expected values.
 
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>object</code> | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> | Group name. Defaults to undefined, which matches all groups. |
+
 **Example** *(Get clients marked for removal)*  
 ```js
 server.getRemovedClients().then(data => console.log(data));
+```
+**Example** *(Get clients marked for removal in a specific group)*  
+```js
+server.getRemovedClients({ groupName: 'sales' }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getOnlineClients"></a>
 
@@ -396,11 +429,16 @@ Retrieves a list of online clients.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all online clients)*  
 ```js
 server.getOnlineClients().then(data => console.log(data));
+```
+**Example** *(Get online clients from a specific group)*  
+```js
+server.getOnlineClients({ groupName: 'servers' }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getOfflineClients"></a>
 
@@ -417,6 +455,7 @@ Retrieves a list of offline clients.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all offline clients)*  
@@ -425,7 +464,11 @@ server.getOfflineClients().then(data => console.log(data));
 ```
 **Example** *(Get offline clients, skip clients marked for removal)*  
 ```js
-server.getOfflineClients({includeRemoved: false}).then(data => console.log(data));
+server.getOfflineClients({ includeRemoved: false }).then(data => console.log(data));
+```
+**Example** *(Get offline clients from a specific groups)*  
+```js
+server.getOfflineClients({ groupName: 'servers' }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+getActiveClients"></a>
 
@@ -442,6 +485,7 @@ Retrieves a list of active clients.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
 
 **Example** *(Get all active clients)*  
@@ -451,7 +495,8 @@ server.getActiveClients().then(data => console.log(data));
 <a name="UrbackupServer+getBlankClients"></a>
 
 ### urbackupServer.getBlankClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
-Retrieves a list of blank clients, i.e., clients without any finished file or image backups.
+Retrieves a list of blank clients, i.e., clients without any finished file and/or image backups.
+By default, it matches clients without both file and image backups.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
 **Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
@@ -463,15 +508,102 @@ Retrieves a list of blank clients, i.e., clients without any finished file or im
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeFileBackups] | <code>boolean</code> | <code>true</code> | Whether or not file backups should be taken into account when matching clients. Defaults to true. |
+| [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be taken into account when matching clients. Defaults to true. |
 
-**Example** *(Get all blank clients)*  
+**Example** *(Get all blank clients, i.e., clients without both file and image backups)*  
 ```js
 server.getBlankClients().then(data => console.log(data));
 ```
 **Example** *(Get blank clients, skip clients marked for removal)*  
 ```js
 server.getBlankClients({ includeRemoved: false }).then(data => console.log(data));
+```
+**Example** *(Get clients without any file backups)*  
+```js
+server.getBlankClients({ includeImageBackups: false }).then(data => console.log(data));
+```
+**Example** *(Get clients without any image backups)*  
+```js
+server.getBlankClients({ includeFileBackups: false }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getFailedClients"></a>
+
+### urbackupServer.getFailedClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of failed clients, i.e., clients with failed backup status.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeFileBackups] | <code>boolean</code> | <code>true</code> | Whether or not file backups should be taken into account when matching clients. Defaults to true. |
+| [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be taken into account when matching clients. Defaults to true. |
+| [params.includeBlankClients] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
+| [params.failOnFileIssues] | <code>boolean</code> | <code>false</code> | Whether or not to treat file backups finished with issues as being failed. Defaults to false. |
+
+**Example** *(Get clients with failed file or image backups)*  
+```js
+server.getFailedClients().then(data => console.log(data));
+```
+**Example** *(Get failed clients, skip clients marked for removal)*  
+```js
+server.getFailedClients({ includeRemoved: false }).then(data => console.log(data));
+```
+**Example** *(Get clients with failed file backups)*  
+```js
+server.getFailedClients({ includeImageBackups: false }).then(data => console.log(data));
+```
+**Example** *(Get clients with failed image backups)*  
+```js
+server.getFailedClients({ includeFileBackups: false }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getOkClients"></a>
+
+### urbackupServer.getOkClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of OK clients, i.e., clients with OK backup status.
+File backups finished with issues are treated as OK by default.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeFileBackups] | <code>boolean</code> | <code>true</code> | Whether or not file backups should be taken into account when matching clients. Defaults to true. |
+| [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be taken into account when matching clients. Defaults to true. |
+| [params.failOnFileIssues] | <code>boolean</code> | <code>false</code> | Whether or not to treat file backups finished with issues as being failed. Defaults to false. |
+
+**Example** *(Get OK clients, use default parameters)*  
+```js
+server.getOkClients().then(data => console.log(data));
+```
+**Example** *(Get OK clients, skip clients marked for removal)*  
+```js
+server.getOkClients({ includeRemoved: false }).then(data => console.log(data));
+```
+**Example** *(Get clients with OK file backup, skip image backup status)*  
+```js
+server.getOkClients({ includeImageBackups: false }).then(data => console.log(data));
+```
+**Example** *(Get clients with OK file backup but treat backup issues as a failure, skip image backup status)*  
+```js
+server.getOkClients({ includeImageBackups: false, failOnFileIssues: true }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClient"></a>
 
@@ -511,8 +643,8 @@ Actual removal occurs during the cleanup time window. Until then, this operation
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> | Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientId] | <code>number</code> | Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Required if `clientName` is undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Remove client by ID)*  
 ```js
@@ -537,8 +669,8 @@ Unmarks the client as ready for removal.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Stop the server from removing a client by ID)*  
 ```js
@@ -622,7 +754,7 @@ Clients marked for removal are not excluded from the results.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| [params] | <code>object</code> | An object containing parameters. |
+| [params] | <code>object</code> | An optional object containing parameters. |
 | [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
 | [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
@@ -651,8 +783,8 @@ A list of settings can be obtained with the `getClientSettings` method.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 | params.key | <code>string</code> | Settings element to change. |
 | params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element. |
 
@@ -676,8 +808,8 @@ Retrieves the authentication key for a specified client.
 | Param | Type | Description |
 | --- | --- | --- |
 | params | <code>object</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined. |
+| [params.clientId] | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined. |
 
 **Example** *(Get authentication key for a specific client)*  
 ```js
@@ -750,11 +882,11 @@ By default, it matches all clients, but you can use `clientName` or `clientId` t
 - <code>Error</code> If the API response is missing values or if login fails.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>object</code> | An optional object containing parameters. |
+| [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get usage for all clients)*  
 ```js
@@ -781,7 +913,7 @@ By default, this method returns both current and last activities.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 | [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 | [params.includeCurrent] | <code>boolean</code> | <code>true</code> | Whether or not currently running activities should be included. Defaults to true. |
@@ -819,11 +951,11 @@ Matches all clients by default, but `clientName` or `clientId` can be used to re
 - <code>Error</code> If the API response is missing values or if login fails.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>object</code> | An optional object containing parameters. |
+| [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get current activities for all clients)*  
 ```js
@@ -848,11 +980,11 @@ Matches all clients by default, but `clientName` or `clientId` can be used to re
 - <code>Error</code> If the API response is missing values or if login fails.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>object</code> | An optional object containing parameters. |
+| [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get last activities for all clients)*  
 ```js
@@ -876,11 +1008,11 @@ Matches all clients by default, but `clientName` or `clientId` can be used to re
 - <code>Error</code> If the API response is missing values or if login fails.
 
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [params] | <code>object</code> | <code>{}</code> | An object containing parameters. |
-| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| Param | Type | Description |
+| --- | --- | --- |
+| [params] | <code>object</code> | An optional object containing parameters. |
+| [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 
 **Example** *(Get all paused activities)*  
 ```js
@@ -894,7 +1026,7 @@ server.getPausedActivities({ clientId: 3 }).then(data => console.log(data));
 <a name="UrbackupServer+stopActivity"></a>
 
 ### urbackupServer.stopActivity(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
-Stops one activity.
+Stops one selected activity.
 A list of current activities can be obtained with the `getActivities` method.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
@@ -969,11 +1101,11 @@ Starts a full file backup.
 
 **Example** *(Start a full file backup by client name)*  
 ```js
-server.startFullFileBackup({clientName: 'laptop1'}).then(data => console.log(data));
+server.startFullFileBackup({ clientName: 'laptop1' }).then(data => console.log(data));
 ```
 **Example** *(Start a full file backup by client ID)*  
 ```js
-server.startFullFileBackup({clientId: 3}).then(data => console.log(data));
+server.startFullFileBackup({ clientId: 3 }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startIncrementalFileBackup"></a>
 
@@ -995,11 +1127,11 @@ Starts an incremental file backup.
 
 **Example** *(Start an incremental file backup by client name)*  
 ```js
-server.startIncrementalFileBackup({clientName: 'laptop1'}).then(data => console.log(data));
+server.startIncrementalFileBackup({ clientName: 'laptop1' }).then(data => console.log(data));
 ```
 **Example** *(Start an incremental file backup by client ID)*  
 ```js
-server.startIncrementalFileBackup({clientId: 3}).then(data => console.log(data));
+server.startIncrementalFileBackup({ clientId: 3 }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startFullImageBackup"></a>
 
@@ -1021,11 +1153,11 @@ Starts a full image backup.
 
 **Example** *(Start a full image backup by client name)*  
 ```js
-server.startFullImageBackup({clientName: 'laptop1'}).then(data => console.log(data));
+server.startFullImageBackup({ clientName: 'laptop1' }).then(data => console.log(data));
 ```
 **Example** *(Start a full image backup by client ID)*  
 ```js
-server.startFullImageBackup({clientId: 3}).then(data => console.log(data));
+server.startFullImageBackup({ clientId: 3 }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+startIncrementalImageBackup"></a>
 
@@ -1070,7 +1202,7 @@ When `recentOnly` is set to true, only recent (unfetched) logs are requested.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [params] | <code>object</code> |  | An object containing parameters. |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
 | [params.clientId] | <code>number</code> |  | The client's ID. Must be greater than zero. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientId` is also undefined. |
 | [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientName` is also undefined. |
 | [params.recentOnly] | <code>boolean</code> | <code>false</code> | Whether only recent (unfetched) entries should be requested. Defaults to false. |
@@ -1148,9 +1280,9 @@ A list of settings can be obtained with the `getGeneralSettings` method.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| params | <code>object</code> | (Required) An object containing parameters. |
-| params.key | <code>string</code> | (Required) The settings element to change. |
-| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | (Required) The new value for the settings element. |
+| params | <code>object</code> | An object containing parameters. |
+| params.key | <code>string</code> | The settings element to change. |
+| params.newValue | <code>string</code> \| <code>number</code> \| <code>boolean</code> | The new value for the settings element. |
 
 **Example** *(Disable image backups)*  
 ```js
