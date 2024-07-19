@@ -944,6 +944,10 @@ class UrbackupServer {
    * server.getClientSettings({ clientId: 3 }).then(data => console.log(data));
    */
   async getClientSettings({ clientId, clientName } = {}) {
+    if (typeof clientId !== 'undefined' && typeof clientId !== 'number') {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clientSettings = [];
 
     if (clientName === '') {
