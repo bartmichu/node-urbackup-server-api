@@ -1458,9 +1458,12 @@ class UrbackupServer {
 
       if (typeof clientId === 'undefined' && typeof clientName === 'string') {
         mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+        if (mappedClientId === null) {
+          return backups;
+        }
       }
 
-      if (typeof clientId === 'string' || typeof mappedClientId === 'string') {
+      if (typeof clientId === 'number' || typeof mappedClientId === 'number') {
         const backupsResponse = await this.#fetchJson('backups', { sa: 'backups', clientid: clientId ?? mappedClientId });
 
         if (Array.isArray(backupsResponse?.backup_images) && Array.isArray(backupsResponse?.backups)) {
@@ -1477,7 +1480,7 @@ class UrbackupServer {
           throw new Error(this.#messages.missingValues);
         }
       } else {
-        throw new Error(this.#messages.missingValues);
+        throw new Error(this.#messages.missingParameters);
       }
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
