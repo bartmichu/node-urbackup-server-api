@@ -309,6 +309,37 @@ class UrbackupServer {
   }
 
   /**
+   * Removes a user by their user ID.
+   * @param {object} params - An object containing parameters.
+   * @param {number} params.userId - The ID of the user to be removed.
+   * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the user was successfully removed.
+   * @throws {Error} If the `userId` parameter is missing or invalid, or if the login fails.
+   * @example <caption>Remove a user by their ID</caption>
+   * server.removeUser({ userId: 123 }).then(status => console.log(status));
+   */
+  async removeUser({ userId } = {}) {
+    if (typeof userId !== 'number' || userId <= 0) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
+    let operationStatus = false;
+    const login = await this.#login();
+
+    if (login) {
+      const users = await this.getUsers();
+
+      if (typeof users.find(user => user.id === userId.toString(10)) !== 'undefined') {
+        const response = await this.#fetchJson('settings', { sa: 'removeuser', userid: userId.toString(10) });
+        operationStatus = typeof response.users.find(user => user.id === userId.toString(10)) === 'undefined';
+      }
+
+      return operationStatus;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
    * Retrieves the rights of a specific user.
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined. Required if `clientName` is undefined.
