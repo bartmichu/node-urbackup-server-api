@@ -15,6 +15,9 @@ class UrbackupServer {
   #sessionId = '';
   #url;
   #username;
+  #constants = {
+    currentClientVersion: 2525
+  };
   #messages = {
     failedAnonymousLogin: 'Anonymous login failed.',
     failedFetch: 'Fetch request failed: response status is not in the range 200-299.',
@@ -703,6 +706,31 @@ class UrbackupServer {
     }
 
     return okClients;
+  }
+
+  /**
+   * Retrieves a list of clients using an outdated version.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get all outdated clients</caption>
+   * server.getOutdatedClients().then(data => console.log(data));
+   * @example <caption>Get outdated clients in a specific group</caption>
+   * server.getOutdatedClients({ groupName: 'exampleGroup' }).then(data => console.log(data));
+   * @example <caption>Get outdated clients, exclude clients marked for removal</caption>
+   * server.getOutdatedClients({ includeRemoved: false }).then(data => console.log(data));
+   */
+  async getOutdatedClients({ groupName, includeRemoved = true } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
+
+    const outdatedClients = clients.filter(client => {
+      const version = Number(client.client_version_string.split('.').join(''));
+      return this.#constants.currentClientVersion > version;
+    });
+
+    return outdatedClients;
   }
 
   /**
