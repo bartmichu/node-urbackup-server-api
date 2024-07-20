@@ -734,6 +734,35 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of online clients with the same, i.e., conflicting IP address.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get all online clients with conflicting IP addresses</caption>
+   * server.getConflictingClients().then(data => console.log(data));
+   * @example <caption>Get online clients with conflicting IP addresses, exclude clients marked for removal</caption>
+   * server.getConflictingClients({ includeRemoved: false }).then(data => console.log(data));
+   */
+  async getConflictingClients({ includeRemoved = true } = {}) {
+    const onlineClients = await this.getOnlineClients({ includeRemoved });
+    const seenIPs = new Set();
+    const conflictingClients = new Set();
+
+    for (const client of onlineClients) {
+      if (client.ip.length > 0 && client.ip !== '-') {
+        if (seenIPs.has(client.ip)) {
+          conflictingClients.add(client);
+        } else {
+          seenIPs.add(client.ip);
+        }
+      }
+    }
+
+    return Array.from(conflictingClients);
+  }
+
+  /**
    * Adds a new client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.clientName - The client's name.
