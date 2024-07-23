@@ -16,7 +16,9 @@ class UrbackupServer {
   #url;
   #username;
   #constants = {
-    currentClientVersion: 2525
+    currentClientVersion: 2525,
+    adminUserRights: [{ domain: 'all', right: 'all' }],
+    defaultUserRights: []
   };
   #messages = {
     failedAnonymousLogin: 'Anonymous login failed.',
@@ -143,6 +145,79 @@ class UrbackupServer {
       .digest('hex');
 
     return passwordHash;
+  }
+
+  /**
+   * Generates an MD5 hashed password using a salt and a password.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {string} salt - The salt to use for hashing.
+   * @param {string} password - The password to hash.
+   * @returns {string} The MD5 hashed password.
+   * @private
+   */
+  #hashPasswordMd5(salt, password) {
+    const hash = crypto.createHash('md5');
+    hash.update(salt + password);
+
+    return hash.digest('hex');
+  }
+
+  /**
+   * Generates a random string of the specified length using a set of alphanumeric characters.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {number} length - The desired length of the random string.
+   * @returns {string} - The generated random alphanumeric string.
+   * @private
+   * @example
+   * const randomStr = this.#generateRandomAlphanumericString(10);
+   */
+  #generateRandomString(length) {
+    const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const charactersLength = characters.length;
+
+    const randomBytes = crypto.randomBytes(length);
+    let randomString = '';
+
+    for (let i = 0; i < length; i++) {
+      const randomValue = randomBytes[i] % charactersLength;
+      randomString += characters[randomValue];
+    }
+
+    return randomString;
+  }
+
+  /**
+   * Encodes user rights into apropriate string format.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {Array<object>} rights - An array of objects representing user rights.
+   * @param {string} rights[].domain - The domain of the right.
+   * @param {string} rights[].right - The specific right.
+   * @returns {string} The encoded query string representing user rights.
+   * @private
+   * @example
+   * const encodedRights = this.#encodeUserRights([{ domain: 'all', right: 'all' }]);
+   */
+  #encodeUserRights(rights) {
+    let encodedRights = '';
+    const indices = [];
+    let index = 0;
+
+    while (index < rights.length) {
+      const { domain, right } = rights[index];
+
+      if (index !== 0) {
+        encodedRights += '&';
+      }
+
+      encodedRights += `${index}_domain=${domain}&${index}_right=${right}`;
+      indices.push(index);
+
+      index++;
+    }
+
+    encodedRights += `&idx=${indices.join(',')}`;
+
+    return encodedRights;
   }
 
   /**
@@ -302,6 +377,49 @@ class UrbackupServer {
         return usersResponse.users;
       } else {
         throw new Error(this.#messages.missingUserData);
+      }
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
+   * Adds a new user with the specified username, password, and rights.
+   * @param {object} params - An object containing parameters.
+   * @param {string} params.userName - The username for the new user.
+   * @param {string} params.password - The password for the new user.
+   * @param {boolean} [params.isAdmin=false] - Whether the new user should have admin rights (all domains, all rights). Defaults to false.
+   * @param {Array<object>} [params.rights] - Array of user permissions. Ignored if `isAdmin` is true. Defaults to the default user rights.
+   * @returns {Promise<boolean>} A promise that resolves to true if the user was added successfully, false otherwise.
+   * @throws {Error} If required parameters are missing, the login fails, or the API response is missing expected values.
+   * @example <caption>Add a regular user</caption>
+   * server.addUser({ userName: 'newUser', password: 'userPassword' }).then(result => console.log(result));
+   * @example <caption>Add an admin user</caption>
+   * server.addUser({ userName: 'adminUser', password: 'adminPassword', isAdmin: true }).then(result => console.log(result));
+   */
+  async addUser({ userName, password, isAdmin = false, rights = this.#constants.defaultUserRights } = {}) {
+    if (typeof userName !== 'string' || userName.length === 0 || typeof password !== 'string' || password.length === 0) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
+    const login = await this.#login();
+
+    if (login) {
+      // NOTE: Server expects an alphanumeric string (no special characters), hence an additional method is needed
+      const salt = this.#generateRandomString(50);
+
+      const response = await this.#fetchJson('settings', {
+        sa: 'useradd',
+        name: userName,
+        pwmd5: this.#hashPasswordMd5(salt, password),
+        salt: salt,
+        rights: this.#encodeUserRights(isAdmin ? this.#constants.adminUserRights : rights)
+      });
+
+      if ('add_ok' in response || 'alread_exists' in response) {
+        return response.add_ok === true;
+      } else {
+        throw new Error(this.#messages.missingValues);
       }
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
