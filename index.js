@@ -16,7 +16,7 @@ class UrbackupServer {
   #url;
   #username;
   #constants = {
-    currentClientVersion: 2525,
+    availableClientVersion: '2.5.25',
     adminUserRights: [{ domain: 'all', right: 'all' }],
     defaultUserRights: []
   };
@@ -218,6 +218,35 @@ class UrbackupServer {
     encodedRights += `&idx=${indices.join(',')}`;
 
     return encodedRights;
+  }
+
+  /**
+   * Compares two version strings to determine if the installed version is older than the available version.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {string} installed - The installed version string in the format 'major.minor.patch'.
+   * @param {string} available - The available version string in the format 'major.minor.patch'.
+   * @returns {boolean} Returns true if the installed version is older than the available version, false otherwise.
+   * @private
+   */
+  #compareVersion(installed, available) {
+    const parseVersion = (version) => version.split('.').map(Number);
+
+    const [installedMajor, installedMinor, installedPatch] = parseVersion(installed);
+    const [availableMajor, availableMinor, availablePatch] = parseVersion(available);
+
+    if (installedMajor !== availableMajor) {
+      return installedMajor < availableMajor;
+    }
+
+    if (installedMinor !== availableMinor) {
+      return installedMinor < availableMinor;
+    }
+
+    if (installedPatch !== availablePatch) {
+      return installedPatch < availablePatch;
+    }
+
+    return false;
   }
 
   /**
@@ -875,8 +904,7 @@ class UrbackupServer {
     const clients = await this.getClients({ groupName, includeRemoved });
 
     const outdatedClients = clients.filter(client => {
-      const version = Number(client.client_version_string.split('.').join(''));
-      return this.#constants.currentClientVersion > version;
+      return this.#compareVersion(client.client_version_string, this.#constants.availableClientVersion);
     });
 
     return outdatedClients;
