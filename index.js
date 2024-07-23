@@ -17,6 +17,7 @@ class UrbackupServer {
   #username;
   #constants = {
     availableClientVersion: '2.5.25',
+    availableServerVersion: '2.5.33',
     adminUserRights: [{ domain: 'all', right: 'all' }],
     defaultUserRights: []
   };
@@ -384,6 +385,60 @@ class UrbackupServer {
       } else {
         throw new Error(this.#messages.missingServerIdentity);
       }
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
+     * Retrieves the server version in both number and string representation.
+     * @returns {Promise<object>} An object containing the server version number and string.
+     * @throws {Error} If the API response is missing required values or if the login fails.
+     * @example <caption>Get server version number</caption>
+     * server.getServerVersion().then(data => console.log(data.number));
+     * @example <caption>Get server version string</caption>
+     * server.getServerVersion().then(data => console.log(data.string));
+     */
+  async getServerVersion() {
+    const login = await this.#login();
+
+    if (login) {
+      const serverVersion = { number: 0, string: '' };
+
+      const statusResponse = await this.#fetchJson('status');
+
+      if (typeof statusResponse?.curr_version_num === 'number') {
+        serverVersion.number = statusResponse.curr_version_num;
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+
+      if (typeof statusResponse?.curr_version_str === 'string') {
+        serverVersion.string = statusResponse.curr_version_str;
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+
+      return serverVersion;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
+   * Checks if the server version is outdated compared to the available version.
+   * @returns {Promise<boolean>} A promise that resolves to true if the server version is outdated, false otherwise.
+   * @throws {Error} If the API response is missing required values or if the login fails.
+   * @example
+   * server.isServerOutdated().then(isOutdated => console.log(isOutdated));
+   */
+  async isServerOutdated() {
+    const login = await this.#login();
+
+    if (login) {
+      const serverVersion = await this.getServerVersion();
+
+      return this.#compareVersion(serverVersion.string, this.#constants.availableServerVersion);
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
     }
@@ -1384,41 +1439,6 @@ class UrbackupServer {
       } else {
         throw new Error(this.#messages.missingValues);
       }
-    } else {
-      throw new Error(this.#messages.failedLoginUnknown);
-    }
-  }
-
-  /**
-   * Retrieves the server version in both number and string representation.
-   * @returns {Promise<object>} An object containing the server version number and string.
-   * @throws {Error} If the API response is missing required values or if the login fails.
-   * @example <caption>Get server version number</caption>
-   * server.getServerVersion().then(data => console.log(data.number));
-   * @example <caption>Get server version string</caption>
-   * server.getServerVersion().then(data => console.log(data.string));
-   */
-  async getServerVersion() {
-    const login = await this.#login();
-
-    if (login) {
-      const serverVersion = { number: 0, string: '' };
-
-      const statusResponse = await this.#fetchJson('status');
-
-      if (typeof statusResponse?.curr_version_num === 'number') {
-        serverVersion.number = statusResponse.curr_version_num;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      if (typeof statusResponse?.curr_version_str === 'string') {
-        serverVersion.string = statusResponse.curr_version_str;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      return serverVersion;
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
     }
