@@ -771,7 +771,8 @@ class UrbackupServer {
    * server.getRemovedClients({ groupName: 'sales' }).then(data => console.log(data));
    */
   async getRemovedClients({ groupName } = {}) {
-    return (await this.getClients({ groupName, includeRemoved: true })).filter(client => client.delete_pending === '1');
+    return await this.getClients({ groupName, includeRemoved: true })
+      .then(removedClients => removedClients.filter(client => client.delete_pending === '1'));
   }
 
   /**
@@ -787,7 +788,8 @@ class UrbackupServer {
    * server.getOnlineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
   async getOnlineClients({ groupName, includeRemoved = true } = {}) {
-    return (await this.getClients({ groupName, includeRemoved })).filter(client => client.online === true);
+    return await this.getClients({ groupName, includeRemoved })
+      .then(onlineClients => onlineClients.filter(client => client.online === true));
   }
 
   /**
@@ -805,7 +807,8 @@ class UrbackupServer {
    * server.getOfflineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
   async getOfflineClients({ groupName, includeRemoved = true } = {}) {
-    return (await this.getClients({ groupName, includeRemoved })).filter(client => client.online === false);
+    return await this.getClients({ groupName, includeRemoved })
+      .then(offlineClients => offlineClients.filter(client => client.online === false));
   }
 
   /**
@@ -819,7 +822,8 @@ class UrbackupServer {
    * server.getActiveClients().then(data => console.log(data));
    */
   async getActiveClients({ groupName, includeRemoved = true } = {}) {
-    return (await this.getClients({ groupName, includeRemoved })).filter(client => client.status !== 0);
+    return await this.getClients({ groupName, includeRemoved })
+      .then(activeClients => activeClients.filter(client => client.status !== 0));
   }
 
   /**
