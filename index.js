@@ -1688,7 +1688,7 @@ class UrbackupServer {
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be included. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be included. Defaults to true.
-   * @returns {Promise<object>} A promise that resolves to an object with backups info. Returns an object with empty arrays when no matching clients/backups are found.
+   * @returns {Promise<object>} A promise that resolves to an object with backups info in two separate arrays (one for file and one for image backups). Returns an object with empty arrays when no matching clients/backups are found.
    * @throws {Error} If there are missing or invalid parameters, if the API response is missing values, or if login fails.
    * @example <caption>Get all backups for a specific client</caption>
    * server.getBackups({ clientName: 'laptop1' }).then(data => console.log(data));

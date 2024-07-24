@@ -15,6 +15,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Notable Changes
 
+  - 0.52.0
+    - Added following methods: `getOutdatedClients()`, `getConflictingClients()`, `removeUser()`, `addUser()`, `isServerOutdated()`.
+
   - 0.51.0
     - Added following methods: `getFailedClients()`, `getOkClients()`.
     - Added following parameters to `getBlankClients()`: `includeFileBackups`, `includeImageBackups`, `groupName`.

@@ -57,15 +57,6 @@ const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'ad
     // Get all clients without both file and image backups
    const blankClients = await urbackup.getBlankClients().then(data => console.log(data));
 
-    // Get outdated clients
-    const allClients = await urbackup.getClients();
-    const currentVersion = 2525;
-    const outdateClients = allClients.filter(client => {
-      const version = Number(client.client_version_string.split('.').join(''));
-      return currentVersion > version;
-    });
-    console.log(outdateClients);
-
   } catch (error) {
     // Deal with it
   }
@@ -88,6 +79,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ### Notable Changes
+
+  - 0.52.0
+    - Added following methods: `getOutdatedClients()`, `getConflictingClients()`, `removeUser()`, `addUser()`, `isServerOutdated()`.
 
   - 0.51.0
     - Added following methods: `getFailedClients()`, `getOkClients()`.
@@ -140,7 +134,11 @@ Represents a UrBackup Server.
 * [UrbackupServer](#UrbackupServer)
     * [new UrbackupServer([params])](#new_UrbackupServer_new)
     * [.getServerIdentity()](#UrbackupServer+getServerIdentity) ⇒ <code>Promise.&lt;string&gt;</code>
+    * [.getServerVersion()](#UrbackupServer+getServerVersion) ⇒ <code>Promise.&lt;object&gt;</code>
+    * [.isServerOutdated()](#UrbackupServer+isServerOutdated) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getUsers()](#UrbackupServer+getUsers) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.addUser(params)](#UrbackupServer+addUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
+    * [.removeUser(params)](#UrbackupServer+removeUser) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getUserRights([params])](#UrbackupServer+getUserRights) ⇒ <code>Promise.&lt;(Array\|null)&gt;</code>
     * [.getGroups()](#UrbackupServer+getGroups) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addGroup(params)](#UrbackupServer+addGroup) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -154,6 +152,8 @@ Represents a UrBackup Server.
     * [.getBlankClients([params])](#UrbackupServer+getBlankClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getFailedClients([params])](#UrbackupServer+getFailedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOkClients([params])](#UrbackupServer+getOkClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getOutdatedClients([params])](#UrbackupServer+getOutdatedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getConflictingClients([params])](#UrbackupServer+getConflictingClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -164,7 +164,6 @@ Represents a UrBackup Server.
     * [.setClientSettings(params)](#UrbackupServer+setClientSettings) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>Promise.&lt;string&gt;</code>
     * [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Promise.&lt;Array&gt;</code>
-    * [.getServerVersion()](#UrbackupServer+getServerVersion) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.getActivities([params])](#UrbackupServer+getActivities) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getCurrentActivities([params])](#UrbackupServer+getCurrentActivities) ⇒ <code>Promise.&lt;Array&gt;</code>
@@ -225,6 +224,40 @@ Retrieves server identity.
 ```js
 server.getServerIdentity().then(data => console.log(data));
 ```
+<a name="UrbackupServer+getServerVersion"></a>
+
+### urbackupServer.getServerVersion() ⇒ <code>Promise.&lt;object&gt;</code>
+Retrieves the server version in both number and string representation.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;object&gt;</code> - An object containing the server version number and string.  
+**Throws**:
+
+- <code>Error</code> If the API response is missing required values or if the login fails.
+
+**Example** *(Get server version number)*  
+```js
+server.getServerVersion().then(data => console.log(data.number));
+```
+**Example** *(Get server version string)*  
+```js
+server.getServerVersion().then(data => console.log(data.string));
+```
+<a name="UrbackupServer+isServerOutdated"></a>
+
+### urbackupServer.isServerOutdated() ⇒ <code>Promise.&lt;boolean&gt;</code>
+Checks if the server version is outdated compared to the available version.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the server version is outdated, false otherwise.  
+**Throws**:
+
+- <code>Error</code> If the API response is missing required values or if the login fails.
+
+**Example**  
+```js
+server.isServerOutdated().then(isOutdated => console.log(isOutdated));
+```
 <a name="UrbackupServer+getUsers"></a>
 
 ### urbackupServer.getUsers() ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
@@ -239,6 +272,55 @@ Retrieves a list of users.
 **Example** *(Get all users)*  
 ```js
 server.getUsers().then(data => console.log(data));
+```
+<a name="UrbackupServer+addUser"></a>
+
+### urbackupServer.addUser(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
+Adds a new user with the specified username, password, and rights.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the user was added successfully, false otherwise.  
+**Throws**:
+
+- <code>Error</code> If required parameters are missing, the login fails, or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| params | <code>object</code> |  | An object containing parameters. |
+| params.userName | <code>string</code> |  | The username for the new user. |
+| params.password | <code>string</code> |  | The password for the new user. |
+| [params.isAdmin] | <code>boolean</code> | <code>false</code> | Whether the new user should have admin rights (all domains, all rights). Defaults to false. |
+| [params.rights] | <code>Array.&lt;object&gt;</code> |  | Array of user permissions. Ignored if `isAdmin` is true. Defaults to the default user rights. |
+
+**Example** *(Add a regular user)*  
+```js
+server.addUser({ userName: 'newUser', password: 'userPassword' }).then(result => console.log(result));
+```
+**Example** *(Add an admin user)*  
+```js
+server.addUser({ userName: 'adminUser', password: 'adminPassword', isAdmin: true }).then(result => console.log(result));
+```
+<a name="UrbackupServer+removeUser"></a>
+
+### urbackupServer.removeUser(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
+Removes a user by their user ID.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to a boolean indicating whether the user was successfully removed.  
+**Throws**:
+
+- <code>Error</code> If the `userId` parameter is missing or invalid, or if the login fails.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>object</code> | An object containing parameters. |
+| params.userId | <code>number</code> | The ID of the user to be removed. |
+
+**Example** *(Remove a user by their ID)*  
+```js
+server.removeUser({ userId: 123 }).then(status => console.log(status));
 ```
 <a name="UrbackupServer+getUserRights"></a>
 
@@ -605,6 +687,61 @@ server.getOkClients({ includeImageBackups: false }).then(data => console.log(dat
 ```js
 server.getOkClients({ includeImageBackups: false, failOnFileIssues: true }).then(data => console.log(data));
 ```
+<a name="UrbackupServer+getOutdatedClients"></a>
+
+### urbackupServer.getOutdatedClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of clients using an outdated version.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(Get all outdated clients)*  
+```js
+server.getOutdatedClients().then(data => console.log(data));
+```
+**Example** *(Get outdated clients in a specific group)*  
+```js
+server.getOutdatedClients({ groupName: 'exampleGroup' }).then(data => console.log(data));
+```
+**Example** *(Get outdated clients, exclude clients marked for removal)*  
+```js
+server.getOutdatedClients({ includeRemoved: false }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getConflictingClients"></a>
+
+### urbackupServer.getConflictingClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of online clients with the same, i.e., conflicting IP address.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+
+**Example** *(Get all online clients with conflicting IP addresses)*  
+```js
+server.getConflictingClients().then(data => console.log(data));
+```
+**Example** *(Get online clients with conflicting IP addresses, exclude clients marked for removal)*  
+```js
+server.getConflictingClients({ includeRemoved: false }).then(data => console.log(data));
+```
 <a name="UrbackupServer+addClient"></a>
 
 ### urbackupServer.addClient(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -850,25 +987,6 @@ server.getStatus({ includeRemoved: false }).then(data => console.log(data));
 server.getStatus({ clientName: 'laptop1' }).then(data => console.log(data));
 server.getStatus({ clientId: 3 }).then(data => console.log(data));
 ```
-<a name="UrbackupServer+getServerVersion"></a>
-
-### urbackupServer.getServerVersion() ⇒ <code>Promise.&lt;object&gt;</code>
-Retrieves the server version in both number and string representation.
-
-**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Promise.&lt;object&gt;</code> - An object containing the server version number and string.  
-**Throws**:
-
-- <code>Error</code> If the API response is missing required values or if the login fails.
-
-**Example** *(Get server version number)*  
-```js
-server.getServerVersion().then(data => console.log(data.number));
-```
-**Example** *(Get server version string)*  
-```js
-server.getServerVersion().then(data => console.log(data.string));
-```
 <a name="UrbackupServer+getUsage"></a>
 
 ### urbackupServer.getUsage([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
@@ -1054,7 +1172,7 @@ server.stopActivity({ clientId: 3, activityId: 42 }).then(data => console.log(da
 Retrieves a list of file and/or image backups for a specific client.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
-**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to an object with backups info. Returns an object with empty arrays when no matching clients/backups are found.  
+**Returns**: <code>Promise.&lt;object&gt;</code> - A promise that resolves to an object with backups info in two separate arrays (one for file and one for image backups). Returns an object with empty arrays when no matching clients/backups are found.  
 **Throws**:
 
 - <code>Error</code> If there are missing or invalid parameters, if the API response is missing values, or if login fails.
