@@ -63,6 +63,14 @@ const server = new UrbackupServer({ url: 'http://127.0.0.1:55414', username: 'ad
 })();
 ```
 
+## Example implementation
+
+<https://github.com/bartmichu/urbstat/>
+
+urbstat
+
+The missing command-line tool for UrBackup Server. It provides valuable insights into the utilization of data, clients' status and activities, and helps administrator to identify, troubleshoot and resolve issues that may arise within the system.
+
 ## CHANGELOG
 
 This changelog starts at version `0.20.0` and includes a selection of significant changes.
