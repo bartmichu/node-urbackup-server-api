@@ -853,9 +853,7 @@ class UrbackupServer {
       const isBlankFileBackup = includeFileBackups && client.lastbackup === 0;
       const isBlankImageBackup = includeImageBackups && client.lastbackup_image === 0;
 
-      if (isBlankFileBackup && (!includeImageBackups || isBlankImageBackup)) {
-        blankClients.push(client);
-      } else if (isBlankImageBackup && !includeFileBackups) {
+      if (isBlankFileBackup || isBlankImageBackup) {
         blankClients.push(client);
       }
     });

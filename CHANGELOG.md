@@ -15,6 +15,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Notable Changes
 
+  - 0.53.0
+    - Fixed the `getBlankClients()` method: image backups were not being matched correctly.
+
   - 0.52.0
     - Added following methods: `getOutdatedClients()`, `getConflictingClients()`, `removeUser()`, `addUser()`, `isServerOutdated()`.
 
