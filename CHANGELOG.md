@@ -15,6 +15,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Notable Changes
 
+  - 0.54.0
+    - Added following parameters to `getActivities()` and `getCurrentActivities()`: `includePaused`.
+
   - 0.53.0
     - Fixed the `getBlankClients()` method: image backups were not being matched correctly.
 

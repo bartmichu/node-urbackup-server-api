@@ -1503,10 +1503,13 @@ class UrbackupServer {
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {boolean} [params.includeCurrent=true] - Whether or not currently running activities should be included. Defaults to true.
    * @param {boolean} [params.includeLast=true] - Whether or not last activities should be included. Defaults to true.
+   * @param {boolean} [params.includePaused=true] - Whether or not paused activities should be included. Defaults to true.
    * @returns {Promise<object>} An object with activities info in two separate arrays (one for current and one for last activities). Returns an object with empty arrays when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get current (in progress) activities for all clients</caption>
    * server.getActivities({ includeLast: false }).then(data => console.log(data));
+   * @example <caption>Get current (in progress, skip paused) activities for all clients</caption>
+   * server.getActivities({ includeLast: false, includePaused: false }).then(data => console.log(data));
    * @example <caption>Get last activities for all clients</caption>
    * server.getActivities({ includeCurrent: false }).then(data => console.log(data));
    * @example <caption>Get current (in progress) activities for a specific client only</caption>
@@ -1516,7 +1519,7 @@ class UrbackupServer {
    * server.getActivities({ clientName: 'laptop1' }).then(data => console.log(data));
    * server.getActivities({ clientId: 3 }).then(data => console.log(data));
    */
-  async getActivities({ clientId, clientName, includeCurrent = true, includeLast = true } = {}) {
+  async getActivities({ clientId, clientName, includeCurrent = true, includeLast = true, includePaused = true } = {}) {
     const activities = { current: [], last: [] };
 
     if (clientName === '') {
@@ -1535,12 +1538,18 @@ class UrbackupServer {
       if (Array.isArray(activitiesResponse?.progress) && Array.isArray(activitiesResponse?.lastacts)) {
         if (includeCurrent) {
           if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
-            activities.current = activitiesResponse.progress;
+            if (includePaused === true) {
+              activities.current = activitiesResponse.progress;
+            } else {
+              activities.current = activitiesResponse.progress.filter((activity) =>
+                activity.paused !== true
+              );
+            }
           } else {
-            activities.current = activitiesResponse.progress.filter((activity) =>
-              typeof clientId === 'number'
-                ? activity.clientid === clientId
-                : activity.name === clientName
+            activities.current = activitiesResponse.progress.filter((activity) => {
+              return (typeof clientId === 'number' ? activity.clientid === clientId : activity.name === clientName) &&
+                (includePaused === true ? true : activity.paused !== true);
+            }
             );
           }
         }
@@ -1573,16 +1582,19 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
+   * @param {boolean} [params.includePaused=true] - Whether or not paused activities should be included. Defaults to true.
    * @returns {Promise<Array>} A promise that resolves to an array of current activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get current activities for all clients</caption>
    * server.getCurrentActivities().then(data => console.log(data));
+   * @example <caption>Get current activities for all clients, skip paused activities</caption>
+   * server.getCurrentActivities({ includePaused: false }).then(data => console.log(data));
    * @example <caption>Get current activities for a specific client only</caption>
    * server.getCurrentActivities({ clientName: 'laptop1' }).then(data => console.log(data));
    * server.getCurrentActivities({ clientId: 3 }).then(data => console.log(data));
    */
-  async getCurrentActivities({ clientId, clientName } = {}) {
-    const currentActivities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false });
+  async getCurrentActivities({ clientId, clientName, includePaused = true } = {}) {
+    const activities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false, includePaused });
     return currentActivities.current;
   }
 
@@ -1602,8 +1614,8 @@ class UrbackupServer {
    * server.getLastActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getLastActivities({ clientId, clientName } = {}) {
-    const lastActivities = await this.getActivities({ clientId, clientName, includeCurrent: false, includeLast: true });
-    return lastActivities.last;
+    const activities = await this.getActivities({ clientId, clientName, includeCurrent: false, includeLast: true, includePaused: false });
+    return activities.last;
   }
 
   /**
