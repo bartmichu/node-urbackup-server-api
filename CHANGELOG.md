@@ -3,6 +3,8 @@
 This changelog starts at version `0.20.0` and includes a selection of significant changes.
 
 ## Breaking Changes
+  - 0.60.0
+    - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
 
   - 0.50.0
     - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
@@ -15,8 +17,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Notable Changes
 
-  - 0.54.0
-    - Added following parameters to `getActivities()` and `getCurrentActivities()`: `includePaused`.
+  - 0.60.0
+    - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
+    - Added following parameters to `getActivities()` and `getCurrentActivities()` method: `includePaused`.
 
   - 0.53.0
     - Fixed the `getBlankClients()` method: image backups were not being matched correctly.
