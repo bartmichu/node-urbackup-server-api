@@ -1017,6 +1017,43 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves a list of clients who have not been seen for a specified period of time. Defaults to 24 hours.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
+   * @param {number} [params.timeThreshold=1440] - A time threshold, measured in minutes, after which a client is considered unseen. Defaults to 1440 minutes (24 hours).
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get clients not seen for more than 2 days</caption>
+   * server.getUnseenClients({ timeThreshold: 2880 }).then(data => console.log(data));
+   */
+  async getUnseenClients({ groupName, includeRemoved = true, includeBlank = true, timeThreshold = 1440 } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
+    const unseenClients = [];
+
+    // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
+    const currentEpochTime = Math.round(new Date().getTime() / 1000.0);
+
+    for (const client of clients) {
+      const timestampDifference = Math.round((currentEpochTime - (client?.lastseen ?? 0)) / 60);
+      if (timestampDifference >= timeThreshold) {
+        if (includeBlank !== true && client.file_disabled !== true && client.lastbackup === 0) {
+          continue;
+        }
+
+        if (includeBlank !== true && client.image_disabled !== true && client.lastbackup_image === 0) {
+          continue;
+        }
+
+        unseenClients.push(client);
+      }
+    };
+
+    return unseenClients;
+  }
+
+  /**
    * Adds a new client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.clientName - The client's name.
