@@ -780,6 +780,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all online clients</caption>
@@ -787,9 +788,18 @@ class UrbackupServer {
    * @example <caption>Get online clients from a specific group</caption>
    * server.getOnlineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
-  async getOnlineClients({ groupName, includeRemoved = true } = {}) {
-    return await this.getClients({ groupName, includeRemoved })
-      .then(onlineClients => onlineClients.filter(client => client.online === true));
+  async getOnlineClients({ groupName, includeRemoved = true, includeBlank = true } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
+    const onlineClients = [];
+
+    clients.forEach(client => {
+      if (client.online === true) {
+        if (includeBlank === true || (!includeBlank && (client.lastbackup !== 0 || client.lastbackup_image !== 0)))
+          onlineClients.push(client);
+      }
+    });
+
+    return onlineClients;
   }
 
   /**
@@ -797,6 +807,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all offline clients</caption>
@@ -806,9 +817,18 @@ class UrbackupServer {
    * @example <caption>Get offline clients from a specific groups</caption>
    * server.getOfflineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
-  async getOfflineClients({ groupName, includeRemoved = true } = {}) {
-    return await this.getClients({ groupName, includeRemoved })
-      .then(offlineClients => offlineClients.filter(client => client.online === false));
+  async getOfflineClients({ groupName, includeRemoved = true, includeBlank = true } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
+    const offlineClients = [];
+
+    clients.forEach(client => {
+      if (client.online === false) {
+        if (includeBlank === true || (!includeBlank && (client.lastbackup !== 0 || client.lastbackup_image !== 0)))
+          offlineClients.push(client);
+      }
+    });
+
+    return offlineClients;
   }
 
   /**
@@ -979,7 +999,7 @@ class UrbackupServer {
    * server.getConflictingClients({ includeRemoved: false }).then(data => console.log(data));
    */
   async getConflictingClients({ includeRemoved = true } = {}) {
-    const onlineClients = await this.getOnlineClients({ includeRemoved });
+    const onlineClients = await this.getOnlineClients({ includeRemoved, includeBlank: true });
     const seenIPs = new Set();
     const conflictingClients = new Set();
 
@@ -1634,7 +1654,7 @@ class UrbackupServer {
    */
   async getPausedActivities({ clientId, clientName } = {}) {
     const pausedActivities = [];
-    const activities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false });
+    const activities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false, includePaused: true });
 
     activities.current.forEach(activity => {
       if (activity.paused === true) {

@@ -19,6 +19,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
   - 0.60.0
     - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
+    - Added following parameters to `getOnlineClients()` and `getOfflineClients()` method: `includeBlank`.
+
+  - 0.54.0
     - Added following parameters to `getActivities()` and `getCurrentActivities()` method: `includePaused`.
 
   - 0.53.0
