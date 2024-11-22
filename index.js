@@ -250,13 +250,26 @@ class UrbackupServer {
     return false;
   }
 
-  // TODO
+  /**
+   * Determines whether a given client is considered "blank" (i.e., without any backups).
+   * This method is intended for internal use only and should not be called outside the class.
+   * A client is considered "blank" if either file backups or image backups have never been performed and the respective backup type is not disabled.
+   * @param {Object} params - Options for determining the blank state.
+   * @param {Object} params.client - The client object to evaluate.
+   * @param {boolean} params.includeFileBackups - Whether to include file backups in the blank evaluation.
+   * @param {boolean} params.includeImageBackups - Whether to include image backups in the blank evaluation.
+   * @returns {boolean} - Returns `true` if the client is considered "blank", otherwise `false`.
+   * @private
+  */
   #isBlankCLient({ client, includeFileBackups = true, includeImageBackups = true } = {}) {
-    const isBlankFileBackup = includeFileBackups === true && client.lastbackup === 0 && client.file_disabled !== true;
-    const isBlankImageBackup = includeImageBackups === true && client.lastbackup_image === 0 && client.image_disabled !== true;
+    const isBlankFileBackup = includeFileBackups === true &&
+      client.lastbackup === 0 && client.file_disabled !== true;
+
+    const isBlankImageBackup = includeImageBackups === true &&
+      client.lastbackup_image === 0 &&
+      client.image_disabled !== true;
 
     return isBlankFileBackup === true || isBlankImageBackup === true;
-    // TODO what if fileDisabled && imageDisabled? what if lastbackup === 0 && lastbackup_image === 0
   }
 
   /**
