@@ -261,7 +261,7 @@ class UrbackupServer {
    * @returns {boolean} - Returns `true` if the client is considered "blank", otherwise `false`.
    * @private
   */
-  #isBlankCLient({ client, includeFileBackups = true, includeImageBackups = true } = {}) {
+  #isBlankClient({ client, includeFileBackups = true, includeImageBackups = true } = {}) {
     const isBlankFileBackup = includeFileBackups === true &&
       client.lastbackup === 0 && client.file_disabled !== true;
 
@@ -842,7 +842,7 @@ class UrbackupServer {
         if (includeBlank === true) {
           onlineClients.push(client);
         } else {
-          if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
+          if (this.#isBlankClient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
             onlineClients.push(client);
           }
         }
@@ -876,7 +876,7 @@ class UrbackupServer {
         if (includeBlank === true) {
           offlineClients.push(client);
         } else {
-          if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
+          if (this.#isBlankClient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
             offlineClients.push(client);
           }
         }
@@ -926,7 +926,7 @@ class UrbackupServer {
     const blankClients = [];
 
     clients.forEach(client => {
-      if (this.#isBlankCLient({ client, includeFileBackups, includeImageBackups }) === true) {
+      if (this.#isBlankClient({ client, includeFileBackups, includeImageBackups }) === true) {
         blankClients.push(client);
       }
     });
@@ -964,7 +964,7 @@ class UrbackupServer {
           failedClients.push(client);
           continue;
         } else {
-          if (this.#isBlankCLient({ client, includeFileBackups, includeImageBackups }) === false) {
+          if (this.#isBlankClient({ client, includeFileBackups, includeImageBackups }) === false) {
             failedClients.push(client);
             continue;
           }
@@ -1095,7 +1095,7 @@ class UrbackupServer {
         if (includeBlank === true) {
           unseenClients.push(client);
         } else {
-          if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
+          if (this.#isBlankClient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
             unseenClients.push(client);
           }
         }
