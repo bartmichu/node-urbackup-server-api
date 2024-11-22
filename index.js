@@ -260,6 +260,29 @@ class UrbackupServer {
   }
 
   /**
+   * Determines whether a given client is considered "failed" based on its backup statuses.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {Object} params - The options for determining the failure state.
+   * @param {Object} params.client - The client object to evaluate.
+   * @param {boolean} params.includeFileBackups - Whether to include file backups in the failure evaluation.
+   * @param {boolean} params.includeImageBackups - Whether to include image backups in the failure evaluation.
+   * @param {boolean} params.failOnFileIssues - Whether to fail the client if file backup issues are detected.
+   * @returns {boolean} - Returns `true` if the client is considered "failed" (either due to file or image backup failure), otherwise `false`.
+   * @private
+   */
+  #isFailedClient({ client, includeFileBackups, includeImageBackups, failOnFileIssues } = {}) {
+    const isFailedFileBackup = includeFileBackups === true &&
+      client.file_disabled !== true &&
+      (failOnFileIssues === true ? (client.last_filebackup_issues !== 0 || client.file_ok !== true) : client.file_ok !== true) === true;
+
+    const isFailedImageBackup = includeImageBackups === true &&
+      client.image_disabled !== true &&
+      client.image_ok !== true;
+
+    return isFailedFileBackup === true || isFailedImageBackup === true;
+  }
+
+  /**
    * Logs in to the server.
    * This method is intended for internal use only and should not be called outside the class.
    * If the username is empty, then the anonymous login method is used.
@@ -923,30 +946,14 @@ class UrbackupServer {
     const failedClients = [];
 
     for (const client of clients) {
-      if (includeFileBackups === true) {
-        if ((failOnFileIssues === true && client.last_filebackup_issues !== 0) || client.file_ok !== true) {
-          if (includeBlank === true) {
+      if (this.#isFailedClient({ client, includeFileBackups, includeImageBackups, failOnFileIssues }) === true) {
+        if (includeBlank === true) {
+          failedClients.push(client);
+          continue;
+        } else {
+          if (this.#isBlankCLient({ client, includeFileBackups, includeImageBackups }) === false) {
             failedClients.push(client);
             continue;
-          } else {
-            if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: false }) === false) {
-              failedClients.push(client);
-              continue;
-            }
-          }
-        }
-      }
-
-      if (includeImageBackups === true) {
-        if (client.image_ok !== true) {
-          if (includeBlank === true) {
-            failedClients.push(client);
-            continue;
-          } else {
-            if (this.#isBlankCLient({ client, includeFileBackups: false, includeImageBackups: true }) === false) {
-              failedClients.push(client);
-              continue;
-            }
           }
         }
       }
@@ -980,14 +987,15 @@ class UrbackupServer {
     const okClients = [];
 
     for (const client of clients) {
-      if (includeFileBackups === true && client.file_ok === true) {
-        if (failOnFileIssues === false || (failOnFileIssues === true && client.last_filebackup_issues === 0)) {
-          okClients.push(client);
-          continue;
-        }
-      }
+      const isOkFileBackup = includeFileBackups === true &&
+        client.file_disabled !== true &&
+        (failOnFileIssues === true ? (client.last_filebackup_issues === 0 && client.file_ok === true) : client.file_ok === true) === true;
 
-      if (includeImageBackups === true && client.image_ok === true) {
+      const isOkImageBackup = includeImageBackups === true &&
+        client.image_disabled !== true &&
+        client.image_ok === true;
+
+      if (isOkFileBackup || isOkImageBackup) {
         okClients.push(client);
       }
     }

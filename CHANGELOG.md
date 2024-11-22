@@ -22,6 +22,7 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Added following parameters to `getOnlineClients()` and `getOfflineClients()` method: `includeBlank`.
     - Added following methods: `getUnseenClients()`.
     - Matching empty clients now considers whether file backups or image backups are enabled.
+    - Matching failed clients now considers whether file backups or image backups are enabled.
 
   - 0.54.0
     - Added following parameters to `getActivities()` and `getCurrentActivities()` method: `includePaused`.
