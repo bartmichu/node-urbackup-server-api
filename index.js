@@ -250,6 +250,15 @@ class UrbackupServer {
     return false;
   }
 
+  // TODO
+  #isBlankCLient({ client, includeFileBackups = true, includeImageBackups = true } = {}) {
+    const isBlankFileBackup = includeFileBackups === true && client.lastbackup === 0 && client.file_disabled !== true;
+    const isBlankImageBackup = includeImageBackups === true && client.lastbackup_image === 0 && client.image_disabled !== true;
+
+    return isBlankFileBackup === true || isBlankImageBackup === true;
+    // TODO what if fileDisabled && imageDisabled? what if lastbackup === 0 && lastbackup_image === 0
+  }
+
   /**
    * Logs in to the server.
    * This method is intended for internal use only and should not be called outside the class.
@@ -794,8 +803,13 @@ class UrbackupServer {
 
     clients.forEach(client => {
       if (client.online === true) {
-        if (includeBlank === true || (includeBlank === false && (client.lastbackup !== 0 || client.lastbackup_image !== 0)))
+        if (includeBlank === true) {
           onlineClients.push(client);
+        } else {
+          if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
+            onlineClients.push(client);
+          }
+        }
       }
     });
 
@@ -823,8 +837,13 @@ class UrbackupServer {
 
     clients.forEach(client => {
       if (client.online === false) {
-        if (includeBlank === true || (includeBlank === false && (client.lastbackup !== 0 || client.lastbackup_image !== 0)))
+        if (includeBlank === true) {
           offlineClients.push(client);
+        } else {
+          if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
+            offlineClients.push(client);
+          }
+        }
       }
     });
 
@@ -848,6 +867,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of blank clients, i.e., clients without any finished file and/or image backups.
+   * Matching empty clients considers whether file backups or image backups are enabled.
    * By default, it matches clients without both file and image backups.
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
@@ -870,10 +890,7 @@ class UrbackupServer {
     const blankClients = [];
 
     clients.forEach(client => {
-      const isBlankFileBackup = includeFileBackups === true && client.lastbackup === 0;
-      const isBlankImageBackup = includeImageBackups === true && client.lastbackup_image === 0;
-
-      if (isBlankFileBackup === true || isBlankImageBackup === true) {
+      if (this.#isBlankCLient({ client, includeFileBackups, includeImageBackups }) === true) {
         blankClients.push(client);
       }
     });
@@ -907,15 +924,30 @@ class UrbackupServer {
 
     for (const client of clients) {
       if (includeFileBackups === true) {
-        if ((failOnFileIssues === true && client.last_filebackup_issues !== 0) || ((includeBlank === true || (includeBlank === false && client.lastbackup !== 0)) && client.file_ok !== true)) {
-          failedClients.push(client);
-          continue;
+        if ((failOnFileIssues === true && client.last_filebackup_issues !== 0) || client.file_ok !== true) {
+          if (includeBlank === true) {
+            failedClients.push(client);
+            continue;
+          } else {
+            if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: false }) === false) {
+              failedClients.push(client);
+              continue;
+            }
+          }
         }
       }
 
       if (includeImageBackups === true) {
-        if ((includeBlank === true || (includeBlank === false && client.lastbackup_image !== 0)) && client.image_ok !== true) {
-          failedClients.push(client);
+        if (client.image_ok !== true) {
+          if (includeBlank === true) {
+            failedClients.push(client);
+            continue;
+          } else {
+            if (this.#isBlankCLient({ client, includeFileBackups: false, includeImageBackups: true }) === false) {
+              failedClients.push(client);
+              continue;
+            }
+          }
         }
       }
     }
@@ -1035,20 +1067,19 @@ class UrbackupServer {
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
     const currentEpochTime = Math.round(new Date().getTime() / 1000.0);
 
-    for (const client of clients) {
+    clients.forEach(client => {
       const timestampDifference = Math.round((currentEpochTime - (client?.lastseen ?? 0)) / 60);
+
       if (timestampDifference >= timeThreshold) {
-        if (includeBlank === false && client.file_disabled !== true && client.lastbackup === 0) {
-          continue;
+        if (includeBlank === true) {
+          unseenClients.push(client);
+        } else {
+          if (this.#isBlankCLient({ client, includeFileBackups: true, includeImageBackups: true }) === false) {
+            unseenClients.push(client);
+          }
         }
-
-        if (includeBlank === false && client.image_disabled !== true && client.lastbackup_image === 0) {
-          continue;
-        }
-
-        unseenClients.push(client);
       }
-    };
+    });
 
     return unseenClients;
   }
