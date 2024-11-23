@@ -296,6 +296,32 @@ class UrbackupServer {
   }
 
   /**
+   * Determines whether a given client is considered "stale".
+   * A client is considered "stale" if the time elapsed since their last file or image backup exceeds the given time threshold,
+   * and the respective backup type is not disabled.
+   * This method is intended for internal use only and should not be called outside the class.
+   * @param {Object} params - Options for determining the stale state.
+   * @param {Object} params.client - The client object to evaluate.
+   * @param {boolean} params.includeFileBackups - Whether to include file backups in the stale evaluation.
+   * @param {boolean} params.includeImageBackups - Whether to include image backups in the stale evaluation.
+   * @param {number} params.time - The current timestamp (in seconds).
+   * @param {number} params.timeThreshold - The time threshold (in minutes) used to determine staleness.
+   * @returns {boolean} - Returns `true` if the client is considered "stale" (either for file or image backups), otherwise `false`.
+   * @private
+   */
+  #isStaleClient({ client, includeFileBackups, includeImageBackups, time, timeThreshold } = {}) {
+    const isStaleFileBackup = includeFileBackups === true &&
+      client.file_disabled !== true &&
+      Math.round((time - (client.lastbackup ?? 0)) / 60) >= timeThreshold;
+
+    const isStaleImageBackup = includeImageBackups === true &&
+      client.image_disabled !== true &&
+      Math.round((time - (client.lastbackup_image ?? 0)) / 60) >= timeThreshold;
+
+    return isStaleFileBackup === true || isStaleImageBackup === true;
+  }
+
+  /**
    * Logs in to the server.
    * This method is intended for internal use only and should not be called outside the class.
    * If the username is empty, then the anonymous login method is used.
@@ -1103,6 +1129,44 @@ class UrbackupServer {
     });
 
     return unseenClients;
+  }
+
+  /**
+   * Retrieves a list of clients that are considered "stale" (i.e., have backups older than the specified threshold).
+   * This method fetches all clients within a specified group and filters those that are stale based on their last backup times.
+   * Optionally, it can exclude blank clients (clients with no backups) from the results.
+   * @param {Object} [params={}] - An optional object containing parameters.
+   * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
+   * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
+   * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
+   * @param {number} [params.timeThreshold=1440] - The time threshold (in minutes) for determining if a client is stale. Defaults to 1440 minutes (24 hours).
+   * @returns {Promise<Array>} - A promise that resolves to an array of clients that are considered stale.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get clients with file backup older than a day, skip blank clients</caption>
+   * server.getStaleClients({ includeBlank: false, includeImageBackups: false, timeThreshold: 1440 }).then(data => console.log(data));
+   */
+  async getStaleClients({ groupName, includeRemoved = true, includeBlank = true, includeFileBackups = true, includeImageBackups = true, timeThreshold = 1440 } = {}) {
+    const clients = await this.getClients({ groupName, includeRemoved });
+    const staleClients = [];
+
+    // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
+    const currentEpochTime = Math.round(new Date().getTime() / 1000.0);
+
+    clients.forEach(client => {
+      if (this.#isStaleClient({ client, includeFileBackups, includeImageBackups, time: currentEpochTime, timeThreshold }) === true) {
+        if (includeBlank === true) {
+          staleClients.push(client);
+        } else {
+          if (this.#isBlankClient({ client, includeFileBackups, includeImageBackups }) === false) {
+            staleClients.push(client);
+          }
+        }
+      }
+    });
+
+    return staleClients;
   }
 
   /**
