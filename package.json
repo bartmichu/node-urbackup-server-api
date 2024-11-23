@@ -1,6 +1,6 @@
 {
   "name": "urbackup-server-api",
-  "version": "0.60",
+  "version": "0.60.0",
   "description": "Node.js wrapper for UrBackup Server web API",
   "main": "index.js",
   "scripts": {
