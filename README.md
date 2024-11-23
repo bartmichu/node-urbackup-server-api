@@ -77,6 +77,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ### Breaking Changes
 
+  - 0.60.0
+    - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
+
   - 0.50.0
     - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
 
@@ -87,6 +90,17 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ### Notable Changes
+
+  - 0.60.0
+    - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
+    - Added following parameters to `getOnlineClients()` and `getOfflineClients()` method: `includeBlank`.
+    - Added following methods: `getUnseenClients()`, `getStaleClients()`.
+    - Matching empty clients now considers whether file backups or image backups are enabled.
+    - Matching failed clients now considers whether file backups or image backups are enabled.
+    - Matching OK clients now considers whether file backups or image backups are enabled.
+
+  - 0.54.0
+    - Added following parameters to `getActivities()` and `getCurrentActivities()` method: `includePaused`.
 
   - 0.53.0
     - Fixed the `getBlankClients()` method: image backups were not being matched correctly.
@@ -165,6 +179,8 @@ Represents a UrBackup Server.
     * [.getOkClients([params])](#UrbackupServer+getOkClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getOutdatedClients([params])](#UrbackupServer+getOutdatedClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.getConflictingClients([params])](#UrbackupServer+getConflictingClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getUnseenClients([params])](#UrbackupServer+getUnseenClients) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+    * [.getStaleClients([params])](#UrbackupServer+getStaleClients) ⇒ <code>Promise.&lt;Array&gt;</code>
     * [.addClient(params)](#UrbackupServer+addClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.removeClient(params)](#UrbackupServer+removeClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.cancelRemoveClient(params)](#UrbackupServer+cancelRemoveClient) ⇒ <code>Promise.&lt;boolean&gt;</code>
@@ -524,6 +540,7 @@ Retrieves a list of online clients.
 | [params] | <code>object</code> |  | An optional object containing parameters. |
 | [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeBlank] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
 
 **Example** *(Get all online clients)*  
 ```js
@@ -550,6 +567,7 @@ Retrieves a list of offline clients.
 | [params] | <code>object</code> |  | An optional object containing parameters. |
 | [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeBlank] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
 
 **Example** *(Get all offline clients)*  
 ```js
@@ -589,6 +607,7 @@ server.getActiveClients().then(data => console.log(data));
 
 ### urbackupServer.getBlankClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
 Retrieves a list of blank clients, i.e., clients without any finished file and/or image backups.
+Matching empty clients considers whether file backups or image backups are enabled.
 By default, it matches clients without both file and image backups.
 
 **Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
@@ -639,9 +658,9 @@ Retrieves a list of failed clients, i.e., clients with failed backup status.
 | [params] | <code>object</code> |  | An optional object containing parameters. |
 | [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
 | [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeBlank] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
 | [params.includeFileBackups] | <code>boolean</code> | <code>true</code> | Whether or not file backups should be taken into account when matching clients. Defaults to true. |
 | [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be taken into account when matching clients. Defaults to true. |
-| [params.includeBlankClients] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
 | [params.failOnFileIssues] | <code>boolean</code> | <code>false</code> | Whether or not to treat file backups finished with issues as being failed. Defaults to false. |
 
 **Example** *(Get clients with failed file or image backups)*  
@@ -752,6 +771,58 @@ server.getConflictingClients().then(data => console.log(data));
 **Example** *(Get online clients with conflicting IP addresses, exclude clients marked for removal)*  
 ```js
 server.getConflictingClients({ includeRemoved: false }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getUnseenClients"></a>
+
+### urbackupServer.getUnseenClients([params]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
+Retrieves a list of clients who have not been seen for a specified period of time. Defaults to 24 hours.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array.&lt;object&gt;&gt;</code> - A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeBlank] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
+| [params.timeThreshold] | <code>number</code> | <code>1440</code> | A time threshold, measured in minutes, after which a client is considered unseen. Defaults to 1440 minutes (24 hours). |
+
+**Example** *(Get clients not seen for more than 2 days)*  
+```js
+server.getUnseenClients({ timeThreshold: 2880 }).then(data => console.log(data));
+```
+<a name="UrbackupServer+getStaleClients"></a>
+
+### urbackupServer.getStaleClients([params]) ⇒ <code>Promise.&lt;Array&gt;</code>
+Retrieves a list of clients that are considered "stale" (i.e., have backups older than the specified threshold).
+This method fetches all clients within a specified group and filters those that are stale based on their last backup times.
+Optionally, it can exclude blank clients (clients with no backups) from the results.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;Array&gt;</code> - - A promise that resolves to an array of clients that are considered stale.  
+**Throws**:
+
+- <code>Error</code> If the login fails or the API response is missing expected values.
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>Object</code> | <code>{}</code> | An optional object containing parameters. |
+| [params.groupName] | <code>string</code> |  | Group name. Defaults to undefined, which matches all groups. |
+| [params.includeRemoved] | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true. |
+| [params.includeBlank] | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true. |
+| [params.includeFileBackups] | <code>boolean</code> | <code>true</code> | Whether or not file backups should be taken into account when matching clients. Defaults to true. |
+| [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be taken into account when matching clients. Defaults to true. |
+| [params.timeThreshold] | <code>number</code> | <code>1440</code> | The time threshold (in minutes) for determining if a client is stale. Defaults to 1440 minutes (24 hours). |
+
+**Example** *(Get clients with file backup older than a day, skip blank clients)*  
+```js
+server.getStaleClients({ includeBlank: false, includeImageBackups: false, timeThreshold: 1440 }).then(data => console.log(data));
 ```
 <a name="UrbackupServer+addClient"></a>
 
@@ -1047,10 +1118,15 @@ By default, this method returns both current and last activities.
 | [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
 | [params.includeCurrent] | <code>boolean</code> | <code>true</code> | Whether or not currently running activities should be included. Defaults to true. |
 | [params.includeLast] | <code>boolean</code> | <code>true</code> | Whether or not last activities should be included. Defaults to true. |
+| [params.includePaused] | <code>boolean</code> | <code>true</code> | Whether or not paused activities should be included. Defaults to true. |
 
 **Example** *(Get current (in progress) activities for all clients)*  
 ```js
 server.getActivities({ includeLast: false }).then(data => console.log(data));
+```
+**Example** *(Get current (in progress, skip paused) activities for all clients)*  
+```js
+server.getActivities({ includeLast: false, includePaused: false }).then(data => console.log(data));
 ```
 **Example** *(Get last activities for all clients)*  
 ```js
@@ -1080,15 +1156,20 @@ Matches all clients by default, but `clientName` or `clientId` can be used to re
 - <code>Error</code> If the API response is missing values or if login fails.
 
 
-| Param | Type | Description |
-| --- | --- | --- |
-| [params] | <code>object</code> | An optional object containing parameters. |
-| [params.clientId] | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
-| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [params] | <code>object</code> |  | An optional object containing parameters. |
+| [params.clientId] | <code>number</code> |  | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.clientName] | <code>string</code> |  | The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined. |
+| [params.includePaused] | <code>boolean</code> | <code>true</code> | Whether or not paused activities should be included. Defaults to true. |
 
 **Example** *(Get current activities for all clients)*  
 ```js
 server.getCurrentActivities().then(data => console.log(data));
+```
+**Example** *(Get current activities for all clients, skip paused activities)*  
+```js
+server.getCurrentActivities({ includePaused: false }).then(data => console.log(data));
 ```
 **Example** *(Get current activities for a specific client only)*  
 ```js
