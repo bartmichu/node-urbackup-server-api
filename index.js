@@ -1768,7 +1768,7 @@ class UrbackupServer {
    */
   async getCurrentActivities({ clientId, clientName, includePaused = true } = {}) {
     const activities = await this.getActivities({ clientId, clientName, includeCurrent: true, includeLast: false, includePaused });
-    return currentActivities.current;
+    return activities.current;
   }
 
   /**
@@ -2170,7 +2170,7 @@ class UrbackupServer {
    * server.getGeneralSettings().then(data => console.log(data));
    */
   async getGeneralSettings() {
-    const generalSettings = this.#getServerSettings('general');
+    const generalSettings = await this.#getServerSettings('general');
     return generalSettings;
   }
 
@@ -2182,7 +2182,7 @@ class UrbackupServer {
    * server.getMailSettings().then(data => console.log(data));
    */
   async getMailSettings() {
-    const mailSettings = this.#getServerSettings('mail');
+    const mailSettings = await this.#getServerSettings('mail');
     return mailSettings;
   }
 
@@ -2194,7 +2194,7 @@ class UrbackupServer {
    * server.getLdapSettings().then(data => console.log(data));
    */
   async getLdapSettings() {
-    const ldapSettings = this.#getServerSettings('ldap');
+    const ldapSettings = await this.#getServerSettings('ldap');
     return ldapSettings;
   }
 
