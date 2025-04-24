@@ -77,6 +77,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ### Breaking Changes
 
+  - 0.70.0
+    - Migrated from CommonJS (require, module.exports) to ES Modules (import, export) only.
+
   - 0.60.0
     - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
 
@@ -90,6 +93,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ### Notable Changes
+
+  - 0.70.0
+    - Migrated from CommonJS (require, module.exports) to ES Modules (import, export) only.
 
   - 0.60.0
     - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
