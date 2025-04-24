@@ -1,7 +1,7 @@
-const fetch = require('node-fetch');
-const { URL, URLSearchParams } = require('url');
-const crypto = require('crypto');
-const Semaphore = require('async-mutex').Semaphore;
+import { Semaphore } from 'async-mutex';
+import { URL, URLSearchParams } from 'url';
+import crypto from 'crypto';
+import fetch from 'node-fetch';
 
 /**
  * Represents a UrBackup Server.
@@ -2296,4 +2296,4 @@ class UrbackupServer {
   }
 }
 
-module.exports.UrbackupServer = UrbackupServer;
+export { UrbackupServer };

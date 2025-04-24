@@ -35,7 +35,7 @@ npm install urbackup-server-api
 Here's a basic example to get you started:
 
 ```javascript
-const { UrbackupServer } = require('urbackup-server-api');
+import { UrbackupServer } from 'urbackup-server-api';
 
 // When troubleshooting TSL connections with self-signed certificates you may try to disable certificate validation. Keep in mind that it's strongly discouraged for production use.
 //process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
