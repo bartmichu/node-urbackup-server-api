@@ -95,6 +95,7 @@ class UrbackupServer {
       method: 'POST',
       headers: {
         Accept: 'application/json',
+        'User-Agent': '',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams(bodyParams)
