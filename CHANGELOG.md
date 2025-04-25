@@ -21,6 +21,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Notable Changes
 
+  - 0.80.1
+    - Fixed the `getUsage()` method: the return type for a single client was incorrect.
+
   - 0.70.0
     - Migrated from CommonJS (require, module.exports) to ES Modules (import, export) only.
   

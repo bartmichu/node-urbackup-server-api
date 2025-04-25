@@ -1656,11 +1656,13 @@ class UrbackupServer {
               return fallbackReturnValue;
             }
           }
-          return usageResponse.usage.find((client) =>
+
+          const match = usageResponse.usage.find((client) =>
             typeof clientId === 'number'
               ? client.name === mappedClientName
               : client.name === clientName
-          ) ?? fallbackReturnValue;
+          );
+          return match ? [match] : fallbackReturnValue;
         }
       } else {
         throw new Error(this.#messages.missingValues);
