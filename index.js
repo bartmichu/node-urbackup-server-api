@@ -83,17 +83,19 @@ class UrbackupServer {
    * const response = await this.#fetchJson('status');
    */
   async #fetchJson(action = '', bodyParams = {}) {
-    this.#url.searchParams.set('a', action);
+    const url = new URL(this.#url);
+    url.searchParams.set('a', action);
+    // this.#url.searchParams.set('a', action);
 
     if (this.#sessionId.length > 0) {
       bodyParams.ses = this.#sessionId;
     }
 
-    const response = await fetch(this.#url, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json; charset=UTF-8'
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams(bodyParams)
     });
