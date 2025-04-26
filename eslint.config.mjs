@@ -7,7 +7,7 @@ export default [
   pluginJs.configs.recommended,
   {
     files: ["**/*.js"],
-    languageOptions: { sourceType: "commonjs" },
+    languageOptions: { sourceType: "module" },
     plugins: {
       jsdoc,
     },
