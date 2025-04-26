@@ -1,6 +1,6 @@
 {
   "name": "urbackup-server-api",
-  "version": "0.80.1",
+  "version": "0.90.0",
   "description": "Node.js wrapper for UrBackup Server web API",
   "main": "index.js",
   "type": "module",
@@ -24,8 +24,7 @@
   },
   "homepage": "https://github.com/bartmichu/node-urbackup-server-api#readme",
   "dependencies": {
-    "async-mutex": "^0.5.0",
-    "node-fetch": "^2.7.0"
+    "async-mutex": "^0.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.5.0",

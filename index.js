@@ -1,7 +1,6 @@
 import { Semaphore } from 'async-mutex';
 import { URL, URLSearchParams } from 'url';
 import crypto from 'crypto';
-import fetch from 'node-fetch';
 
 /**
  * Represents a UrBackup Server.
@@ -94,15 +93,15 @@ class UrbackupServer {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        Accept: 'application/json',
+        'Accept': 'application/json',
         'User-Agent': 'urbstat',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams(bodyParams)
+      body: new URLSearchParams(bodyParams).toString()
     });
 
     if (response?.ok === true) {
-      return response.json();
+      return await response.json();
     } else {
       throw new Error(this.#messages.failedFetch);
     }

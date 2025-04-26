@@ -4,6 +4,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Breaking Changes
 
+  - 0.90.0
+    - Use the Node.js Fetch API instead of the node-fetch module. Older Node.js versions may require the `--experimental-fetch` flag.
+
   - 0.70.0
     - Migrated from CommonJS (require, module.exports) to ES Modules (import, export) only.
 
@@ -20,6 +23,9 @@ This changelog starts at version `0.20.0` and includes a selection of significan
     - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
 
 ## Notable Changes
+
+  - 0.90.0
+    - Use the Node.js Fetch API instead of the node-fetch module. Older Node.js versions may require the `--experimental-fetch` flag.
 
   - 0.80.1
     - Fixed the `getUsage()` method: the return type for a single client was incorrect.
