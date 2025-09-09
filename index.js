@@ -15,7 +15,7 @@ class UrbackupServer {
   #url;
   #username;
   #constants = {
-    availableClientVersion: '2.5.25',
+    availableClientVersion: '2.5.26',
     availableServerVersion: '2.5.33',
     adminUserRights: [{ domain: 'all', right: 'all' }],
     defaultUserRights: []
