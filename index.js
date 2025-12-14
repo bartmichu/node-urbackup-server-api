@@ -15,8 +15,8 @@ class UrbackupServer {
   #url;
   #username;
   #constants = {
-    availableClientVersion: '2.5.26',
-    availableServerVersion: '2.5.33',
+    latestClientVersion: '2.5.26',
+    latestServerVersion: '2.5.33',
     adminUserRights: [{ domain: 'all', right: 'all' }],
     defaultUserRights: []
   };
@@ -511,7 +511,7 @@ class UrbackupServer {
     if (login === true) {
       const serverVersion = await this.getServerVersion();
 
-      return this.#compareVersion(serverVersion.string, this.#constants.availableServerVersion);
+      return this.#compareVersion(serverVersion.string, this.#constants.latestServerVersion);
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
     }
@@ -1062,7 +1062,7 @@ class UrbackupServer {
     const clients = await this.getClients({ groupName, includeRemoved });
 
     const outdatedClients = clients.filter(client => {
-      return this.#compareVersion(client.client_version_string, this.#constants.availableClientVersion);
+      return this.#compareVersion(client.client_version_string, this.#constants.latestClientVersion);
     });
 
     return outdatedClients;
