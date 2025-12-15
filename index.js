@@ -11,7 +11,7 @@ class UrbackupServer {
   #lastLogId = new Map();
   #password;
   #semaphore = new Semaphore(1);
-  #sessionId = '';
+  #sessionId = ''; 
   #url;
   #username;
   #constants = {
@@ -157,6 +157,8 @@ class UrbackupServer {
    * @param {string} password - The password to hash.
    * @returns {string} The MD5 hashed password.
    * @private
+   * @example
+   * const pwmd5 = this.#hashPasswordMd5(this.#generateRandomString(50), password)
    */
   #hashPasswordMd5(salt, password) {
     const hash = crypto.createHash('md5');
@@ -230,6 +232,8 @@ class UrbackupServer {
    * @param {string} available - The available version string in the format 'major.minor.patch'.
    * @returns {boolean} Returns true if the installed version is older than the available version, false otherwise.
    * @private
+   * @example
+   * this.#compareVersion(serverVersion.string, this.#constants.latestServerVersion);
    */
   #compareVersion(installed, available) {
     const parseVersion = (version) => version.split('.').map(Number);
@@ -256,13 +260,15 @@ class UrbackupServer {
    * Determines whether a given client is considered "blank" (i.e., without any backups).
    * This method is intended for internal use only and should not be called outside the class.
    * A client is considered "blank" if either file backups or image backups have never been performed and the respective backup type is not disabled.
-   * @param {Object} params - Options for determining the blank state.
-   * @param {Object} params.client - The client object to evaluate.
+   * @param {object} params - Options for determining the blank state.
+   * @param {object} params.client - The client object to evaluate.
    * @param {boolean} params.includeFileBackups - Whether to include file backups in the blank evaluation.
    * @param {boolean} params.includeImageBackups - Whether to include image backups in the blank evaluation.
    * @returns {boolean} - Returns `true` if the client is considered "blank", otherwise `false`.
    * @private
-  */
+   * @example
+   * this.#isBlankClient({ client });
+   */
   #isBlankClient({ client, includeFileBackups = true, includeImageBackups = true } = {}) {
     const isBlankFileBackup = includeFileBackups === true &&
       client.lastbackup === 0 && client.file_disabled !== true;
@@ -277,13 +283,15 @@ class UrbackupServer {
   /**
    * Determines whether a given client is considered "failed" based on its backup statuses.
    * This method is intended for internal use only and should not be called outside the class.
-   * @param {Object} params - The options for determining the failure state.
-   * @param {Object} params.client - The client object to evaluate.
+   * @param {object} params - The options for determining the failure state.
+   * @param {object} params.client - The client object to evaluate.
    * @param {boolean} params.includeFileBackups - Whether to include file backups in the failure evaluation.
    * @param {boolean} params.includeImageBackups - Whether to include image backups in the failure evaluation.
    * @param {boolean} params.failOnFileIssues - Whether to fail the client if file backup issues are detected.
    * @returns {boolean} - Returns `true` if the client is considered "failed" (either due to file or image backup failure), otherwise `false`.
    * @private
+   * @example
+   * this.#isFailedClient({ client, includeFileBackups: true, includeImageBackups: true, failOnFileIssues: false });
    */
   #isFailedClient({ client, includeFileBackups, includeImageBackups, failOnFileIssues } = {}) {
     const isFailedFileBackup = includeFileBackups === true &&
@@ -302,14 +310,16 @@ class UrbackupServer {
    * A client is considered "stale" if the time elapsed since their last file or image backup exceeds the given time threshold,
    * and the respective backup type is not disabled.
    * This method is intended for internal use only and should not be called outside the class.
-   * @param {Object} params - Options for determining the stale state.
-   * @param {Object} params.client - The client object to evaluate.
+   * @param {object} params - Options for determining the stale state.
+   * @param {object} params.client - The client object to evaluate.
    * @param {boolean} params.includeFileBackups - Whether to include file backups in the stale evaluation.
    * @param {boolean} params.includeImageBackups - Whether to include image backups in the stale evaluation.
    * @param {number} params.time - The current timestamp (in seconds).
    * @param {number} params.timeThreshold - The time threshold (in minutes) used to determine staleness.
    * @returns {boolean} - Returns `true` if the client is considered "stale" (either for file or image backups), otherwise `false`.
    * @private
+   * @example
+   * this.#isStaleClient({ client, includeFileBackups: true, includeImageBackups: true, time, timeThreshold });
    */
   #isStaleClient({ client, includeFileBackups, includeImageBackups, time, timeThreshold } = {}) {
     const isStaleFileBackup = includeFileBackups === true &&
@@ -464,14 +474,14 @@ class UrbackupServer {
   }
 
   /**
-     * Retrieves the server version in both number and string representation.
-     * @returns {Promise<object>} An object containing the server version number and string.
-     * @throws {Error} If the API response is missing required values or if the login fails.
-     * @example <caption>Get server version number</caption>
-     * server.getServerVersion().then(data => console.log(data.number));
-     * @example <caption>Get server version string</caption>
-     * server.getServerVersion().then(data => console.log(data.string));
-     */
+   * Retrieves the server version in both number and string representation.
+   * @returns {Promise<object>} An object containing the server version number and string.
+   * @throws {Error} If the API response is missing required values or if the login fails.
+   * @example <caption>Get server version number</caption>
+   * server.getServerVersion().then(data => console.log(data.number));
+   * @example <caption>Get server version string</caption>
+   * server.getServerVersion().then(data => console.log(data.string));
+   */
   async getServerVersion() {
     const login = await this.#login();
 
@@ -1137,7 +1147,7 @@ class UrbackupServer {
    * Retrieves a list of clients that are considered "stale" (i.e., have backups older than the specified threshold).
    * This method fetches all clients within a specified group and filters those that are stale based on their last backup times.
    * Optionally, it can exclude blank clients (clients with no backups) from the results.
-   * @param {Object} [params={}] - An optional object containing parameters.
+   * @param {object} [params={}] - An optional object containing parameters.
    * @param {string} [params.groupName] - Group name. Defaults to undefined, which matches all groups.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
    * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to true.
