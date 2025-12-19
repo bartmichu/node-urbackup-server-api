@@ -1,7 +1,5 @@
 # CHANGELOG
 
-This changelog starts at version `0.20.0` and includes a selection of significant changes.
-
 ## Breaking Changes
 
 - 0.90.0
@@ -31,7 +29,7 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 - 0.91.0
 
-  - Added following methods: `getClientGroup()` `setClientGroup()`. Thanks to @yoya93 for the contribution!
+  - Added following methods: `getClientGroup()`, `setClientGroup()`. Thanks to @yoya93 for the contribution!
 
 - 0.90.0
 

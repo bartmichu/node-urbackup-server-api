@@ -13,7 +13,7 @@ This module provides a Node.js interface for interacting with the UrBackup serve
 
 The module aims to simplify the integration of UrBackup server management into Node.js applications, making it easier to automate and control backup operations programmatically.
 
-_Please note that this module is still in a pre-1.0.0 release. Some functionality is missing. All implemented methods are working and considered stable, but public method signatures occasionally change. Always check the changelog before updating to understand any potential breaking changes._
+_Please note that this module is still in a pre-1.0.0 release. Some functionality is missing, and method signatures may change without notice. Always review the [CHANGELOG](https://github.com/bartmichu/node-urbackup-server-api/blob/main/CHANGELOG.md) before updating to understand any potential breaking changes._
 
 ## Requirements
 
@@ -76,124 +76,9 @@ const server = new UrbackupServer({
 
 <https://github.com/bartmichu/urbstat/>
 
-urbstat
+**urbstat**
 
 The missing command-line tool for UrBackup Server. It provides valuable insights into the utilization of data, clients' status and activities, and helps administrator to identify, troubleshoot and resolve issues that may arise within the system.
-
-## CHANGELOG
-
-This changelog starts at version `0.20.0` and includes a selection of significant changes.
-
-### Breaking Changes
-
-- 0.90.0
-
-  - Use the Node.js Fetch API instead of the node-fetch module. Older Node.js versions may require the `--experimental-fetch` flag.
-
-- 0.70.0
-
-  - Migrated from CommonJS (require, module.exports) to ES Modules (import, export) only.
-
-- 0.60.0
-
-  - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
-
-- 0.50.0
-
-  - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
-
-- 0.40.0
-
-  - ~~Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.~~
-
-- 0.30.0
-  - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
-
-### Notable Changes
-
-- 0.91.0
-
-  - Added following methods: `getClientGroup()` `setClientGroup()`. Thanks to @yoya93 for the contribution!
-
-- 0.90.0
-
-  - Use the Node.js Fetch API instead of the node-fetch module. Older Node.js versions may require the `--experimental-fetch` flag.
-
-- 0.80.1
-
-  - Fixed the `getUsage()` method: the return type for a single client was incorrect.
-
-- 0.70.0
-
-  - Migrated from CommonJS (require, module.exports) to ES Modules (import, export) only.
-
-- 0.60.0
-
-  - Breaking change of naming in `getFailedClients()` method: previously, it used the `includeBlankClients` parameter, which is now renamed to `includeBlank`.
-  - Added following parameters to `getOnlineClients()` and `getOfflineClients()` method: `includeBlank`.
-  - Added following methods: `getUnseenClients()`, `getStaleClients()`.
-  - Matching empty clients now considers whether file backups or image backups are enabled.
-  - Matching failed clients now considers whether file backups or image backups are enabled.
-  - Matching OK clients now considers whether file backups or image backups are enabled.
-
-- 0.54.0
-
-  - Added following parameters to `getActivities()` and `getCurrentActivities()` method: `includePaused`.
-
-- 0.53.0
-
-  - Fixed the `getBlankClients()` method: image backups were not being matched correctly.
-
-- 0.52.0
-
-  - Added following methods: `getOutdatedClients()`, `getConflictingClients()`, `removeUser()`, `addUser()`, `isServerOutdated()`.
-
-- 0.51.0
-
-  - Added following methods: `getFailedClients()`, `getOkClients()`.
-  - Added following parameters to `getBlankClients()`: `includeFileBackups`, `includeImageBackups`, `groupName`.
-  - Added `groupName` parameter to the following methods: `getRemovedClients()`, `getOnlineClients()`, `getOfflineClients()`, `getActiveClients()`, `getBlankClients()`.
-
-- 0.50.0
-
-  - Reverted property name changes introduced in `0.40.0` - this was not a good idea. If such a change is needed in the future, it will be an optional feature (disabled by default) controlled by a method parameter.
-
-- 0.42.0
-
-  - Added following methods: `getServerVersion()`, `getUserRights()`, `getRawStatus()`, `getRawUsage()`, `getRawProgress()`, `getActiveClients()`, `getBlankClients()`.
-  - Added following properties to objects returned by `getClients()` method: `status`, `seen`, `processes`, `imageBackupDisabled`, `imageBackupOk`, `lastImageBackup`, `fileBackupOk`, `lastFileBackup`, `lastFileBackupIssues`.
-
-- 0.41.0
-
-  - Added following properties to objects returned by `getClients()` method: `online`, `uid`, `ip`, `clientVersion`, `osFamily`, `osVersion`. This affects the `getClients()`, `getGroupMembers()`, `getRemovedClients()`, `getOnlineClients()`, `getOfflineClients()`.
-
-- 0.40.0
-
-  - ~~Breaking change of property names of objects returned by `getClients()` method. This affects the `getClients()`, `getGroupMembers()`, and `getRemovedClients()` methods.~~
-
-- 0.31.0
-
-  - Added following methods: `getOnlineClients()`, `getOfflineClients()`, `getRemovedClients()`, `getPausedActivities()`.
-
-- 0.30.0
-
-  - Breaking change of naming in `getActivities()` method: previously, it used the `past` property, which is now renamed to `last`. Similarly, the `includePast` parameter has been renamed to `includeLast`.
-  - Defaults change for `getActivities()` method: previously, it returned only current activities by default. Now, both current and last activities are included.
-
-- 0.22.0
-
-  - Added following methods: `getCurrentActivities()`, `getPastActivities()`, `getMailSettings()`, `getLdapSettings()`.
-
-- 0.21.0
-
-  - Added `getGroupMembers()` method.
-
-- 0.20.1
-
-  - Fixed `getClientAuthKey()` method. Previously, due to changes introduced by a UrBackup Server update, it was always returning an empty string.
-
-- 0.20.0
-  - Fixed returned type inconsistencies for the following methods: `getClientId()`, `getClientName()`, `getGroupId()`, `getGroupName()`.
 
 ---
 
@@ -240,6 +125,8 @@ Represents a UrBackup Server.
   - [.removeClientHint(params)](#UrbackupServer+removeClientHint) ⇒ <code>Promise.&lt;boolean&gt;</code>
   - [.getClientSettings([params])](#UrbackupServer+getClientSettings) ⇒ <code>Promise.&lt;Array&gt;</code>
   - [.setClientSettings(params)](#UrbackupServer+setClientSettings) ⇒ <code>Promise.&lt;boolean&gt;</code>
+  - [.getClientGroup(params)](#UrbackupServer+getClientGroup) ⇒ <code>Promise.&lt;(object\|null)&gt;</code>
+  - [.setClientGroup(params)](#UrbackupServer+setClientGroup) ⇒ <code>Promise.&lt;boolean&gt;</code>
   - [.getClientAuthkey(params)](#UrbackupServer+getClientAuthkey) ⇒ <code>Promise.&lt;string&gt;</code>
   - [.getStatus([params])](#UrbackupServer+getStatus) ⇒ <code>Promise.&lt;Array&gt;</code>
   - [.getUsage([params])](#UrbackupServer+getUsage) ⇒ <code>Promise.&lt;Array&gt;</code>
@@ -531,11 +418,11 @@ All clients in this group will be reassigned to the default group. Does not allo
 
 - <code>Error</code> If both `groupId` and `groupName` are missing or invalid, or if the login fails.
 
-| Param              | Type                | Description                                                                                                                                      |
-| ------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| params             | <code>object</code> | An object containing parameters.                                                                                                                 |
-| [params.groupId]   | <code>number</code> | Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.          |
-| [params.groupName] | <code>string</code> | Group name. Must be different than '' (empty string). Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
+| Param            | Type                | Description                                                                                                                                 |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| params           | <code>object</code> | An object containing parameters.                                                                                                            |
+| params.groupId   | <code>number</code> | Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.     |
+| params.groupName | <code>string</code> | Group name. Must be different than empty string. Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
 
 **Example** _(Remove group)_
 
@@ -557,11 +444,11 @@ This is only a convenience method that wraps the `getClients()` method.
 
 - <code>Error</code> If both `groupId` and `groupName` are missing or invalid.
 
-| Param              | Type                | Description                                                                                                     |
-| ------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| params             | <code>object</code> | An object containing parameters.                                                                                |
-| [params.groupId]   | <code>number</code> | Group ID. Ignored if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.          |
-| [params.groupName] | <code>string</code> | Group name. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
+| Param            | Type                | Description                                                                                                     |
+| ---------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| params           | <code>object</code> | An object containing parameters.                                                                                |
+| params.groupId   | <code>number</code> | Group ID. Ignored if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.          |
+| params.groupName | <code>string</code> | Group name. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
 
 **Example** _(Get members of default group)_
 
@@ -1014,7 +901,7 @@ Optionally, it can exclude blank clients (clients with no backups) from the resu
 
 | Param                        | Type                 | Default           | Description                                                                                                |
 | ---------------------------- | -------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
-| [params]                     | <code>Object</code>  | <code>{}</code>   | An optional object containing parameters.                                                                  |
+| [params]                     | <code>object</code>  |                   | An optional object containing parameters.                                                                  |
 | [params.groupName]           | <code>string</code>  |                   | Group name. Defaults to undefined, which matches all groups.                                               |
 | [params.includeRemoved]      | <code>boolean</code> | <code>true</code> | Whether or not clients pending deletion should be included. Defaults to true.                              |
 | [params.includeBlank]        | <code>boolean</code> | <code>true</code> | Whether or not blank clients should be taken into account when matching clients. Defaults to true.         |
@@ -1071,11 +958,11 @@ Actual removal occurs during the cleanup time window. Until then, this operation
 
 - <code>Error</code> If parameters are missing or invalid.
 
-| Param               | Type                | Description                                                                                                                   |
-| ------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                              |
-| [params.clientId]   | <code>number</code> | Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.                  |
+| Param             | Type                | Description                                                                                                                   |
+| ----------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                              |
+| params.clientId   | <code>number</code> | Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.                  |
 
 **Example** _(Remove client by ID)_
 
@@ -1103,11 +990,11 @@ Unmarks the client as ready for removal.
 
 - <code>Error</code> If parameters are missing or invalid.
 
-| Param               | Type                | Description                                                                                                           |
-| ------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                      |
-| [params.clientId]   | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| Param             | Type                | Description                                                                                                           |
+| ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                      |
+| params.clientId   | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 
 **Example** _(Stop the server from removing a client by ID)_
 
@@ -1240,13 +1127,13 @@ A list of settings can be obtained with the `getClientSettings` method.
 
 - <code>Error</code> If parameters are missing or invalid, or if the API response is incorrect.
 
-| Param               | Type                                                               | Description                                                                                                           |
-| ------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code>                                                | An object containing parameters.                                                                                      |
-| [params.clientId]   | <code>number</code>                                                | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code>                                                | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
-| params.key          | <code>string</code>                                                | Settings element to change.                                                                                           |
-| params.newValue     | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element.                                                                                       |
+| Param             | Type                                                               | Description                                                                                                           |
+| ----------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code>                                                | An object containing parameters.                                                                                      |
+| params.clientId   | <code>number</code>                                                | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code>                                                | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| params.key        | <code>string</code>                                                | Settings element to change.                                                                                           |
+| params.newValue   | <code>string</code> \| <code>number</code> \| <code>boolean</code> | New value for settings element.                                                                                       |
 
 **Example** _(Set directories to backup to be optional by default)_
 
@@ -1267,6 +1154,73 @@ server
   .then((data) => console.log(data));
 ```
 
+<a name="UrbackupServer+getClientGroup"></a>
+
+### urbackupServer.getClientGroup(params) ⇒ <code>Promise.&lt;(object\|null)&gt;</code>
+
+Retrieves the group information for a specific client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;(object\|null)&gt;</code> - A promise that resolves to an object containing the group ID and name, or null if the client or group is not found.  
+**Throws**:
+
+- <code>Error</code> If parameters are missing or invalid, if the API response is missing values, or if login fails.
+
+| Param             | Type                | Description                                                                                                               |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                          |
+| params.clientId   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+
+**Example** _(Get client group by client ID)_
+
+```js
+server.getClientGroup({ clientId: 1 }).then((data) => console.log(data));
+```
+
+**Example** _(Get client group by client name)_
+
+```js
+server
+  .getClientGroup({ clientName: 'laptop2' })
+  .then((data) => console.log(data));
+```
+
+<a name="UrbackupServer+setClientGroup"></a>
+
+### urbackupServer.setClientGroup(params) ⇒ <code>Promise.&lt;boolean&gt;</code>
+
+Sets the group for a specific client.
+
+**Kind**: instance method of [<code>UrbackupServer</code>](#UrbackupServer)  
+**Returns**: <code>Promise.&lt;boolean&gt;</code> - A promise that resolves to true if the group was successfully set, or false otherwise.  
+**Throws**:
+
+- <code>Error</code> If parameters are missing or invalid, or if the API response is incorrect.
+
+| Param             | Type                | Description                                                                                                           |
+| ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                      |
+| params.clientId   | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| params.groupId    | <code>number</code> | Group ID.                                                                                                             |
+
+**Example** _(Set client group by client ID)_
+
+```js
+server
+  .setClientGroup({ clientId: 1, groupId: 123 })
+  .then((data) => console.log(data));
+```
+
+**Example** _(Set client group by client name)_
+
+```js
+server
+  .setClientGroup({ clientName: 'laptop2', groupId: 123 })
+  .then((data) => console.log(data));
+```
+
 <a name="UrbackupServer+getClientAuthkey"></a>
 
 ### urbackupServer.getClientAuthkey(params) ⇒ <code>Promise.&lt;string&gt;</code>
@@ -1279,11 +1233,11 @@ Retrieves the authentication key for a specified client.
 
 - <code>Error</code> If parameters are missing or invalid, or if the API response is incorrect.
 
-| Param               | Type                | Description                                                                                                           |
-| ------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                      |
-| [params.clientId]   | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| Param             | Type                | Description                                                                                                           |
+| ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                      |
+| params.clientId   | <code>number</code> | Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 
 **Example** _(Get authentication key for a specific client)_
 
@@ -1557,12 +1511,12 @@ A list of current activities can be obtained with the `getActivities` method.
 
 - <code>Error</code> If there are missing or invalid parameters, if the API response is missing values, or if login fails.
 
-| Param               | Type                | Description                                                                                                               |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                          |
-| [params.clientId]   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
-| params.activityId   | <code>number</code> | The activity ID. Required.                                                                                                |
+| Param             | Type                | Description                                                                                                               |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                          |
+| params.clientId   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| params.activityId | <code>number</code> | The activity ID. Required.                                                                                                |
 
 **Example** _(Stop activity)_
 
@@ -1590,8 +1544,8 @@ Retrieves a list of file and/or image backups for a specific client.
 | Param                        | Type                 | Default           | Description                                                                                                               |
 | ---------------------------- | -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | params                       | <code>object</code>  |                   | An object containing parameters.                                                                                          |
-| [params.clientId]            | <code>number</code>  |                   | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName]          | <code>string</code>  |                   | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| params.clientId              | <code>number</code>  |                   | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName            | <code>string</code>  |                   | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 | [params.includeFileBackups]  | <code>boolean</code> | <code>true</code> | Whether or not file backups should be included. Defaults to true.                                                         |
 | [params.includeImageBackups] | <code>boolean</code> | <code>true</code> | Whether or not image backups should be included. Defaults to true.                                                        |
 
@@ -1630,11 +1584,11 @@ Starts a full file backup.
 
 - <code>Error</code> If there are missing or invalid parameters.
 
-| Param               | Type                | Description                                                                                                               |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                          |
-| [params.clientId]   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| Param             | Type                | Description                                                                                                               |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                          |
+| params.clientId   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 
 **Example** _(Start a full file backup by client name)_
 
@@ -1662,11 +1616,11 @@ Starts an incremental file backup.
 
 - <code>Error</code> If there are missing or invalid parameters.
 
-| Param               | Type                | Description                                                                                                               |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                          |
-| [params.clientId]   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| Param             | Type                | Description                                                                                                               |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                          |
+| params.clientId   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 
 **Example** _(Start an incremental file backup by client name)_
 
@@ -1696,11 +1650,11 @@ Starts a full image backup.
 
 - <code>Error</code> If there are missing or invalid parameters.
 
-| Param               | Type                | Description                                                                                                               |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                          |
-| [params.clientId]   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| Param             | Type                | Description                                                                                                               |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                          |
+| params.clientId   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 
 **Example** _(Start a full image backup by client name)_
 
@@ -1728,11 +1682,11 @@ Starts an incremental image backup.
 
 - <code>Error</code> If there are missing or invalid parameters.
 
-| Param               | Type                | Description                                                                                                               |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| params              | <code>object</code> | An object containing parameters.                                                                                          |
-| [params.clientId]   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
-| [params.clientName] | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
+| Param             | Type                | Description                                                                                                               |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| params            | <code>object</code> | An object containing parameters.                                                                                          |
+| params.clientId   | <code>number</code> | The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined. |
+| params.clientName | <code>string</code> | The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.          |
 
 **Example** _(Start an incremental image backup by client name)_
 
