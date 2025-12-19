@@ -1779,6 +1779,121 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves the group information for a specific client.
+   * @param {object} params - An object containing parameters.
+   * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
+   * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @returns {Promise<object|null>} A promise that resolves to an object containing the group ID and name, or null if the client or group is not found.
+   * @throws {Error} If parameters are missing or invalid, if the API response is missing values, or if login fails.
+   * @example <caption>Get client group by client ID</caption>
+   * server.getClientGroup({ clientId: 1 }).then(data => console.log(data));
+   * @example <caption>Get client group by client name</caption>
+   * server.getClientGroup({ clientName: 'laptop2' }).then(data => console.log(data));
+   */
+  async getClientGroup({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId !== 'number' && typeof clientid !== 'undefined') ||
+      (typeof clientname !== 'string' && typeof clientname !== 'undefined') ||
+      (typeof clientId !== 'number' && typeof clientName !== 'string')
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
+    const login = await this.#login();
+
+    if (login === true) {
+      const fallbackReturnValue = null;
+
+      const clientSettings = await this.getClientSettings(
+        typeof clientId === 'number' ? { clientId } : { clientName }
+      );
+
+      if (!Array.isArray(clientSettings)) {
+        throw new Error(this.#messages.missingValues);
+      }
+
+      if (clientSettings.length === 0) {
+        return fallbackReturnValue;
+      }
+
+      const groupId = clientSettings[0]?.memberof;
+      const group = {
+        id: groupId,
+        name: await this.#getGroupIdentifier(groupId, 'name'),
+      };
+
+      return typeof group.id === 'number' && typeof group.name === 'string'
+        ? group
+        : fallbackReturnValue;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
+   * Sets the group for a specific client.
+   * @param {object} params - An object containing parameters.
+   * @param {number} params.clientId - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
+   * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
+   * @param {number} params.groupId - Group ID.
+   * @returns {Promise<boolean>} A promise that resolves to true if the group was successfully set, or false otherwise.
+   * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
+   * @example <caption>Set client group by client ID</caption>
+   * server.setClientGroup({ clientId: 1, groupId: 123 }).then(data => console.log(data));
+   * @example <caption>Set client group by client name</caption>
+   * server.setClientGroup({ clientName: 'laptop2', groupId: 123 }).then(data => console.log(data));
+   */
+  async setClientGroup({ clientId, clientName, groupId } = {}) {
+    if (
+      (typeof clientId !== 'number' && typeof clientid !== 'undefined') ||
+      (typeof clientname !== 'string' && typeof clientname !== 'undefined') ||
+      (typeof clientId !== 'number' && typeof clientName !== 'string') ||
+      typeof groupId !== 'number'
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
+    const login = await this.#login();
+
+    if (login === true) {
+      let operationStatus = false;
+      let mappedClientId;
+
+      if (typeof clientId !== 'number') {
+        if (typeof clientName === 'string') {
+          mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+        }
+
+        if (typeof mappedClientId !== 'number') {
+          return operationStatus;
+        }
+      }
+
+      if ((await this.#getGroupIdentifier(groupId, 'name')) === null) {
+        return operationStatus;
+      }
+
+      const payload = {
+        sa: 'clientsettings_save',
+        t_clientid: clientId ?? mappedClientId,
+        memberof: groupId,
+      };
+
+      const saveSettingsResponse = await this.#fetchJson('settings', payload);
+
+      if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
+        operationStatus = saveSettingsResponse.saved_ok === true;
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+
+      return operationStatus;
+    } else {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+  }
+
+  /**
    * Retrieves the authentication key for a specified client.
    * @param {object} params - An object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.

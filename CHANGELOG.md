@@ -29,6 +29,10 @@ This changelog starts at version `0.20.0` and includes a selection of significan
 
 ## Notable Changes
 
+- 0.91.0
+
+  - Added following methods: `getClientGroup()` `setClientGroup()`. Thanks to @yoya93 for the contribution!
+
 - 0.90.0
 
   - Use the Node.js Fetch API instead of the node-fetch module. Older Node.js versions may require the `--experimental-fetch` flag.
