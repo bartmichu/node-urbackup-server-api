@@ -874,8 +874,8 @@ class UrbackupServer {
    * Retrieves a list of clients who are members of a given group.
    * This is only a convenience method that wraps the `getClients()` method.
    * @param {object} params - An object containing parameters.
-   * @param {number} params.groupId - Group ID. Ignored if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.
-   * @param {string} params.groupName - Group name. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupId` is undefined.
+   * @param {number} params.groupId - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.
+   * @param {string} params.groupName - Group name. Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
    * @throws {Error} If both `groupId` and `groupName` are missing or invalid.
    * @example <caption>Get members of default group</caption>
@@ -890,7 +890,7 @@ class UrbackupServer {
 
     const fallbackReturnValue = [];
     let mappedGroupName;
-    if (typeof groupName === 'undefined') {
+    if (typeof groupId !== 'undefined') {
       mappedGroupName = await this.#getGroupIdentifier(groupId, 'name');
       if (mappedGroupName === null) {
         return fallbackReturnValue;
@@ -898,7 +898,7 @@ class UrbackupServer {
     }
 
     const groupMembers = await this.getClients({
-      groupName: groupName ?? mappedGroupName,
+      groupName: mappedGroupName ?? groupName,
     });
 
     return groupMembers;

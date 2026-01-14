@@ -27,6 +27,10 @@
 
 ## Notable Changes
 
+- 0.92.0
+
+  - Changes in `getGroupMembers()` method: Change the precedence to `groupId` if both `groupId` and `groupName` are defined.
+
 - 0.91.0
 
   - Added following methods: `getClientGroup()`, `setClientGroup()`. Thanks to @yoya93 for the contribution!

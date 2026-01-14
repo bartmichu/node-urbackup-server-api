@@ -447,8 +447,8 @@ This is only a convenience method that wraps the `getClients()` method.
 | Param            | Type                | Description                                                                                                     |
 | ---------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
 | params           | <code>object</code> | An object containing parameters.                                                                                |
-| params.groupId   | <code>number</code> | Group ID. Ignored if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.          |
-| params.groupName | <code>string</code> | Group name. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupId` is undefined. |
+| params.groupId   | <code>number</code> | Group ID. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined. |
+| params.groupName | <code>string</code> | Group name. Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined.          |
 
 **Example** _(Get members of default group)_
 
