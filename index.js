@@ -146,7 +146,7 @@ class UrbackupServer {
           'sha256',
           (error, key) => {
             return error ? reject(error) : resolve(key);
-          }
+          },
         );
       });
     }
@@ -165,7 +165,7 @@ class UrbackupServer {
       .createHash('md5')
       .update(
         randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash),
-        'utf8'
+        'utf8',
       )
       .digest('hex');
 
@@ -422,7 +422,7 @@ class UrbackupServer {
           const hashedPassword = await this.#hashPassword(
             saltResponse.salt,
             saltResponse.pbkdf2_rounds,
-            saltResponse.rnd
+            saltResponse.rnd,
           );
           const userLoginResponse = await this.#fetchJson('login', {
             username: this.#username,
@@ -468,7 +468,7 @@ class UrbackupServer {
       throw new Error(
         outputIdentifierType === 'id'
           ? this.#messages.syntaxClientName
-          : this.#messages.syntaxClientId
+          : this.#messages.syntaxClientId,
       );
     }
 
@@ -505,7 +505,7 @@ class UrbackupServer {
       throw new Error(
         outputIdentifierType === 'id'
           ? this.#messages.syntaxGroupName
-          : this.#messages.syntaxGroupId
+          : this.#messages.syntaxGroupId,
       );
     }
 
@@ -595,7 +595,7 @@ class UrbackupServer {
 
       return this.#compareVersion(
         serverVersion.string,
-        this.#constants.latestServerVersion
+        this.#constants.latestServerVersion,
       );
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
@@ -668,7 +668,7 @@ class UrbackupServer {
         pwmd5: this.#hashPasswordMd5(salt, password),
         salt: salt,
         rights: this.#encodeUserRights(
-          isAdmin ? this.#constants.adminUserRights : rights
+          isAdmin ? this.#constants.adminUserRights : rights,
         ),
       });
 
@@ -712,7 +712,7 @@ class UrbackupServer {
         });
         operationStatus =
           typeof response.users.find(
-            (user) => user.id === userId.toString(10)
+            (user) => user.id === userId.toString(10),
           ) === 'undefined';
       }
 
@@ -962,7 +962,7 @@ class UrbackupServer {
   async getRemovedClients({ groupName } = {}) {
     return await this.getClients({ groupName, includeRemoved: true }).then(
       (removedClients) =>
-        removedClients.filter((client) => client.delete_pending === '1')
+        removedClients.filter((client) => client.delete_pending === '1'),
     );
   }
 
@@ -1064,7 +1064,7 @@ class UrbackupServer {
    */
   async getActiveClients({ groupName, includeRemoved = true } = {}) {
     return await this.getClients({ groupName, includeRemoved }).then(
-      (activeClients) => activeClients.filter((client) => client.status !== 0)
+      (activeClients) => activeClients.filter((client) => client.status !== 0),
     );
   }
 
@@ -1244,7 +1244,7 @@ class UrbackupServer {
     const outdatedClients = clients.filter((client) => {
       return this.#compareVersion(
         client.client_version_string,
-        this.#constants.latestClientVersion
+        this.#constants.latestClientVersion,
       );
     });
 
@@ -1309,7 +1309,7 @@ class UrbackupServer {
 
     clients.forEach((client) => {
       const timestampDifference = Math.round(
-        (currentEpochTime - (client?.lastseen ?? 0)) / 60
+        (currentEpochTime - (client?.lastseen ?? 0)) / 60,
       );
 
       if (timestampDifference >= timeThreshold) {
@@ -1473,7 +1473,7 @@ class UrbackupServer {
       if (Array.isArray(statusResponse?.status)) {
         return (
           statusResponse.status.find(
-            (client) => client.id === (clientId ?? mappedClientId)
+            (client) => client.id === (clientId ?? mappedClientId),
           )?.delete_pending === (stopRemove ? '0' : '1')
         );
       } else {
@@ -1575,7 +1575,7 @@ class UrbackupServer {
 
       if (Array.isArray(statusResponse?.extra_clients)) {
         return statusResponse.extra_clients.some(
-          (extraClient) => extraClient.hostname === address
+          (extraClient) => extraClient.hostname === address,
         );
       } else {
         throw new Error(this.#messages.missingValues);
@@ -1607,7 +1607,7 @@ class UrbackupServer {
 
       if (Array.isArray(extraClients)) {
         const matchingClient = extraClients.find(
-          (extraClient) => extraClient.hostname === address
+          (extraClient) => extraClient.hostname === address,
         );
 
         if (typeof matchingClient !== 'undefined') {
@@ -1619,7 +1619,7 @@ class UrbackupServer {
           if (Array.isArray(statusResponse?.extra_clients)) {
             if (
               typeof statusResponse.extra_clients.find(
-                (extraClient) => extraClient.hostname === address
+                (extraClient) => extraClient.hostname === address,
               ) === 'undefined'
             ) {
               operationStatus = true;
@@ -1747,7 +1747,7 @@ class UrbackupServer {
       const clientSettings = await this.getClientSettings(
         typeof clientId === 'undefined'
           ? { clientName: clientName }
-          : { clientId: clientId }
+          : { clientId: clientId },
       );
 
       if (Array.isArray(clientSettings) && clientSettings.length > 0) {
@@ -1759,7 +1759,7 @@ class UrbackupServer {
 
           const saveSettingsResponse = await this.#fetchJson(
             'settings',
-            clientSettings[0]
+            clientSettings[0],
           );
 
           if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
@@ -1805,7 +1805,7 @@ class UrbackupServer {
       const fallbackReturnValue = null;
 
       const clientSettings = await this.getClientSettings(
-        typeof clientId === 'number' ? { clientId } : { clientName }
+        typeof clientId === 'number' ? { clientId } : { clientName },
       );
 
       if (!Array.isArray(clientSettings)) {
@@ -1921,7 +1921,7 @@ class UrbackupServer {
       const clientSettings = await this.getClientSettings(
         typeof clientId === 'undefined'
           ? { clientName: clientName }
-          : { clientId: clientId }
+          : { clientId: clientId },
       );
 
       if (Array.isArray(clientSettings)) {
@@ -1977,7 +1977,7 @@ class UrbackupServer {
         ) {
           if (includeRemoved !== true) {
             return statusResponse.status.filter(
-              (client) => client.delete_pending !== '1'
+              (client) => client.delete_pending !== '1',
             );
           } else {
             return statusResponse.status;
@@ -1986,7 +1986,7 @@ class UrbackupServer {
           const clientStatus = statusResponse.status.find((client) =>
             typeof clientId === 'number'
               ? client.id === clientId
-              : client.name === clientName
+              : client.name === clientName,
           );
 
           if (typeof clientStatus !== 'undefined') {
@@ -2040,7 +2040,7 @@ class UrbackupServer {
             // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
             mappedClientName = await this.#getClientIdentifier(
               clientId,
-              'name'
+              'name',
             );
             if (mappedClientName === null) {
               return fallbackReturnValue;
@@ -2050,7 +2050,7 @@ class UrbackupServer {
           const match = usageResponse.usage.find((client) =>
             typeof clientId === 'number'
               ? client.name === mappedClientName
-              : client.name === clientName
+              : client.name === clientName,
           );
           return match ? [match] : fallbackReturnValue;
         }
@@ -2122,7 +2122,7 @@ class UrbackupServer {
               activities.current = activitiesResponse.progress;
             } else {
               activities.current = activitiesResponse.progress.filter(
-                (activity) => activity.paused !== true
+                (activity) => activity.paused !== true,
               );
             }
           } else {
@@ -2134,7 +2134,7 @@ class UrbackupServer {
                     : activity.name === clientName) &&
                   (includePaused === true ? true : activity.paused !== true)
                 );
-              }
+              },
             );
           }
         }
@@ -2149,7 +2149,7 @@ class UrbackupServer {
             activities.last = activitiesResponse.lastacts.filter((activity) =>
               typeof clientId === 'number'
                 ? activity.clientid === clientId
-                : activity.name === clientName
+                : activity.name === clientName,
             );
           }
         }
@@ -2434,7 +2434,7 @@ class UrbackupServer {
         if (
           Array.isArray(backupResponse.result) &&
           backupResponse.result.filter((element) =>
-            Object.keys(element).includes('start_ok')
+            Object.keys(element).includes('start_ok'),
           ).length !== 1
         ) {
           return !!backupResponse.result[0].start_ok;
@@ -2699,7 +2699,7 @@ class UrbackupServer {
 
         const saveSettingsResponse = await this.#fetchJson(
           'settings',
-          settings
+          settings,
         );
 
         if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
