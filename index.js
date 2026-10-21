@@ -45,7 +45,7 @@ class UrbackupServer {
   };
 
   /**
-   * This is a constructor.
+   * Creates an instance of UrbackupServer.
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.url='http://127.0.0.1:55414'] - The URL of the server, must include the protocol, hostname, and port. Defaults to `http://127.0.0.1:55414`.
    * @param {string} [params.username=''] - The username used for logging in. If empty, anonymous login method will be used. Defaults to an empty string.
@@ -133,6 +133,7 @@ class UrbackupServer {
      * Async PBKDF2 wrapper.
      * @param {Buffer} passwordHash - The hashed password.
      * @returns {Promise<Buffer>} The derived key.
+     * @private
      * @example
      * const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
      */
@@ -180,7 +181,7 @@ class UrbackupServer {
    * @returns {string} The MD5 hashed password.
    * @private
    * @example
-   * const pwmd5 = this.#hashPasswordMd5(this.#generateRandomString(50), password)
+   * const pwmd5 = this.#hashPasswordMd5(this.#generateRandomString(50), password);
    */
   #hashPasswordMd5(salt, password) {
     const hash = crypto.createHash("md5");
@@ -193,10 +194,10 @@ class UrbackupServer {
    * Generates a random string of the specified length using a set of alphanumeric characters.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {number} length - The desired length of the random string.
-   * @returns {string} - The generated random alphanumeric string.
+   * @returns {string} The generated random alphanumeric string.
    * @private
    * @example
-   * const randomStr = this.#generateRandomAlphanumericString(10);
+   * const randomStr = this.#generateRandomString(10);
    */
   #generateRandomString(length) {
     const characters =
@@ -215,7 +216,7 @@ class UrbackupServer {
   }
 
   /**
-   * Encodes user rights into appropriate string format.
+   * Encodes user rights into an appropriate string format.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {Array<object>} rights - An array of objects representing user rights.
    * @param {string} rights[].domain - The domain of the right.
@@ -253,7 +254,7 @@ class UrbackupServer {
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string} installed - The installed version string in the format 'major.minor.patch'.
    * @param {string} available - The available version string in the format 'major.minor.patch'.
-   * @returns {boolean} Returns true if the installed version is older than the available version, false otherwise.
+   * @returns {boolean} Returns `true` if the installed version is older than the available version, or `false` otherwise.
    * @private
    * @example
    * this.#compareVersion(serverVersion.string, this.#constants.latestServerVersion);
@@ -289,7 +290,7 @@ class UrbackupServer {
    * @param {object} params.client - The client object to evaluate.
    * @param {boolean} [params.includeFileBackups=true] - Whether to include file backups in the blank evaluation. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether to include image backups in the blank evaluation. Defaults to true.
-   * @returns {boolean} - Returns `true` if the client is considered "blank", otherwise `false`.
+   * @returns {boolean} Returns `true` if the client is considered "blank", or `false` otherwise.
    * @private
    * @example
    * this.#isBlankClient({ client });
@@ -320,7 +321,7 @@ class UrbackupServer {
    * @param {boolean} params.includeFileBackups - Whether to include file backups in the failure evaluation.
    * @param {boolean} params.includeImageBackups - Whether to include image backups in the failure evaluation.
    * @param {boolean} params.failOnFileIssues - Whether to fail the client if file backup issues are detected.
-   * @returns {boolean} - Returns `true` if the client is considered "failed" (either due to file or image backup failure), otherwise `false`.
+   * @returns {boolean} Returns `true` if the client is considered "failed" (either due to file or image backup failure), or `false` otherwise.
    * @private
    * @example
    * this.#isFailedClient({ client, includeFileBackups: true, includeImageBackups: true, failOnFileIssues: false });
@@ -357,7 +358,7 @@ class UrbackupServer {
    * @param {boolean} params.includeImageBackups - Whether to include image backups in the stale evaluation.
    * @param {number} params.time - The current timestamp (in seconds).
    * @param {number} params.timeThreshold - The time threshold (in minutes) used to determine staleness.
-   * @returns {boolean} - Returns `true` if the client is considered "stale" (either for file or image backups), otherwise `false`.
+   * @returns {boolean} Returns `true` if the client is considered "stale" (either for file or image backups), or `false` otherwise.
    * @private
    * @example
    * this.#isStaleClient({ client, includeFileBackups: true, includeImageBackups: true, time, timeThreshold });
@@ -386,7 +387,7 @@ class UrbackupServer {
    * Logs in to the server.
    * This method is intended for internal use only and should not be called outside the class.
    * If the username is empty, then the anonymous login method is used.
-   * @returns {Promise<boolean>} Boolean value true if the login was successful or if the user was already logged in. Boolean value false in any other case.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the login was successful or if the user was already logged in, or `false` otherwise.
    * @throws {Error} If the login fails.
    * @private
    * @example
@@ -453,7 +454,7 @@ class UrbackupServer {
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string|number} inputIdentifier - The client's name or ID.
    * @param {string} outputIdentifierType - The type of output identifier. Must be: 'name' or 'id'.
-   * @returns {Promise<number|string|null>} The client's ID or name, or null if no matching clients are found.
+   * @returns {Promise<number|string|null>} The client's ID or name, or `null` if no matching client is found.
    * @throws {Error} If the `inputIdentifier` is not a string when `outputIdentifierType` is 'name' or not a number when `outputIdentifierType` is 'id'.
    * @private
    * @example
@@ -489,8 +490,8 @@ class UrbackupServer {
    * Maps group name to group ID or group ID to group name.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string|number} inputIdentifier - The group's name or ID.
-   * @param {string} outputIdentifierType - The type of output identifier Must be: 'name' or 'id'.
-   * @returns {Promise<number|string|null>} The group's ID or name, or null if no matching group is found.
+   * @param {string} outputIdentifierType - The type of output identifier. Must be: 'name' or 'id'.
+   * @returns {Promise<number|string|null>} The group's ID or name, or `null` if no matching group is found.
    * @throws {Error} If the `inputIdentifier` is not a string when `outputIdentifierType` is 'name' or not a number when `outputIdentifierType` is 'id'.
    * @private
    * @example
@@ -524,7 +525,7 @@ class UrbackupServer {
 
   /**
    * Retrieves server identity.
-   * @returns {Promise<string>} The server identity.
+   * @returns {Promise<string>} A promise that resolves to the server identity string.
    * @throws {Error} If the API response is missing required values or if the login fails.
    * @example <caption>Get server identity</caption>
    * server.getServerIdentity().then(data => console.log(data));
@@ -547,7 +548,7 @@ class UrbackupServer {
 
   /**
    * Retrieves the server version in both number and string representation.
-   * @returns {Promise<object>} An object containing the server version number and string.
+   * @returns {Promise<object>} A promise that resolves to an object containing the server version number and string.
    * @throws {Error} If the API response is missing required values or if the login fails.
    * @example <caption>Get server version number</caption>
    * server.getServerVersion().then(data => console.log(data.number));
@@ -582,7 +583,7 @@ class UrbackupServer {
 
   /**
    * Checks if the server version is outdated compared to the available version.
-   * @returns {Promise<boolean>} A promise that resolves to true if the server version is outdated, false otherwise.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the server version is outdated, or `false` otherwise.
    * @throws {Error} If the API response is missing required values or if the login fails.
    * @example
    * server.isServerOutdated().then(isOutdated => console.log(isOutdated));
@@ -604,7 +605,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of users.
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing users. If no users are found, it returns an empty array.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing users. Returns an empty array when no users are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all users</caption>
    * server.getUsers().then(data => console.log(data));
@@ -634,7 +635,7 @@ class UrbackupServer {
    * @param {string} params.password - The password for the new user.
    * @param {boolean} [params.isAdmin=false] - Whether the new user should have admin rights (all domains, all rights). Defaults to false.
    * @param {Array<object>} [params.rights] - Array of user permissions. Ignored if `isAdmin` is true. Defaults to the default user rights.
-   * @returns {Promise<boolean>} A promise that resolves to true if the user was added successfully, false otherwise.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the user was added successfully, or `false` otherwise.
    * @throws {Error} If required parameters are missing, the login fails, or the API response is missing expected values.
    * @example <caption>Add a regular user</caption>
    * server.addUser({ userName: 'newUser', password: 'userPassword' }).then(result => console.log(result));
@@ -686,7 +687,7 @@ class UrbackupServer {
    * Removes a user by their user ID.
    * @param {object} params - An object containing parameters.
    * @param {number} params.userId - The ID of the user to be removed.
-   * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the user was successfully removed.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the user was successfully removed, or `false` otherwise.
    * @throws {Error} If the `userId` parameter is missing or invalid, or if the login fails.
    * @example <caption>Remove a user by their ID</caption>
    * server.removeUser({ userId: 123 }).then(status => console.log(status));
@@ -727,7 +728,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {string} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined. Required if `clientName` is undefined.
    * @param {string} [params.userName=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session. Required if `clientId` is undefined.
-   * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or null if the user is not found.
+   * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or `null` if the user is not found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get user rights of the current session user</caption>
    * server.getUserRights().then(data => console.log(data));
@@ -761,7 +762,7 @@ class UrbackupServer {
   /**
    * Retrieves a list of groups.
    * By default, UrBackup clients are added to a group with ID 0 and an empty name (empty string).
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing groups. If no groups are found, it returns an empty array.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing groups. Returns an empty array when no groups are found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get all groups</caption>
    * server.getGroups().then(data => console.log(data));
@@ -786,7 +787,7 @@ class UrbackupServer {
    * Adds a new group.
    * @param {object} params - An object containing parameters.
    * @param {string} params.groupName - The group name. Must be unique and cannot be an empty string.
-   * @returns {Promise<boolean>} When successful, returns true. If the group already exists, or adding the group was not successful for any reason, returns false.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the group was added successfully, or `false` otherwise.
    * @throws {Error} If the groupName is missing or invalid, or if the API response is missing expected values.
    * @example <caption>Add new group</caption>
    * server.addGroup({ groupName: 'prod' }).then(data => console.log(data));
@@ -826,7 +827,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.groupId - Group ID. Must be greater than 0. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.
    * @param {string} params.groupName - Group name. Must be different than empty string. Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined.
-   * @returns {Promise<boolean>} When the removal is successful, the method returns true. If the removal is not successful, the method returns false.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the removal is successful, or `false` otherwise.
    * @throws {Error} If both `groupId` and `groupName` are missing or invalid, or if the login fails.
    * @example <caption>Remove group</caption>
    * server.removeGroup({ groupId: 1 }).then(data => console.log(data));
@@ -1343,7 +1344,7 @@ class UrbackupServer {
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to true.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to true.
    * @param {number} [params.timeThreshold=1440] - The time threshold (in minutes) for determining if a client is stale. Defaults to 1440 minutes (24 hours).
-   * @returns {Promise<Array>} - A promise that resolves to an array of clients that are considered stale.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of clients that are considered stale.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get clients with file backup older than a day, skip blank clients</caption>
    * server.getStaleClients({ includeBlank: false, includeImageBackups: false, timeThreshold: 1440 }).then(data => console.log(data));
@@ -1395,7 +1396,7 @@ class UrbackupServer {
    * Adds a new client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.clientName - The client's name.
-   * @returns {Promise<boolean>} When successful, returns true. If adding the client was not successful, for example if the client already exists, returns false.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If the clientName is missing or invalid, if the login fails, or if the API response is missing expected values.
    * @example <caption>Add new client</caption>
    * server.addClient({ clientName: 'laptop2' }).then(data => console.log(data));
@@ -1433,8 +1434,9 @@ class UrbackupServer {
    * @param {number} params.clientId - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {boolean} params.stopRemove - Whether it's a 'remove' or 'cancel remove' operation.
-   * @returns {Promise<boolean>} When successful, the method returns true. If the operation to stop the removal was not successful, it returns false.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
+   * @private
    * @example
    * const operationStatus = await this.#removeClientCommon({ clientId: 123, stopRemove: true });
    */
@@ -1491,7 +1493,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - Client's ID. If both `clientId` and `clientName` are defined, the ID takes precedence. Required if `clientName` is undefined.
    * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<boolean>} When successful, returns true. Returns false if the removal was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid.
    * @example <caption>Remove client by ID</caption>
    * server.removeClient({ clientId: 1 }).then(data => console.log(data));
@@ -1512,7 +1514,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<boolean>} When successful, returns true. Returns false if the stopping process was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid.
    * @example <caption>Stop the server from removing a client by ID</caption>
    * server.cancelRemoveClient({ clientId: 1 }).then(data => console.log(data));
@@ -1530,7 +1532,7 @@ class UrbackupServer {
 
   /**
    * Retrieves a list of client discovery hints, which are also known as extra clients.
-   * @returns {Promise<Array>} Array of objects representing client hints. Returns an empty array when no matching client hints are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing client hints. Returns an empty array when no matching client hints are found.
    * @throws {Error} If the login fails or the API response is incorrect.
    * @example <caption>Get extra clients</caption>
    * server.getClientHints().then(data => console.log(data));
@@ -1556,7 +1558,7 @@ class UrbackupServer {
    * Discovery hints are a way of improving client discovery in local area networks.
    * @param {object} params - An object containing parameters.
    * @param {string} params.address - Client's IP address or hostname.
-   * @returns {Promise<boolean>} When successful, returns true. Returns false when adding was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Add new extra client</caption>
    * server.addClientHint({ address: '192.168.100.200' }).then(data => console.log(data));
@@ -1589,7 +1591,7 @@ class UrbackupServer {
    * Removes a specific client discovery hint, also known as an extra client.
    * @param {object} params - An object containing parameters.
    * @param {string} params.address - Client's IP address or hostname.
-   * @returns {Promise<boolean>} When successful, returns true. Returns false when removing was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Remove extra client</caption>
    * server.removeClientHint({ address: '192.168.100.200' }).then(data => console.log(data));
@@ -1645,7 +1647,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
    * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @returns {Promise<Array>} An array with objects representing client settings. Returns an empty array if no matching client is found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing client settings. Returns an empty array if no matching client is found.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
@@ -1720,7 +1722,7 @@ class UrbackupServer {
    * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {string} params.key - Settings element to change.
    * @param {string|number|boolean} params.newValue - New value for settings element.
-   * @returns {Promise<boolean>} When successful, returns true. Returns false when the save request was unsuccessful or if the key/value is invalid.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Set directories to backup to be optional by default</caption>
    * server.setClientSettings({ clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true }).then(data => console.log(data));
@@ -1783,7 +1785,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<object|null>} A promise that resolves to an object containing the group ID and name, or null if the client or group is not found.
+   * @returns {Promise<object|null>} A promise that resolves to an object containing the group ID and name, or `null` if the client or group is not found.
    * @throws {Error} If parameters are missing or invalid, if the API response is missing values, or if login fails.
    * @example <caption>Get client group by client ID</caption>
    * server.getClientGroup({ clientId: 1 }).then(data => console.log(data));
@@ -1836,7 +1838,7 @@ class UrbackupServer {
    * @param {number} params.clientId - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {number} params.groupId - Group ID.
-   * @returns {Promise<boolean>} A promise that resolves to true if the group was successfully set, or false otherwise.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the group was successfully set, or `false` otherwise.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Set client group by client ID</caption>
    * server.setClientGroup({ clientId: 1, groupId: 123 }).then(data => console.log(data));
@@ -1944,11 +1946,11 @@ class UrbackupServer {
    * Retrieves backup status.
    * Matches all clients by default, including clients marked for removal.
    * Client name or client ID can be passed as an argument in which case only that one client's status is returned.
-   * @param {object} [params] - An object containing parameters.
+   * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to true.
-   * @returns {Promise<Array>} Array of objects with status info for matching clients. Returns an empty array if no matching clients are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects with status info for matching clients. Returns an empty array if no matching clients are found.
    * @throws {Error} If the API response is incorrect or if login fails.
    * @example <caption>Get status for all clients</caption>
    * server.getStatus().then(data => console.log(data));
@@ -2012,7 +2014,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientName` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @returns {Promise<Array>} A promise that resolves to an array of objects with storage usage info for each client. Resolves to an empty array if no matching clients are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects with storage usage info for each client. Resolves to an empty array if no matching clients are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get usage for all clients</caption>
    * server.getUsage().then(data => console.log(data));
@@ -2072,7 +2074,7 @@ class UrbackupServer {
    * @param {boolean} [params.includeCurrent=true] - Whether or not currently running activities should be included. Defaults to true.
    * @param {boolean} [params.includeLast=true] - Whether or not last activities should be included. Defaults to true.
    * @param {boolean} [params.includePaused=true] - Whether or not paused activities should be included. Defaults to true.
-   * @returns {Promise<object>} An object with activities info in two separate arrays (one for current and one for last activities). Returns an object with empty arrays when no matching clients/activities are found.
+   * @returns {Promise<object>} A promise that resolves to an object with activities info in two separate arrays (one for current and one for last activities). Returns an object with empty arrays when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get current (in progress) activities for all clients</caption>
    * server.getActivities({ includeLast: false }).then(data => console.log(data));
@@ -2171,7 +2173,7 @@ class UrbackupServer {
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {boolean} [params.includePaused=true] - Whether or not paused activities should be included. Defaults to true.
-   * @returns {Promise<Array>} A promise that resolves to an array of current activities. Returns an empty array when no matching clients/activities are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of current activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get current activities for all clients</caption>
    * server.getCurrentActivities().then(data => console.log(data));
@@ -2203,7 +2205,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @returns {Promise<Array>} A promise that resolves to an array of last activities. Returns an empty array when no matching clients/activities are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of last activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get last activities for all clients</caption>
    * server.getLastActivities().then(data => console.log(data));
@@ -2228,7 +2230,7 @@ class UrbackupServer {
    * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which matches all clients if `clientId` is also undefined.
-   * @returns {Promise<Array>} A promise that resolves to an array of paused activities. Returns an empty array when no matching clients/activities are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of paused activities. Returns an empty array when no matching clients/activities are found.
    * @throws {Error} If the API response is missing values or if login fails.
    * @example <caption>Get all paused activities</caption>
    * server.getPausedActivities().then(data => console.log(data));
@@ -2262,7 +2264,7 @@ class UrbackupServer {
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {number} params.activityId - The activity ID. Required.
-   * @returns {Promise<boolean>} A promise that resolves to true if the activity was stopped successfully, or false if stopping was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the activity was stopped successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters, if the API response is missing values, or if login fails.
    * @example <caption>Stop activity</caption>
    * server.stopActivity({ clientName: 'laptop1', activityId: 42 }).then(data => console.log(data));
@@ -2396,8 +2398,9 @@ class UrbackupServer {
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {string} params.backupType - The backup type. Must be one of `full_file`, `incr_file`, `full_image`, or `incr_image`. Required.
-   * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the backup job was started successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters, if the API response is missing values, or if login fails.
+   * @private
    * @example
    * const startStatus = await this.#startBackupCommon({ clientId: 3, backupType: 'full_file' });
    * @example
@@ -2454,7 +2457,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the backup job was started successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start a full file backup by client name</caption>
    * server.startFullFileBackup({ clientName: 'laptop1' }).then(data => console.log(data));
@@ -2475,7 +2478,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the backup job was started successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start an incremental file backup by client name</caption>
    * server.startIncrementalFileBackup({ clientName: 'laptop1' }).then(data => console.log(data));
@@ -2496,7 +2499,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the backup job was started successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start a full image backup by client name</caption>
    * server.startFullImageBackup({ clientName: 'laptop1' }).then(data => console.log(data));
@@ -2517,7 +2520,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
    * @param {string} params.clientName - The client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
-   * @returns {Promise<boolean>} A promise that resolves to true if the backup job was started successfully, or false if starting was not successful.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the backup job was started successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters.
    * @example <caption>Start an incremental image backup by client name</caption>
    * server.startIncrementalImageBackup({ clientName: 'laptop1' }).then(data => console.log(data));
@@ -2542,7 +2545,7 @@ class UrbackupServer {
    * @param {number} [params.clientId] - The client's ID. Must be greater than zero. Takes precedence if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientId` is also undefined.
    * @param {string} [params.clientName] - The client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to undefined, which means server logs will be requested if `clientName` is also undefined.
    * @param {boolean} [params.recentOnly=false] - Whether only recent (unfetched) entries should be requested. Defaults to false.
-   * @returns {Promise<Array>} A promise that resolves to an array of objects representing log entries. Returns an empty array when no matching clients or logs are found.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing log entries. Returns an empty array when no matching clients or logs are found.
    * @throws {Error} If there is an API response error or login failure.
    * @example <caption>Get server logs</caption>
    * server.getLiveLog().then(data => console.log(data));
@@ -2609,7 +2612,8 @@ class UrbackupServer {
    * @param {string} category - Name of the settings category.
    * @returns {Promise<object>} A promise that resolves to an object with the settings of the specified category.
    * @throws {Error} If there is a syntax error, API response error, or login failure.
-   * @example <caption>Get general settings</caption>
+   * @private
+   * @example
    * this.#getServerSettings('general').then(data => console.log(data));
    */
   async #getServerSettings(category) {
@@ -2678,7 +2682,7 @@ class UrbackupServer {
    * @param {object} params - An object containing parameters.
    * @param {string} params.key - The settings element to change.
    * @param {string|number|boolean} params.newValue - The new value for the settings element.
-   * @returns {Promise<boolean>} A promise that resolves to true when the settings change is successful, and false if the save request was unsuccessful or the key/value is invalid.
+   * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
    * @throws {Error} If there is a syntax error, API response error, or login failure.
    * @example <caption>Disable image backups</caption>
    * server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
@@ -2721,7 +2725,7 @@ class UrbackupServer {
    * @returns {Promise<object>} A promise that resolves to the raw status response object.
    * @throws {Error} If the login fails.
    * @example
-   * urbackup.getRawStatus().then(data => console.log(data));
+   * server.getRawStatus().then(data => console.log(data));
    */
   async getRawStatus() {
     const login = await this.#login();
@@ -2740,7 +2744,7 @@ class UrbackupServer {
    * @returns {Promise<object>} A promise that resolves to the raw usage response object.
    * @throws {Error} If the login fails.
    * @example
-   * const data = await urbackup.getRawUsage();
+   * const data = await server.getRawUsage();
    */
   async getRawUsage() {
     const login = await this.#login();
@@ -2759,7 +2763,7 @@ class UrbackupServer {
    * @returns {Promise<object>} A promise that resolves to the raw progress response object.
    * @throws {Error} If the login fails.
    * @example
-   * const data = await urbackup.getRawProgress();
+   * const data = await server.getRawProgress();
    */
   async getRawProgress() {
     const login = await this.#login();
