@@ -395,8 +395,7 @@ class UrbackupServer {
    */
   async #login() {
     // NOTE: Use a semaphore to prevent race conditions with the login status, i.e., this.#sessionId
-    // eslint-disable-next-line no-unused-vars
-    const [value, release] = await this.#semaphore.acquire();
+    const [_value, release] = await this.#semaphore.acquire();
     try {
       if (this.#isLoggedIn === true && this.#sessionId.length > 0) {
         return true;
@@ -2578,8 +2577,7 @@ class UrbackupServer {
       }
 
       // NOTE: Use semaphore to prevent race condition with this.#lastLogId
-      // eslint-disable-next-line no-unused-vars
-      const [value, release] = await this.#semaphore.acquire();
+      const [_value, release] = await this.#semaphore.acquire();
       try {
         const logResponse = await this.#fetchJson("livelog", {
           clientid: clientId ?? mappedClientId ?? 0,
