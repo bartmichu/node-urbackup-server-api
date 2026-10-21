@@ -215,7 +215,7 @@ class UrbackupServer {
   }
 
   /**
-   * Encodes user rights into apropriate string format.
+   * Encodes user rights into appropriate string format.
    * This method is intended for internal use only and should not be called outside the class.
    * @param {Array<object>} rights - An array of objects representing user rights.
    * @param {string} rights[].domain - The domain of the right.
@@ -490,7 +490,7 @@ class UrbackupServer {
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string|number} inputIdentifier - The group's name or ID.
    * @param {string} outputIdentifierType - The type of output identifier Must be: 'name' or 'id'.
-   * @returns {Promise<number|string|null>} The group's ID or name, or null if no matching group are found.
+   * @returns {Promise<number|string|null>} The group's ID or name, or null if no matching group is found.
    * @throws {Error} If the `inputIdentifier` is not a string when `outputIdentifierType` is 'name' or not a number when `outputIdentifierType` is 'id'.
    * @private
    * @example
@@ -1020,7 +1020,7 @@ class UrbackupServer {
    * server.getOfflineClients().then(data => console.log(data));
    * @example <caption>Get offline clients, skip clients marked for removal</caption>
    * server.getOfflineClients({ includeRemoved: false }).then(data => console.log(data));
-   * @example <caption>Get offline clients from a specific groups</caption>
+   * @example <caption>Get offline clients from a specific group</caption>
    * server.getOfflineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
   async getOfflineClients({
@@ -1434,7 +1434,7 @@ class UrbackupServer {
    * @param {string} params.clientName - Client's name. Ignored if both `clientId` and `clientName` are defined. Required if `clientId` is undefined.
    * @param {boolean} params.stopRemove - Whether it's a 'remove' or 'cancel remove' operation.
    * @returns {Promise<boolean>} When successful, the method returns true. If the operation to stop the removal was not successful, it returns false.
-   * @throws {Error} If parameters are missing or invalid, or if API response is incorrect.
+   * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example
    * const operationStatus = await this.#removeClientCommon({ clientId: 123, stopRemove: true });
    */
