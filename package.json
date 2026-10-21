@@ -1,6 +1,6 @@
 {
   "name": "urbackup-server-api",
-  "version": "0.92.9",
+  "version": "0.100.0",
   "description": "Node.js wrapper for UrBackup Server web API",
   "main": "index.js",
   "type": "module",
@@ -27,9 +27,6 @@
     "async-mutex": "^0.5.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "eslint": "^9.39.2",
-    "eslint-plugin-jsdoc": "^61.5.0",
-    "globals": "^16.5"
+    "@biomejs/biome": "^2.5.15"
   }
 }

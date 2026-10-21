@@ -1,6 +1,6 @@
-import { Semaphore } from 'async-mutex';
-import { URL, URLSearchParams } from 'url';
-import crypto from 'crypto';
+import crypto from "node:crypto";
+import { URL, URLSearchParams } from "node:url";
+import { Semaphore } from "async-mutex";
 
 /**
  * Represents a UrBackup Server.
@@ -11,37 +11,37 @@ class UrbackupServer {
   #lastLogId = new Map();
   #password;
   #semaphore = new Semaphore(1);
-  #sessionId = '';
+  #sessionId = "";
   #url;
   #username;
   #constants = {
-    latestClientVersion: '2.5.32',
-    latestServerVersion: '2.5.38',
-    adminUserRights: [{ domain: 'all', right: 'all' }],
+    latestClientVersion: "2.5.32",
+    latestServerVersion: "2.5.38",
+    adminUserRights: [{ domain: "all", right: "all" }],
     defaultUserRights: [],
   };
   #messages = {
-    failedAnonymousLogin: 'Anonymous login failed.',
+    failedAnonymousLogin: "Anonymous login failed.",
     failedFetch:
-      'Fetch request failed: response status is not in the range 200-299.',
-    failedLogin: 'Login failed: invalid username or password.',
-    failedLoginUnknown: 'Login failed: unknown reason.',
-    invalidCategory: 'Syntax error: invalid category name.',
+      "Fetch request failed: response status is not in the range 200-299.",
+    failedLogin: "Login failed: invalid username or password.",
+    failedLoginUnknown: "Login failed: unknown reason.",
+    invalidCategory: "Syntax error: invalid category name.",
     missingClientData:
-      'API response error: missing client data. Make sure the UrBackup user has appropriate rights.',
+      "API response error: missing client data. Make sure the UrBackup user has appropriate rights.",
     missingGroupData:
-      'API response error: missing group data. Make sure the UrBackup user has appropriate rights.',
-    missingParameters: 'Syntax error: missing or invalid parameters.',
+      "API response error: missing group data. Make sure the UrBackup user has appropriate rights.",
+    missingParameters: "Syntax error: missing or invalid parameters.",
     missingServerIdentity:
-      'API response error: missing server identity. Make sure the UrBackup user has appropriate rights.',
+      "API response error: missing server identity. Make sure the UrBackup user has appropriate rights.",
     missingUserData:
-      'API response error: missing user data. Make sure the UrBackup user has appropriate rights.',
+      "API response error: missing user data. Make sure the UrBackup user has appropriate rights.",
     missingValues:
-      'API response error: some values are missing. Make sure the UrBackup user has appropriate rights.',
-    syntaxClientId: 'Syntax error: clientId must be a number.',
-    syntaxClientName: 'Syntax error: clientName must be a string.',
-    syntaxGroupId: 'Syntax error: groupId must be a number.',
-    syntaxGroupName: 'Syntax error: groupName must be a string.',
+      "API response error: some values are missing. Make sure the UrBackup user has appropriate rights.",
+    syntaxClientId: "Syntax error: clientId must be a number.",
+    syntaxClientName: "Syntax error: clientName must be a string.",
+    syntaxGroupId: "Syntax error: groupId must be a number.",
+    syntaxGroupName: "Syntax error: groupName must be a string.",
   };
 
   /**
@@ -58,12 +58,12 @@ class UrbackupServer {
    * const server = new UrbackupServer({ url: 'https://192.168.0.2:443', username: 'admin', password: 'secretpassword' });
    */
   constructor({
-    url = 'http://127.0.0.1:55414',
-    username = '',
-    password = '',
+    url = "http://127.0.0.1:55414",
+    username = "",
+    password = "",
   } = {}) {
     this.#url = new URL(url);
-    this.#url.pathname = 'x';
+    this.#url.pathname = "x";
     this.#username = username;
     this.#password = password;
   }
@@ -76,7 +76,7 @@ class UrbackupServer {
    * this.#clearLoginStatus();
    */
   #clearLoginStatus() {
-    this.#sessionId = '';
+    this.#sessionId = "";
     this.#isLoggedIn = false;
   }
 
@@ -91,9 +91,9 @@ class UrbackupServer {
    * @example
    * const response = await this.#fetchJson('status');
    */
-  async #fetchJson(action = '', bodyParams = {}) {
+  async #fetchJson(action = "", bodyParams = {}) {
     const url = new URL(this.#url);
-    url.searchParams.set('a', action);
+    url.searchParams.set("a", action);
     // this.#url.searchParams.set('a', action);
 
     if (this.#sessionId.length > 0) {
@@ -101,11 +101,11 @@ class UrbackupServer {
     }
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'urbstat',
-        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: "application/json",
+        "User-Agent": "urbstat",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams(bodyParams).toString(),
     });
@@ -128,7 +128,7 @@ class UrbackupServer {
    * @example
    * const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
    */
-  async #hashPassword(salt = '', rounds = 10000, randomKey = '') {
+  async #hashPassword(salt = "", rounds = 10000, randomKey = "") {
     /**
      * Async PBKDF2 wrapper.
      * @param {Buffer} passwordHash - The hashed password.
@@ -143,7 +143,7 @@ class UrbackupServer {
           salt,
           rounds,
           32,
-          'sha256',
+          "sha256",
           (error, key) => {
             return error ? reject(error) : resolve(key);
           },
@@ -152,8 +152,8 @@ class UrbackupServer {
     }
 
     let passwordHash = crypto
-      .createHash('md5')
-      .update(salt + this.#password, 'utf8')
+      .createHash("md5")
+      .update(salt + this.#password, "utf8")
       .digest();
 
     let derivedKey;
@@ -162,12 +162,12 @@ class UrbackupServer {
     }
 
     passwordHash = crypto
-      .createHash('md5')
+      .createHash("md5")
       .update(
-        randomKey + (rounds > 0 ? derivedKey.toString('hex') : passwordHash),
-        'utf8',
+        randomKey + (rounds > 0 ? derivedKey.toString("hex") : passwordHash),
+        "utf8",
       )
-      .digest('hex');
+      .digest("hex");
 
     return passwordHash;
   }
@@ -183,10 +183,10 @@ class UrbackupServer {
    * const pwmd5 = this.#hashPasswordMd5(this.#generateRandomString(50), password)
    */
   #hashPasswordMd5(salt, password) {
-    const hash = crypto.createHash('md5');
+    const hash = crypto.createHash("md5");
     hash.update(salt + password);
 
-    return hash.digest('hex');
+    return hash.digest("hex");
   }
 
   /**
@@ -200,11 +200,11 @@ class UrbackupServer {
    */
   #generateRandomString(length) {
     const characters =
-      '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const charactersLength = characters.length;
 
     const randomBytes = crypto.randomBytes(length);
-    let randomString = '';
+    let randomString = "";
 
     for (let i = 0; i < length; i++) {
       const randomValue = randomBytes[i] % charactersLength;
@@ -226,7 +226,7 @@ class UrbackupServer {
    * const encodedRights = this.#encodeUserRights([{ domain: 'all', right: 'all' }]);
    */
   #encodeUserRights(rights) {
-    let encodedRights = '';
+    let encodedRights = "";
     const indices = [];
     let index = 0;
 
@@ -234,7 +234,7 @@ class UrbackupServer {
       const { domain, right } = rights[index];
 
       if (index !== 0) {
-        encodedRights += '&';
+        encodedRights += "&";
       }
 
       encodedRights += `${index}_domain=${domain}&${index}_right=${right}`;
@@ -243,7 +243,7 @@ class UrbackupServer {
       index++;
     }
 
-    encodedRights += `&idx=${indices.join(',')}`;
+    encodedRights += `&idx=${indices.join(",")}`;
 
     return encodedRights;
   }
@@ -259,7 +259,7 @@ class UrbackupServer {
    * this.#compareVersion(serverVersion.string, this.#constants.latestServerVersion);
    */
   #compareVersion(installed, available) {
-    const parseVersion = (version) => version.split('.').map(Number);
+    const parseVersion = (version) => version.split(".").map(Number);
 
     const [installedMajor, installedMinor, installedPatch] =
       parseVersion(installed);
@@ -402,7 +402,7 @@ class UrbackupServer {
       }
 
       if (this.#username.length === 0) {
-        const anonymousLoginResponse = await this.#fetchJson('login');
+        const anonymousLoginResponse = await this.#fetchJson("login");
 
         if (anonymousLoginResponse?.success === true) {
           this.#sessionId = anonymousLoginResponse.session;
@@ -413,18 +413,18 @@ class UrbackupServer {
           throw new Error(this.#messages.failedAnonymousLogin);
         }
       } else {
-        const saltResponse = await this.#fetchJson('salt', {
+        const saltResponse = await this.#fetchJson("salt", {
           username: this.#username,
         });
 
-        if (typeof saltResponse?.salt === 'string') {
+        if (typeof saltResponse?.salt === "string") {
           this.#sessionId = saltResponse.ses;
           const hashedPassword = await this.#hashPassword(
             saltResponse.salt,
             saltResponse.pbkdf2_rounds,
             saltResponse.rnd,
           );
-          const userLoginResponse = await this.#fetchJson('login', {
+          const userLoginResponse = await this.#fetchJson("login", {
             username: this.#username,
             password: hashedPassword,
           });
@@ -462,11 +462,11 @@ class UrbackupServer {
    */
   async #getClientIdentifier(inputIdentifier, outputIdentifierType) {
     if (
-      (outputIdentifierType === 'id' && typeof inputIdentifier !== 'string') ||
-      (outputIdentifierType === 'name' && typeof inputIdentifier !== 'number')
+      (outputIdentifierType === "id" && typeof inputIdentifier !== "string") ||
+      (outputIdentifierType === "name" && typeof inputIdentifier !== "number")
     ) {
       throw new Error(
-        outputIdentifierType === 'id'
+        outputIdentifierType === "id"
           ? this.#messages.syntaxClientName
           : this.#messages.syntaxClientId,
       );
@@ -476,13 +476,13 @@ class UrbackupServer {
     const clients = await this.getClients({ includeRemoved: true });
 
     let result;
-    if (outputIdentifierType === 'id') {
+    if (outputIdentifierType === "id") {
       result = clients.find((client) => client.name === inputIdentifier)?.id;
-    } else if (outputIdentifierType === 'name') {
+    } else if (outputIdentifierType === "name") {
       result = clients.find((client) => client.id === inputIdentifier)?.name;
     }
 
-    return typeof result === 'undefined' ? fallbackReturnValue : result;
+    return typeof result === "undefined" ? fallbackReturnValue : result;
   }
 
   /**
@@ -499,11 +499,11 @@ class UrbackupServer {
    */
   async #getGroupIdentifier(inputIdentifier, outputIdentifierType) {
     if (
-      (outputIdentifierType === 'id' && typeof inputIdentifier !== 'string') ||
-      (outputIdentifierType === 'name' && typeof inputIdentifier !== 'number')
+      (outputIdentifierType === "id" && typeof inputIdentifier !== "string") ||
+      (outputIdentifierType === "name" && typeof inputIdentifier !== "number")
     ) {
       throw new Error(
-        outputIdentifierType === 'id'
+        outputIdentifierType === "id"
           ? this.#messages.syntaxGroupName
           : this.#messages.syntaxGroupId,
       );
@@ -513,13 +513,13 @@ class UrbackupServer {
     const groups = await this.getGroups();
 
     let result;
-    if (outputIdentifierType === 'id') {
+    if (outputIdentifierType === "id") {
       result = groups.find((group) => group.name === inputIdentifier)?.id;
-    } else if (outputIdentifierType === 'name') {
+    } else if (outputIdentifierType === "name") {
       result = groups.find((group) => group.id === inputIdentifier)?.name;
     }
 
-    return typeof result === 'undefined' ? fallbackReturnValue : result;
+    return typeof result === "undefined" ? fallbackReturnValue : result;
   }
 
   /**
@@ -533,9 +533,9 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status');
+      const statusResponse = await this.#fetchJson("status");
 
-      if (typeof statusResponse?.server_identity === 'string') {
+      if (typeof statusResponse?.server_identity === "string") {
         return statusResponse.server_identity;
       } else {
         throw new Error(this.#messages.missingServerIdentity);
@@ -558,17 +558,17 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const serverVersion = { number: 0, string: '' };
+      const serverVersion = { number: 0, string: "" };
 
-      const statusResponse = await this.#fetchJson('status');
+      const statusResponse = await this.#fetchJson("status");
 
-      if (typeof statusResponse?.curr_version_num === 'number') {
+      if (typeof statusResponse?.curr_version_num === "number") {
         serverVersion.number = statusResponse.curr_version_num;
       } else {
         throw new Error(this.#messages.missingValues);
       }
 
-      if (typeof statusResponse?.curr_version_str === 'string') {
+      if (typeof statusResponse?.curr_version_str === "string") {
         serverVersion.string = statusResponse.curr_version_str;
       } else {
         throw new Error(this.#messages.missingValues);
@@ -613,8 +613,8 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const usersResponse = await this.#fetchJson('settings', {
-        sa: 'listusers',
+      const usersResponse = await this.#fetchJson("settings", {
+        sa: "listusers",
       });
 
       if (Array.isArray(usersResponse?.users)) {
@@ -648,9 +648,9 @@ class UrbackupServer {
     rights = this.#constants.defaultUserRights,
   } = {}) {
     if (
-      typeof userName !== 'string' ||
+      typeof userName !== "string" ||
       userName.length === 0 ||
-      typeof password !== 'string' ||
+      typeof password !== "string" ||
       password.length === 0
     ) {
       throw new Error(this.#messages.missingParameters);
@@ -662,8 +662,8 @@ class UrbackupServer {
       // NOTE: Server expects an alphanumeric string (no special characters), hence an additional method is needed
       const salt = this.#generateRandomString(50);
 
-      const response = await this.#fetchJson('settings', {
-        sa: 'useradd',
+      const response = await this.#fetchJson("settings", {
+        sa: "useradd",
         name: userName,
         pwmd5: this.#hashPasswordMd5(salt, password),
         salt: salt,
@@ -672,7 +672,7 @@ class UrbackupServer {
         ),
       });
 
-      if ('add_ok' in response || 'alread_exists' in response) {
+      if ("add_ok" in response || "alread_exists" in response) {
         return response.add_ok === true;
       } else {
         throw new Error(this.#messages.missingValues);
@@ -692,7 +692,7 @@ class UrbackupServer {
    * server.removeUser({ userId: 123 }).then(status => console.log(status));
    */
   async removeUser({ userId } = {}) {
-    if (typeof userId !== 'number' || userId <= 0) {
+    if (typeof userId !== "number" || userId <= 0) {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -704,16 +704,16 @@ class UrbackupServer {
 
       if (
         typeof users.find((user) => user.id === userId.toString(10)) !==
-        'undefined'
+        "undefined"
       ) {
-        const response = await this.#fetchJson('settings', {
-          sa: 'removeuser',
+        const response = await this.#fetchJson("settings", {
+          sa: "removeuser",
           userid: userId.toString(10),
         });
         operationStatus =
           typeof response.users.find(
             (user) => user.id === userId.toString(10),
-          ) === 'undefined';
+          ) === "undefined";
       }
 
       return operationStatus;
@@ -744,9 +744,9 @@ class UrbackupServer {
       const allUsers = await this.getUsers();
 
       let userRights;
-      if (typeof userId === 'string') {
+      if (typeof userId === "string") {
         userRights = allUsers.find((user) => user.id === userId)?.rights;
-      } else if (typeof userName === 'string') {
+      } else if (typeof userName === "string") {
         userRights = allUsers.find((user) => user.name === userName)?.rights;
       } else {
         return fallbackReturnValue;
@@ -770,7 +770,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const settingsResponse = await this.#fetchJson('settings');
+      const settingsResponse = await this.#fetchJson("settings");
 
       if (Array.isArray(settingsResponse?.navitems?.groups)) {
         return settingsResponse.navitems.groups;
@@ -792,25 +792,25 @@ class UrbackupServer {
    * server.addGroup({ groupName: 'prod' }).then(data => console.log(data));
    */
   async addGroup({ groupName } = {}) {
-    if (typeof groupName === 'undefined') {
+    if (typeof groupName === "undefined") {
       throw new Error(this.#messages.missingParameters);
     }
 
     // NOTE: Fail early due to a possible UrBackup bug (server does not allow adding multiple groups with the same name,
     // but allows empty string which is the same as default group name)
-    if (groupName === '') {
+    if (groupName === "") {
       return false;
     }
 
     const login = await this.#login();
 
     if (login === true) {
-      const response = await this.#fetchJson('settings', {
-        sa: 'groupadd',
+      const response = await this.#fetchJson("settings", {
+        sa: "groupadd",
         name: groupName,
       });
 
-      if ('add_ok' in response || 'already_exists' in response) {
+      if ("add_ok" in response || "already_exists" in response) {
         return response?.add_ok === true;
       } else {
         throw new Error(this.#messages.missingGroupData);
@@ -833,11 +833,11 @@ class UrbackupServer {
    * server.removeGroup({ groupName: 'prod' }).then(data => console.log(data));
    */
   async removeGroup({ groupId, groupName } = {}) {
-    if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
+    if (typeof groupId === "undefined" && typeof groupName === "undefined") {
       throw new Error(this.#messages.missingParameters);
     }
 
-    if (groupId === 0 || groupName === '') {
+    if (groupId === 0 || groupName === "") {
       return false;
     }
 
@@ -846,22 +846,22 @@ class UrbackupServer {
     if (login === true) {
       let mappedGroupId;
 
-      if (typeof groupId === 'undefined') {
-        mappedGroupId = await this.#getGroupIdentifier(groupName, 'id');
+      if (typeof groupId === "undefined") {
+        mappedGroupId = await this.#getGroupIdentifier(groupName, "id");
         if (mappedGroupId === 0 || mappedGroupId === null) {
           return false;
         }
       } else {
         // NOTE: Fail early due to a possible UrBackup bug where the server returns delete_ok:true even when
         // attempting to delete a non-existent group ID
-        const mappedGroupName = await this.#getGroupIdentifier(groupId, 'name');
+        const mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
         if (mappedGroupName === null) {
           return false;
         }
       }
 
-      const response = await this.#fetchJson('settings', {
-        sa: 'groupremove',
+      const response = await this.#fetchJson("settings", {
+        sa: "groupremove",
         id: groupId ?? mappedGroupId,
       });
       return response?.delete_ok === true;
@@ -884,14 +884,14 @@ class UrbackupServer {
    * server.getGroupMembers({ groupName: 'office' }).then(data => console.log(data));
    */
   async getGroupMembers({ groupId, groupName } = {}) {
-    if (typeof groupId === 'undefined' && typeof groupName === 'undefined') {
+    if (typeof groupId === "undefined" && typeof groupName === "undefined") {
       throw new Error(this.#messages.missingParameters);
     }
 
     const fallbackReturnValue = [];
     let mappedGroupName;
-    if (typeof groupId !== 'undefined') {
-      mappedGroupName = await this.#getGroupIdentifier(groupId, 'name');
+    if (typeof groupId !== "undefined") {
+      mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
       if (mappedGroupName === null) {
         return fallbackReturnValue;
       }
@@ -924,15 +924,15 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status');
+      const statusResponse = await this.#fetchJson("status");
 
       if (Array.isArray(statusResponse?.status)) {
         for (const client of statusResponse.status) {
-          if (typeof groupName === 'string' && groupName !== client.groupname) {
+          if (typeof groupName === "string" && groupName !== client.groupname) {
             continue;
           }
 
-          if (includeRemoved === false && client.delete_pending === '1') {
+          if (includeRemoved === false && client.delete_pending === "1") {
             continue;
           }
 
@@ -962,7 +962,7 @@ class UrbackupServer {
   async getRemovedClients({ groupName } = {}) {
     return await this.getClients({ groupName, includeRemoved: true }).then(
       (removedClients) =>
-        removedClients.filter((client) => client.delete_pending === '1'),
+        removedClients.filter((client) => client.delete_pending === "1"),
     );
   }
 
@@ -1164,7 +1164,7 @@ class UrbackupServer {
             }) === false
           ) {
             failedClients.push(client);
-            continue;
+            // continue;
           }
         }
       }
@@ -1271,7 +1271,7 @@ class UrbackupServer {
     const conflictingClients = new Set();
 
     for (const client of onlineClients) {
-      if (client.ip.length > 0 && client.ip !== '-') {
+      if (client.ip.length > 0 && client.ip !== "-") {
         if (seenIPs.has(client.ip)) {
           conflictingClients.add(client);
         } else {
@@ -1305,7 +1305,7 @@ class UrbackupServer {
     const unseenClients = [];
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
-    const currentEpochTime = Math.round(new Date().getTime() / 1000.0);
+    const currentEpochTime = Math.round(Date.now() / 1000.0);
 
     clients.forEach((client) => {
       const timestampDifference = Math.round(
@@ -1360,7 +1360,7 @@ class UrbackupServer {
     const staleClients = [];
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
-    const currentEpochTime = Math.round(new Date().getTime() / 1000.0);
+    const currentEpochTime = Math.round(Date.now() / 1000.0);
 
     clients.forEach((client) => {
       if (
@@ -1401,18 +1401,18 @@ class UrbackupServer {
    * server.addClient({ clientName: 'laptop2' }).then(data => console.log(data));
    */
   async addClient({ clientName } = {}) {
-    if (typeof clientName === 'undefined') {
+    if (typeof clientName === "undefined") {
       throw new Error(this.#messages.missingParameters);
     }
 
-    if (clientName === '') {
+    if (clientName === "") {
       return false;
     }
 
     const login = await this.#login();
 
     if (login === true) {
-      const addClientResponse = await this.#fetchJson('add_client', {
+      const addClientResponse = await this.#fetchJson("add_client", {
         clientname: clientName,
       });
 
@@ -1440,13 +1440,13 @@ class UrbackupServer {
    */
   async #removeClientCommon({ clientId, clientName, stopRemove } = {}) {
     if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      typeof stopRemove === 'undefined'
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      typeof stopRemove === "undefined"
     ) {
       throw new Error(this.#messages.missingParameters);
     }
 
-    if (clientName === '') {
+    if (clientName === "") {
       return false;
     }
 
@@ -1456,8 +1456,8 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined') {
-        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+      if (typeof clientId === "undefined") {
+        mappedClientId = await this.#getClientIdentifier(clientName, "id");
         if (mappedClientId === null) {
           return fallbackReturnValue;
         }
@@ -1468,13 +1468,13 @@ class UrbackupServer {
         apiCallParameters.stop_remove_client = true;
       }
 
-      const statusResponse = await this.#fetchJson('status', apiCallParameters);
+      const statusResponse = await this.#fetchJson("status", apiCallParameters);
 
       if (Array.isArray(statusResponse?.status)) {
         return (
           statusResponse.status.find(
             (client) => client.id === (clientId ?? mappedClientId),
-          )?.delete_pending === (stopRemove ? '0' : '1')
+          )?.delete_pending === (stopRemove ? "0" : "1")
         );
       } else {
         throw new Error(this.#messages.missingValues);
@@ -1539,7 +1539,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status');
+      const statusResponse = await this.#fetchJson("status");
 
       if (Array.isArray(statusResponse?.extra_clients)) {
         return statusResponse.extra_clients;
@@ -1562,14 +1562,14 @@ class UrbackupServer {
    * server.addClientHint({ address: '192.168.100.200' }).then(data => console.log(data));
    */
   async addClientHint({ address } = {}) {
-    if (typeof address === 'undefined' || address === '') {
+    if (typeof address === "undefined" || address === "") {
       throw new Error(this.#messages.missingParameters);
     }
 
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status', {
+      const statusResponse = await this.#fetchJson("status", {
         hostname: address,
       });
 
@@ -1595,7 +1595,7 @@ class UrbackupServer {
    * server.removeClientHint({ address: '192.168.100.200' }).then(data => console.log(data));
    */
   async removeClientHint({ address } = {}) {
-    if (typeof address === 'undefined' || address === '') {
+    if (typeof address === "undefined" || address === "") {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -1610,8 +1610,8 @@ class UrbackupServer {
           (extraClient) => extraClient.hostname === address,
         );
 
-        if (typeof matchingClient !== 'undefined') {
-          const statusResponse = await this.#fetchJson('status', {
+        if (typeof matchingClient !== "undefined") {
+          const statusResponse = await this.#fetchJson("status", {
             hostname: matchingClient.id,
             remove: true,
           });
@@ -1620,7 +1620,7 @@ class UrbackupServer {
             if (
               typeof statusResponse.extra_clients.find(
                 (extraClient) => extraClient.hostname === address,
-              ) === 'undefined'
+              ) === "undefined"
             ) {
               operationStatus = true;
             }
@@ -1654,13 +1654,13 @@ class UrbackupServer {
    * server.getClientSettings({ clientId: 3 }).then(data => console.log(data));
    */
   async getClientSettings({ clientId, clientName } = {}) {
-    if (typeof clientId !== 'undefined' && typeof clientId !== 'number') {
+    if (typeof clientId !== "undefined" && typeof clientId !== "number") {
       throw new Error(this.#messages.missingParameters);
     }
 
     const clientSettings = [];
 
-    if (clientName === '') {
+    if (clientName === "") {
       return clientSettings;
     }
 
@@ -1670,13 +1670,13 @@ class UrbackupServer {
       const clientIds = [];
       const allClients = await this.getClients({ includeRemoved: true });
 
-      if (allClients.some((client) => typeof client.id === 'undefined')) {
+      if (allClients.some((client) => typeof client.id === "undefined")) {
         throw new Error(this.#messages.missingValues);
       }
 
-      if (typeof clientId === 'undefined') {
+      if (typeof clientId === "undefined") {
         for (const client of allClients) {
-          if (typeof clientName === 'undefined') {
+          if (typeof clientName === "undefined") {
             clientIds.push(client.id);
           } else {
             if (client.name === clientName) {
@@ -1694,12 +1694,12 @@ class UrbackupServer {
       }
 
       for (const id of clientIds) {
-        const settingsResponse = await this.#fetchJson('settings', {
-          sa: 'clientsettings',
+        const settingsResponse = await this.#fetchJson("settings", {
+          sa: "clientsettings",
           t_clientid: id,
         });
 
-        if (typeof settingsResponse?.settings === 'object') {
+        if (typeof settingsResponse?.settings === "object") {
           clientSettings.push(settingsResponse.settings);
         } else {
           throw new Error(this.#messages.missingValues);
@@ -1728,16 +1728,16 @@ class UrbackupServer {
    */
   async setClientSettings({ clientId, clientName, key, newValue } = {}) {
     if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      typeof key === 'undefined' ||
-      typeof newValue === 'undefined'
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      typeof key === "undefined" ||
+      typeof newValue === "undefined"
     ) {
       throw new Error(this.#messages.missingParameters);
     }
 
     let operationStatus = false;
 
-    if (clientName === '') {
+    if (clientName === "") {
       return operationStatus;
     }
 
@@ -1745,7 +1745,7 @@ class UrbackupServer {
 
     if (login === true) {
       const clientSettings = await this.getClientSettings(
-        typeof clientId === 'undefined'
+        typeof clientId === "undefined"
           ? { clientName: clientName }
           : { clientId: clientId },
       );
@@ -1754,15 +1754,15 @@ class UrbackupServer {
         if (Object.keys(clientSettings[0]).includes(key)) {
           clientSettings[0][key] = newValue;
           clientSettings[0].overwrite = true;
-          clientSettings[0].sa = 'clientsettings_save';
+          clientSettings[0].sa = "clientsettings_save";
           clientSettings[0].t_clientid = clientSettings[0].clientid;
 
           const saveSettingsResponse = await this.#fetchJson(
-            'settings',
+            "settings",
             clientSettings[0],
           );
 
-          if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
+          if (typeof saveSettingsResponse?.saved_ok === "boolean") {
             operationStatus = saveSettingsResponse.saved_ok === true;
           } else {
             throw new Error(this.#messages.missingValues);
@@ -1792,9 +1792,9 @@ class UrbackupServer {
    */
   async getClientGroup({ clientId, clientName } = {}) {
     if (
-      (typeof clientId !== 'number' && typeof clientid !== 'undefined') ||
-      (typeof clientname !== 'string' && typeof clientname !== 'undefined') ||
-      (typeof clientId !== 'number' && typeof clientName !== 'string')
+      (typeof clientId !== "number" && typeof clientid !== "undefined") ||
+      (typeof clientname !== "string" && typeof clientname !== "undefined") ||
+      (typeof clientId !== "number" && typeof clientName !== "string")
     ) {
       throw new Error(this.#messages.missingParameters);
     }
@@ -1805,7 +1805,7 @@ class UrbackupServer {
       const fallbackReturnValue = null;
 
       const clientSettings = await this.getClientSettings(
-        typeof clientId === 'number' ? { clientId } : { clientName },
+        typeof clientId === "number" ? { clientId } : { clientName },
       );
 
       if (!Array.isArray(clientSettings)) {
@@ -1819,10 +1819,10 @@ class UrbackupServer {
       const groupId = clientSettings[0]?.memberof;
       const group = {
         id: groupId,
-        name: await this.#getGroupIdentifier(groupId, 'name'),
+        name: await this.#getGroupIdentifier(groupId, "name"),
       };
 
-      return typeof group.id === 'number' && typeof group.name === 'string'
+      return typeof group.id === "number" && typeof group.name === "string"
         ? group
         : fallbackReturnValue;
     } else {
@@ -1845,10 +1845,10 @@ class UrbackupServer {
    */
   async setClientGroup({ clientId, clientName, groupId } = {}) {
     if (
-      (typeof clientId !== 'number' && typeof clientid !== 'undefined') ||
-      (typeof clientname !== 'string' && typeof clientname !== 'undefined') ||
-      (typeof clientId !== 'number' && typeof clientName !== 'string') ||
-      typeof groupId !== 'number'
+      (typeof clientId !== "number" && typeof clientid !== "undefined") ||
+      (typeof clientname !== "string" && typeof clientname !== "undefined") ||
+      (typeof clientId !== "number" && typeof clientName !== "string") ||
+      typeof groupId !== "number"
     ) {
       throw new Error(this.#messages.missingParameters);
     }
@@ -1859,29 +1859,29 @@ class UrbackupServer {
       let operationStatus = false;
       let mappedClientId;
 
-      if (typeof clientId !== 'number') {
-        if (typeof clientName === 'string') {
-          mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+      if (typeof clientId !== "number") {
+        if (typeof clientName === "string") {
+          mappedClientId = await this.#getClientIdentifier(clientName, "id");
         }
 
-        if (typeof mappedClientId !== 'number') {
+        if (typeof mappedClientId !== "number") {
           return operationStatus;
         }
       }
 
-      if ((await this.#getGroupIdentifier(groupId, 'name')) === null) {
+      if ((await this.#getGroupIdentifier(groupId, "name")) === null) {
         return operationStatus;
       }
 
       const payload = {
-        sa: 'clientsettings_save',
+        sa: "clientsettings_save",
         t_clientid: clientId ?? mappedClientId,
         memberof: groupId,
       };
 
-      const saveSettingsResponse = await this.#fetchJson('settings', payload);
+      const saveSettingsResponse = await this.#fetchJson("settings", payload);
 
-      if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
+      if (typeof saveSettingsResponse?.saved_ok === "boolean") {
         operationStatus = saveSettingsResponse.saved_ok === true;
       } else {
         throw new Error(this.#messages.missingValues);
@@ -1905,13 +1905,13 @@ class UrbackupServer {
    * server.getClientAuthkey({ clientId: 3 }).then(data => console.log(data));
    */
   async getClientAuthkey({ clientId, clientName } = {}) {
-    if (typeof clientId === 'undefined' && typeof clientName === 'undefined') {
+    if (typeof clientId === "undefined" && typeof clientName === "undefined") {
       throw new Error(this.#messages.missingParameters);
     }
 
-    let authKey = '';
+    let authKey = "";
 
-    if (clientName === '') {
+    if (clientName === "") {
       return authKey;
     }
 
@@ -1919,14 +1919,14 @@ class UrbackupServer {
 
     if (login === true) {
       const clientSettings = await this.getClientSettings(
-        typeof clientId === 'undefined'
+        typeof clientId === "undefined"
           ? { clientName: clientName }
           : { clientId: clientId },
       );
 
       if (Array.isArray(clientSettings)) {
         if (clientSettings.length > 0) {
-          if (typeof clientSettings[0]?.internet_authkey?.value === 'string') {
+          if (typeof clientSettings[0]?.internet_authkey?.value === "string") {
             authKey = clientSettings[0].internet_authkey.value.toString();
           }
         }
@@ -1961,37 +1961,37 @@ class UrbackupServer {
   async getStatus({ clientId, clientName, includeRemoved = true } = {}) {
     const fallbackReturnValue = [];
 
-    if (clientName === '') {
+    if (clientName === "") {
       return fallbackReturnValue;
     }
 
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status');
+      const statusResponse = await this.#fetchJson("status");
 
       if (Array.isArray(statusResponse?.status)) {
         if (
-          typeof clientId === 'undefined' &&
-          typeof clientName === 'undefined'
+          typeof clientId === "undefined" &&
+          typeof clientName === "undefined"
         ) {
           if (includeRemoved !== true) {
             return statusResponse.status.filter(
-              (client) => client.delete_pending !== '1',
+              (client) => client.delete_pending !== "1",
             );
           } else {
             return statusResponse.status;
           }
         } else {
           const clientStatus = statusResponse.status.find((client) =>
-            typeof clientId === 'number'
+            typeof clientId === "number"
               ? client.id === clientId
               : client.name === clientName,
           );
 
-          if (typeof clientStatus !== 'undefined') {
+          if (typeof clientStatus !== "undefined") {
             return includeRemoved !== true &&
-              clientStatus.delete_pending === '1'
+              clientStatus.delete_pending === "1"
               ? fallbackReturnValue
               : [clientStatus];
           } else {
@@ -2026,21 +2026,21 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const usageResponse = await this.#fetchJson('usage');
+      const usageResponse = await this.#fetchJson("usage");
 
       if (Array.isArray(usageResponse?.usage)) {
         if (
-          typeof clientId === 'undefined' &&
-          typeof clientName === 'undefined'
+          typeof clientId === "undefined" &&
+          typeof clientName === "undefined"
         ) {
           return usageResponse.usage;
         } else {
           let mappedClientName;
-          if (typeof clientId === 'number') {
+          if (typeof clientId === "number") {
             // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
             mappedClientName = await this.#getClientIdentifier(
               clientId,
-              'name',
+              "name",
             );
             if (mappedClientName === null) {
               return fallbackReturnValue;
@@ -2048,7 +2048,7 @@ class UrbackupServer {
           }
 
           const match = usageResponse.usage.find((client) =>
-            typeof clientId === 'number'
+            typeof clientId === "number"
               ? client.name === mappedClientName
               : client.name === clientName,
           );
@@ -2096,7 +2096,7 @@ class UrbackupServer {
   } = {}) {
     const activities = { current: [], last: [] };
 
-    if (clientName === '') {
+    if (clientName === "") {
       return activities;
     }
 
@@ -2107,7 +2107,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const activitiesResponse = await this.#fetchJson('progress');
+      const activitiesResponse = await this.#fetchJson("progress");
 
       if (
         Array.isArray(activitiesResponse?.progress) &&
@@ -2115,8 +2115,8 @@ class UrbackupServer {
       ) {
         if (includeCurrent === true) {
           if (
-            typeof clientId === 'undefined' &&
-            typeof clientName === 'undefined'
+            typeof clientId === "undefined" &&
+            typeof clientName === "undefined"
           ) {
             if (includePaused === true) {
               activities.current = activitiesResponse.progress;
@@ -2129,7 +2129,7 @@ class UrbackupServer {
             activities.current = activitiesResponse.progress.filter(
               (activity) => {
                 return (
-                  (typeof clientId === 'number'
+                  (typeof clientId === "number"
                     ? activity.clientid === clientId
                     : activity.name === clientName) &&
                   (includePaused === true ? true : activity.paused !== true)
@@ -2141,13 +2141,13 @@ class UrbackupServer {
 
         if (includeLast === true) {
           if (
-            typeof clientId === 'undefined' &&
-            typeof clientName === 'undefined'
+            typeof clientId === "undefined" &&
+            typeof clientName === "undefined"
           ) {
             activities.last = activitiesResponse.lastacts;
           } else {
             activities.last = activitiesResponse.lastacts.filter((activity) =>
-              typeof clientId === 'number'
+              typeof clientId === "number"
                 ? activity.clientid === clientId
                 : activity.name === clientName,
             );
@@ -2270,14 +2270,14 @@ class UrbackupServer {
    */
   async stopActivity({ clientId, clientName, activityId } = {}) {
     if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
-      typeof activityId === 'undefined' ||
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      typeof activityId === "undefined" ||
       activityId <= 0
     ) {
       throw new Error(this.#messages.missingParameters);
     }
 
-    if (clientName === '') {
+    if (clientName === "") {
       return false;
     }
 
@@ -2285,12 +2285,12 @@ class UrbackupServer {
 
     if (login === true) {
       let mappedClientId;
-      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
-        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+      if (typeof clientId === "undefined" && typeof clientName === "string") {
+        mappedClientId = await this.#getClientIdentifier(clientName, "id");
       }
 
-      if (typeof clientId === 'number' || typeof mappedClientId === 'number') {
-        const activitiesResponse = await this.#fetchJson('progress', {
+      if (typeof clientId === "number" || typeof mappedClientId === "number") {
+        const activitiesResponse = await this.#fetchJson("progress", {
           stop_clientid: clientId ?? mappedClientId,
           stop_id: activityId,
         });
@@ -2335,7 +2335,7 @@ class UrbackupServer {
     includeImageBackups = true,
   } = {}) {
     if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
       (includeFileBackups !== true && includeImageBackups !== true)
     ) {
       throw new Error(this.#messages.missingParameters);
@@ -2343,7 +2343,7 @@ class UrbackupServer {
 
     const backups = { file: [], image: [] };
 
-    if (clientName === '') {
+    if (clientName === "") {
       return backups;
     }
 
@@ -2352,16 +2352,16 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
-        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+      if (typeof clientId === "undefined" && typeof clientName === "string") {
+        mappedClientId = await this.#getClientIdentifier(clientName, "id");
         if (mappedClientId === null) {
           return backups;
         }
       }
 
-      if (typeof clientId === 'number' || typeof mappedClientId === 'number') {
-        const backupsResponse = await this.#fetchJson('backups', {
-          sa: 'backups',
+      if (typeof clientId === "number" || typeof mappedClientId === "number") {
+        const backupsResponse = await this.#fetchJson("backups", {
+          sa: "backups",
           clientid: clientId ?? mappedClientId,
         });
 
@@ -2404,16 +2404,16 @@ class UrbackupServer {
    * const startStatus = await this.#startBackupCommon({ clientName: 'laptop1', backupType: 'incr_file' });
    */
   async #startBackupCommon({ clientId, clientName, backupType } = {}) {
-    const backupTypes = ['full_file', 'incr_file', 'full_image', 'incr_image'];
+    const backupTypes = ["full_file", "incr_file", "full_image", "incr_image"];
 
     if (
-      (typeof clientId === 'undefined' && typeof clientName === 'undefined') ||
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
       !backupTypes.includes(backupType)
     ) {
       throw new Error(this.#messages.missingParameters);
     }
 
-    if (clientName === '') {
+    if (clientName === "") {
       return false;
     }
 
@@ -2421,12 +2421,12 @@ class UrbackupServer {
 
     if (login === true) {
       let mappedClientId;
-      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
-        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+      if (typeof clientId === "undefined" && typeof clientName === "string") {
+        mappedClientId = await this.#getClientIdentifier(clientName, "id");
       }
 
-      if (typeof clientId === 'number' || typeof mappedClientId === 'number') {
-        const backupResponse = await this.#fetchJson('start_backup', {
+      if (typeof clientId === "number" || typeof mappedClientId === "number") {
+        const backupResponse = await this.#fetchJson("start_backup", {
           start_client: clientId ?? mappedClientId,
           start_type: backupType,
         });
@@ -2434,7 +2434,7 @@ class UrbackupServer {
         if (
           Array.isArray(backupResponse.result) &&
           backupResponse.result.filter((element) =>
-            Object.keys(element).includes('start_ok'),
+            Object.keys(element).includes("start_ok"),
           ).length !== 1
         ) {
           return !!backupResponse.result[0].start_ok;
@@ -2465,7 +2465,7 @@ class UrbackupServer {
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
-      backupType: 'full_file',
+      backupType: "full_file",
     });
     return operationStatus;
   }
@@ -2486,7 +2486,7 @@ class UrbackupServer {
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
-      backupType: 'incr_file',
+      backupType: "incr_file",
     });
     return operationStatus;
   }
@@ -2507,7 +2507,7 @@ class UrbackupServer {
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
-      backupType: 'full_image',
+      backupType: "full_image",
     });
     return operationStatus;
   }
@@ -2528,7 +2528,7 @@ class UrbackupServer {
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
-      backupType: 'incr_image',
+      backupType: "incr_image",
     });
     return operationStatus;
   }
@@ -2555,7 +2555,7 @@ class UrbackupServer {
   async getLiveLog({ clientId, clientName, recentOnly = false } = {}) {
     let livelog = [];
 
-    if (clientName === '') {
+    if (clientName === "") {
       return livelog;
     }
 
@@ -2564,8 +2564,8 @@ class UrbackupServer {
     if (login === true) {
       let mappedClientId;
 
-      if (typeof clientId === 'undefined' && typeof clientName === 'string') {
-        mappedClientId = await this.#getClientIdentifier(clientName, 'id');
+      if (typeof clientId === "undefined" && typeof clientName === "string") {
+        mappedClientId = await this.#getClientIdentifier(clientName, "id");
       }
 
       if (clientId === 0 || mappedClientId === null) {
@@ -2578,14 +2578,14 @@ class UrbackupServer {
       // eslint-disable-next-line no-unused-vars
       const [value, release] = await this.#semaphore.acquire();
       try {
-        const logResponse = await this.#fetchJson('livelog', {
+        const logResponse = await this.#fetchJson("livelog", {
           clientid: clientId ?? mappedClientId ?? 0,
           lastid: !recentOnly ? 0 : this.#lastLogId.get(clientId),
         });
 
         if (Array.isArray(logResponse.logdata)) {
           const lastId = logResponse.logdata.slice(-1)[0]?.id;
-          if (typeof lastId !== 'undefined') {
+          if (typeof lastId !== "undefined") {
             this.#lastLogId.set(clientId, lastId);
           }
 
@@ -2613,17 +2613,17 @@ class UrbackupServer {
    * this.#getServerSettings('general').then(data => console.log(data));
    */
   async #getServerSettings(category) {
-    const validCategories = ['general', 'ldap', 'mail'];
+    const validCategories = ["general", "ldap", "mail"];
 
-    if (typeof category === 'string' && validCategories.includes(category)) {
+    if (typeof category === "string" && validCategories.includes(category)) {
       const login = await this.#login();
 
       if (login === true) {
-        const settingsResponse = await this.#fetchJson('settings', {
+        const settingsResponse = await this.#fetchJson("settings", {
           sa: category,
         });
 
-        if (typeof settingsResponse?.settings === 'object') {
+        if (typeof settingsResponse?.settings === "object") {
           return settingsResponse.settings;
         } else {
           throw new Error(this.#messages.missingValues);
@@ -2644,7 +2644,7 @@ class UrbackupServer {
    * server.getGeneralSettings().then(data => console.log(data));
    */
   async getGeneralSettings() {
-    const generalSettings = await this.#getServerSettings('general');
+    const generalSettings = await this.#getServerSettings("general");
     return generalSettings;
   }
 
@@ -2656,7 +2656,7 @@ class UrbackupServer {
    * server.getMailSettings().then(data => console.log(data));
    */
   async getMailSettings() {
-    const mailSettings = await this.#getServerSettings('mail');
+    const mailSettings = await this.#getServerSettings("mail");
     return mailSettings;
   }
 
@@ -2668,7 +2668,7 @@ class UrbackupServer {
    * server.getLdapSettings().then(data => console.log(data));
    */
   async getLdapSettings() {
-    const ldapSettings = await this.#getServerSettings('ldap');
+    const ldapSettings = await this.#getServerSettings("ldap");
     return ldapSettings;
   }
 
@@ -2684,7 +2684,7 @@ class UrbackupServer {
    * server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
    */
   async setGeneralSettings({ key, newValue } = {}) {
-    if (typeof key === 'undefined' || typeof newValue === 'undefined') {
+    if (typeof key === "undefined" || typeof newValue === "undefined") {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -2695,14 +2695,14 @@ class UrbackupServer {
 
       if (Object.keys(settings).includes(key)) {
         settings[key] = newValue;
-        settings.sa = 'general_save';
+        settings.sa = "general_save";
 
         const saveSettingsResponse = await this.#fetchJson(
-          'settings',
+          "settings",
           settings,
         );
 
-        if (typeof saveSettingsResponse?.saved_ok === 'boolean') {
+        if (typeof saveSettingsResponse?.saved_ok === "boolean") {
           return saveSettingsResponse.saved_ok;
         } else {
           throw new Error(this.#messages.missingValues);
@@ -2727,7 +2727,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const statusResponse = await this.#fetchJson('status');
+      const statusResponse = await this.#fetchJson("status");
       return statusResponse;
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
@@ -2746,7 +2746,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const usageResponse = await this.#fetchJson('usage');
+      const usageResponse = await this.#fetchJson("usage");
       return usageResponse;
     } else {
       throw new Error(this.#messages.failedLoginUnknown);
@@ -2765,7 +2765,7 @@ class UrbackupServer {
     const login = await this.#login();
 
     if (login === true) {
-      const progressResponse = await this.#fetchJson('progress');
+      const progressResponse = await this.#fetchJson("progress");
       return progressResponse;
     } else {
       throw new Error(this.#messages.failedLoginUnknown);

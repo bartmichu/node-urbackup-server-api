@@ -27,6 +27,10 @@
 
 ## Notable Changes
 
+- 0.100.0
+
+  - Migrated to Biome for code formatting and linting.
+
 - 0.92.0
 
   - Changes in `getGroupMembers()` method: Change the precedence to `groupId` if both `groupId` and `groupName` are defined.
