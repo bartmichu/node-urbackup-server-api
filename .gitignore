@@ -1,4 +1,6 @@
 .vscode/
+.zed/
+.DS_Store
 
 # Logs
 logs
