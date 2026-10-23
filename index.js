@@ -1765,8 +1765,8 @@ class UrbackupServer {
    */
   async getClientGroup({ clientId, clientName } = {}) {
     if (
-      (typeof clientId !== "number" && typeof clientid !== "undefined") ||
-      (typeof clientname !== "string" && typeof clientname !== "undefined") ||
+      (typeof clientId !== "number" && typeof clientId !== "undefined") ||
+      (typeof clientName !== "string" && typeof clientName !== "undefined") ||
       (typeof clientId !== "number" && typeof clientName !== "string")
     ) {
       throw new Error(this.#messages.missingParameters);
@@ -1817,8 +1817,8 @@ class UrbackupServer {
    */
   async setClientGroup({ clientId, clientName, groupId } = {}) {
     if (
-      (typeof clientId !== "number" && typeof clientid !== "undefined") ||
-      (typeof clientname !== "string" && typeof clientname !== "undefined") ||
+      (typeof clientId !== "number" && typeof clientId !== "undefined") ||
+      (typeof clientName !== "string" && typeof clientName !== "undefined") ||
       (typeof clientId !== "number" && typeof clientName !== "string") ||
       typeof groupId !== "number"
     ) {

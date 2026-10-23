@@ -30,6 +30,7 @@
 - 0.100.0
 
   - Migrated to Biome for code formatting and linting.
+  - Fixed the `getClientGroup()` and `setClientGroup()` methods.
 
 - 0.92.0
 
