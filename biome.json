@@ -26,7 +26,8 @@
         "noExcessiveLinesPerFunction": "off"
       },
       "correctness": {
-        "noNodejsModules": "off"
+        "noNodejsModules": "off",
+        "useQwikValidLexicalScope": "off"
       }
     }
   },
