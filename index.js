@@ -130,21 +130,20 @@ class UrbackupServer {
    * const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
    */
   async #hashPassword(salt = "", rounds = 10_000, randomKey = "") {
-    /**
-     * Async PBKDF2 wrapper.
-     * @param {Buffer} passwordHash - The hashed password.
-     * @returns {Promise<Buffer>} The derived key.
-     * @private
-     * @example
-     * const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
-     */
-    function pbkdf2Async(passwordHash) {
+    // NOTE: Async PBKDF2 wrapper.
+    const pbkdf2Async = (inputHash) => {
+      const keyLength = 32;
       return new Promise((resolve, reject) => {
-        crypto.pbkdf2(passwordHash, salt, rounds, 32, "sha256", (error, key) =>
-          error ? reject(error) : resolve(key),
+        crypto.pbkdf2(
+          inputHash,
+          salt,
+          rounds,
+          keyLength,
+          "sha256",
+          (error, key) => (error ? reject(error) : resolve(key)),
         );
       });
-    }
+    };
 
     let passwordHash = crypto
       .createHash("md5")
@@ -1669,7 +1668,7 @@ class UrbackupServer {
       clientIds.push(clientId);
     }
 
-    for (const id of clientIds) {
+    const clientSettingsPromises = clientIds.map(async (id) => {
       const settingsResponse = await this.#fetchJson("settings", {
         sa: "clientsettings",
         // biome-ignore lint/style/useNamingConvention: upstream convention
@@ -1677,11 +1676,13 @@ class UrbackupServer {
       });
 
       if (typeof settingsResponse?.settings === "object") {
-        clientSettings.push(settingsResponse.settings);
-      } else {
-        throw new Error(this.#messages.missingValues);
+        return settingsResponse.settings;
       }
-    }
+
+      throw new Error(this.#messages.missingValues);
+    });
+
+    clientSettings.push(...(await Promise.all(clientSettingsPromises)));
 
     return clientSettings;
   }
@@ -1949,28 +1950,28 @@ class UrbackupServer {
         typeof clientId === "undefined" &&
         typeof clientName === "undefined"
       ) {
-        if (includeRemoved !== true) {
-          return statusResponse.status.filter(
-            (client) => client.delete_pending !== "1",
-          );
-        } else {
+        if (includeRemoved === true) {
           return statusResponse.status;
         }
-      } else {
-        const clientStatus = statusResponse.status.find((client) =>
-          typeof clientId === "number"
-            ? client.id === clientId
-            : client.name === clientName,
-        );
 
-        if (typeof clientStatus !== "undefined") {
-          return includeRemoved !== true && clientStatus.delete_pending === "1"
-            ? fallbackReturnValue
-            : [clientStatus];
-        } else {
-          return fallbackReturnValue;
-        }
+        return statusResponse.status.filter(
+          (client) => client.delete_pending !== "1",
+        );
       }
+
+      const clientStatus = statusResponse.status.find((client) =>
+        typeof clientId === "number"
+          ? client.id === clientId
+          : client.name === clientName,
+      );
+
+      if (typeof clientStatus === "undefined") {
+        return fallbackReturnValue;
+      }
+
+      return includeRemoved !== true && clientStatus.delete_pending === "1"
+        ? fallbackReturnValue
+        : [clientStatus];
     }
 
     throw new Error(this.#messages.missingValues);
@@ -2006,23 +2007,24 @@ class UrbackupServer {
         typeof clientName === "undefined"
       ) {
         return usageResponse.usage;
-      } else {
-        let mappedClientName;
-        if (typeof clientId === "number") {
-          // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
-          mappedClientName = await this.#getClientIdentifier(clientId, "name");
-          if (mappedClientName === null) {
-            return fallbackReturnValue;
-          }
-        }
-
-        const match = usageResponse.usage.find((client) =>
-          typeof clientId === "number"
-            ? client.name === mappedClientName
-            : client.name === clientName,
-        );
-        return match ? [match] : fallbackReturnValue;
       }
+
+      let mappedClientName;
+      if (typeof clientId === "number") {
+        // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
+        mappedClientName = await this.#getClientIdentifier(clientId, "name");
+        if (mappedClientName === null) {
+          return fallbackReturnValue;
+        }
+      }
+
+      const match = usageResponse.usage.find((client) =>
+        typeof clientId === "number"
+          ? client.name === mappedClientName
+          : client.name === clientName,
+      );
+
+      return match ? [match] : fallbackReturnValue;
     }
 
     throw new Error(this.#messages.missingValues);
