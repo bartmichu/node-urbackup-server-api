@@ -62,10 +62,14 @@ class UrbackupServer {
     username = "",
     password = "",
   } = {}) {
-    this.#url = new URL(url);
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error("Syntax error: URL protocol must be http: or https:.");
+    }
+    this.#url = parsedUrl;
     this.#url.pathname = "x";
-    this.#username = username;
-    this.#password = password;
+    this.#username = typeof username === "string" ? username : "";
+    this.#password = typeof password === "string" ? password : "";
   }
 
   /**
