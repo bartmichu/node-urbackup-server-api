@@ -1,6 +1,7 @@
-.vscode/
-.zed/
-.DS_Store
+/.vscode/
+/.zed/
+/.DS_Store
+/sandbox/
 
 # Logs
 logs
