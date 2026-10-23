@@ -15,9 +15,18 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended",
+      "preset": "all",
       "style": {
-        "noExcessiveLinesPerFile": "off"
+        "noExcessiveLinesPerFile": "off",
+        "noTernary": "off",
+        "useConsistentObjectDefinitions": "off",
+        "noContinue": "off"
+      },
+      "complexity": {
+        "noExcessiveLinesPerFunction": "off"
+      },
+      "correctness": {
+        "noNodejsModules": "off"
       }
     }
   },

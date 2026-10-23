@@ -103,18 +103,19 @@ class UrbackupServer {
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        Accept: "application/json",
-        "User-Agent": "urbstat",
-        "Content-Type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+        // TODO: change user agent
+        "user-agent": "urbstat",
+        "content-type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams(bodyParams).toString(),
     });
 
     if (response?.ok === true) {
       return await response.json();
-    } else {
-      throw new Error(this.#messages.failedFetch);
     }
+
+    throw new Error(this.#messages.failedFetch);
   }
 
   /**
@@ -128,7 +129,7 @@ class UrbackupServer {
    * @example
    * const hashedPassword = await this.#hashPassword(saltResponse.salt, saltResponse.pbkdf2_rounds, saltResponse.rnd);
    */
-  async #hashPassword(salt = "", rounds = 10000, randomKey = "") {
+  async #hashPassword(salt = "", rounds = 10_000, randomKey = "") {
     /**
      * Async PBKDF2 wrapper.
      * @param {Buffer} passwordHash - The hashed password.
@@ -139,15 +140,8 @@ class UrbackupServer {
      */
     function pbkdf2Async(passwordHash) {
       return new Promise((resolve, reject) => {
-        crypto.pbkdf2(
-          passwordHash,
-          salt,
-          rounds,
-          32,
-          "sha256",
-          (error, key) => {
-            return error ? reject(error) : resolve(key);
-          },
+        crypto.pbkdf2(passwordHash, salt, rounds, 32, "sha256", (error, key) =>
+          error ? reject(error) : resolve(key),
         );
       });
     }
@@ -186,7 +180,6 @@ class UrbackupServer {
   #hashPasswordMd5(salt, password) {
     const hash = crypto.createHash("md5");
     hash.update(salt + password);
-
     return hash.digest("hex");
   }
 
@@ -200,16 +193,17 @@ class UrbackupServer {
    * const randomStr = this.#generateRandomString(10);
    */
   #generateRandomString(length) {
-    const characters =
+    const charactersSet =
+      // biome-ignore lint/security/noSecrets: false positive
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    const charactersLength = characters.length;
+    const charactersLength = charactersSet.length;
 
     const randomBytes = crypto.randomBytes(length);
     let randomString = "";
 
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length; i += 1) {
       const randomValue = randomBytes[i] % charactersLength;
-      randomString += characters[randomValue];
+      randomString += charactersSet[randomValue];
     }
 
     return randomString;
@@ -241,7 +235,7 @@ class UrbackupServer {
       encodedRights += `${index}_domain=${domain}&${index}_right=${right}`;
       indices.push(index);
 
-      index++;
+      index += 1;
     }
 
     encodedRights += `&idx=${indices.join(",")}`;
@@ -408,41 +402,37 @@ class UrbackupServer {
           this.#sessionId = anonymousLoginResponse.session;
           this.#isLoggedIn = true;
           return true;
-        } else {
-          this.#clearLoginStatus();
-          throw new Error(this.#messages.failedAnonymousLogin);
         }
-      } else {
-        const saltResponse = await this.#fetchJson("salt", {
+
+        this.#clearLoginStatus();
+        throw new Error(this.#messages.failedAnonymousLogin);
+      }
+
+      const saltResponse = await this.#fetchJson("salt", {
+        username: this.#username,
+      });
+
+      if (typeof saltResponse?.salt === "string") {
+        this.#sessionId = saltResponse.ses;
+        const hashedPassword = await this.#hashPassword(
+          saltResponse.salt,
+          saltResponse.pbkdf2_rounds,
+          saltResponse.rnd,
+        );
+        const userLoginResponse = await this.#fetchJson("login", {
           username: this.#username,
+          password: hashedPassword,
         });
 
-        if (typeof saltResponse?.salt === "string") {
-          this.#sessionId = saltResponse.ses;
-          const hashedPassword = await this.#hashPassword(
-            saltResponse.salt,
-            saltResponse.pbkdf2_rounds,
-            saltResponse.rnd,
-          );
-          const userLoginResponse = await this.#fetchJson("login", {
-            username: this.#username,
-            password: hashedPassword,
-          });
-
-          if (userLoginResponse?.success === true) {
-            this.#isLoggedIn = true;
-            return true;
-          } else {
-            // NOTE: Invalid password
-            this.#clearLoginStatus();
-            throw new Error(this.#messages.failedLogin);
-          }
-        } else {
-          // NOTE: Invalid username
-          this.#clearLoginStatus();
-          throw new Error(this.#messages.failedLogin);
+        if (userLoginResponse?.success === true) {
+          this.#isLoggedIn = true;
+          return true;
         }
       }
+
+      // NOTE: Invalid username
+      this.#clearLoginStatus();
+      throw new Error(this.#messages.failedLogin);
     } finally {
       release();
     }
@@ -531,18 +521,17 @@ class UrbackupServer {
    */
   async getServerIdentity() {
     const login = await this.#login();
-
-    if (login === true) {
-      const statusResponse = await this.#fetchJson("status");
-
-      if (typeof statusResponse?.server_identity === "string") {
-        return statusResponse.server_identity;
-      } else {
-        throw new Error(this.#messages.missingServerIdentity);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const statusResponse = await this.#fetchJson("status");
+
+    if (typeof statusResponse?.server_identity === "string") {
+      return statusResponse.server_identity;
+    }
+
+    throw new Error(this.#messages.missingServerIdentity);
   }
 
   /**
@@ -556,28 +545,27 @@ class UrbackupServer {
    */
   async getServerVersion() {
     const login = await this.#login();
-
-    if (login === true) {
-      const serverVersion = { number: 0, string: "" };
-
-      const statusResponse = await this.#fetchJson("status");
-
-      if (typeof statusResponse?.curr_version_num === "number") {
-        serverVersion.number = statusResponse.curr_version_num;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      if (typeof statusResponse?.curr_version_str === "string") {
-        serverVersion.string = statusResponse.curr_version_str;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      return serverVersion;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const serverVersion = { number: 0, string: "" };
+
+    const statusResponse = await this.#fetchJson("status");
+
+    if (typeof statusResponse?.curr_version_num === "number") {
+      serverVersion.number = statusResponse.curr_version_num;
+    } else {
+      throw new Error(this.#messages.missingValues);
+    }
+
+    if (typeof statusResponse?.curr_version_str === "string") {
+      serverVersion.string = statusResponse.curr_version_str;
+    } else {
+      throw new Error(this.#messages.missingValues);
+    }
+
+    return serverVersion;
   }
 
   /**
@@ -589,17 +577,16 @@ class UrbackupServer {
    */
   async isServerOutdated() {
     const login = await this.#login();
-
-    if (login === true) {
-      const serverVersion = await this.getServerVersion();
-
-      return this.#compareVersion(
-        serverVersion.string,
-        this.#constants.latestServerVersion,
-      );
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const serverVersion = await this.getServerVersion();
+
+    return this.#compareVersion(
+      serverVersion.string,
+      this.#constants.latestServerVersion,
+    );
   }
 
   /**
@@ -611,20 +598,19 @@ class UrbackupServer {
    */
   async getUsers() {
     const login = await this.#login();
-
-    if (login === true) {
-      const usersResponse = await this.#fetchJson("settings", {
-        sa: "listusers",
-      });
-
-      if (Array.isArray(usersResponse?.users)) {
-        return usersResponse.users;
-      } else {
-        throw new Error(this.#messages.missingUserData);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const usersResponse = await this.#fetchJson("settings", {
+      sa: "listusers",
+    });
+
+    if (Array.isArray(usersResponse?.users)) {
+      return usersResponse.users;
+    }
+
+    throw new Error(this.#messages.missingUserData);
   }
 
   /**
@@ -657,29 +643,29 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      // NOTE: Server expects an alphanumeric string (no special characters), hence an additional method is needed
-      const salt = this.#generateRandomString(50);
-
-      const response = await this.#fetchJson("settings", {
-        sa: "useradd",
-        name: userName,
-        pwmd5: this.#hashPasswordMd5(salt, password),
-        salt: salt,
-        rights: this.#encodeUserRights(
-          isAdmin ? this.#constants.adminUserRights : rights,
-        ),
-      });
-
-      if ("add_ok" in response || "alread_exists" in response) {
-        return response.add_ok === true;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    // NOTE: Server expects an alphanumeric string (no special characters), hence an additional method is needed
+    const stringLength = 50;
+    const salt = this.#generateRandomString(stringLength);
+
+    const response = await this.#fetchJson("settings", {
+      sa: "useradd",
+      name: userName,
+      pwmd5: this.#hashPasswordMd5(salt, password),
+      salt: salt,
+      rights: this.#encodeUserRights(
+        isAdmin ? this.#constants.adminUserRights : rights,
+      ),
+    });
+
+    if ("add_ok" in response || "alread_exists" in response) {
+      return response.add_ok === true;
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -696,30 +682,30 @@ class UrbackupServer {
       throw new Error(this.#messages.missingParameters);
     }
 
-    let operationStatus = false;
     const login = await this.#login();
-
-    if (login === true) {
-      const users = await this.getUsers();
-
-      if (
-        typeof users.find((user) => user.id === userId.toString(10)) !==
-        "undefined"
-      ) {
-        const response = await this.#fetchJson("settings", {
-          sa: "removeuser",
-          userid: userId.toString(10),
-        });
-        operationStatus =
-          typeof response.users.find(
-            (user) => user.id === userId.toString(10),
-          ) === "undefined";
-      }
-
-      return operationStatus;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let operationStatus = false;
+
+    const users = await this.getUsers();
+
+    if (
+      typeof users.find((user) => user.id === userId.toString(10)) !==
+      "undefined"
+    ) {
+      const response = await this.#fetchJson("settings", {
+        sa: "removeuser",
+        userid: userId.toString(10),
+      });
+      operationStatus =
+        typeof response.users.find(
+          (user) => user.id === userId.toString(10),
+        ) === "undefined";
+    }
+
+    return operationStatus;
   }
 
   /**
@@ -738,24 +724,23 @@ class UrbackupServer {
    */
   async getUserRights({ userId, userName = this.#username } = {}) {
     const login = await this.#login();
-
-    if (login === true) {
-      const fallbackReturnValue = null;
-      const allUsers = await this.getUsers();
-
-      let userRights;
-      if (typeof userId === "string") {
-        userRights = allUsers.find((user) => user.id === userId)?.rights;
-      } else if (typeof userName === "string") {
-        userRights = allUsers.find((user) => user.name === userName)?.rights;
-      } else {
-        return fallbackReturnValue;
-      }
-
-      return Array.isArray(userRights) ? userRights : fallbackReturnValue;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const fallbackReturnValue = null;
+    const allUsers = await this.getUsers();
+
+    let userRights;
+    if (typeof userId === "string") {
+      userRights = allUsers.find((user) => user.id === userId)?.rights;
+    } else if (typeof userName === "string") {
+      userRights = allUsers.find((user) => user.name === userName)?.rights;
+    } else {
+      return fallbackReturnValue;
+    }
+
+    return Array.isArray(userRights) ? userRights : fallbackReturnValue;
   }
 
   /**
@@ -768,18 +753,17 @@ class UrbackupServer {
    */
   async getGroups() {
     const login = await this.#login();
-
-    if (login === true) {
-      const settingsResponse = await this.#fetchJson("settings");
-
-      if (Array.isArray(settingsResponse?.navitems?.groups)) {
-        return settingsResponse.navitems.groups;
-      } else {
-        throw new Error(this.#messages.missingGroupData);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const settingsResponse = await this.#fetchJson("settings");
+
+    if (Array.isArray(settingsResponse?.navitems?.groups)) {
+      return settingsResponse.navitems.groups;
+    }
+
+    throw new Error(this.#messages.missingGroupData);
   }
 
   /**
@@ -803,21 +787,20 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const response = await this.#fetchJson("settings", {
-        sa: "groupadd",
-        name: groupName,
-      });
-
-      if ("add_ok" in response || "already_exists" in response) {
-        return response?.add_ok === true;
-      } else {
-        throw new Error(this.#messages.missingGroupData);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const response = await this.#fetchJson("settings", {
+      sa: "groupadd",
+      name: groupName,
+    });
+
+    if ("add_ok" in response || "already_exists" in response) {
+      return response?.add_ok === true;
+    }
+
+    throw new Error(this.#messages.missingGroupData);
   }
 
   /**
@@ -842,32 +825,32 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      let mappedGroupId;
-
-      if (typeof groupId === "undefined") {
-        mappedGroupId = await this.#getGroupIdentifier(groupName, "id");
-        if (mappedGroupId === 0 || mappedGroupId === null) {
-          return false;
-        }
-      } else {
-        // NOTE: Fail early due to a possible UrBackup bug where the server returns delete_ok:true even when
-        // attempting to delete a non-existent group ID
-        const mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
-        if (mappedGroupName === null) {
-          return false;
-        }
-      }
-
-      const response = await this.#fetchJson("settings", {
-        sa: "groupremove",
-        id: groupId ?? mappedGroupId,
-      });
-      return response?.delete_ok === true;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let mappedGroupId;
+
+    if (typeof groupId === "undefined") {
+      mappedGroupId = await this.#getGroupIdentifier(groupName, "id");
+      if (mappedGroupId === 0 || mappedGroupId === null) {
+        return false;
+      }
+    } else {
+      // NOTE: Fail early due to a possible UrBackup bug where the server returns delete_ok:true even when
+      // attempting to delete a non-existent group ID
+      const mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
+      if (mappedGroupName === null) {
+        return false;
+      }
+    }
+
+    const response = await this.#fetchJson("settings", {
+      sa: "groupremove",
+      id: groupId ?? mappedGroupId,
+    });
+
+    return response?.delete_ok === true;
   }
 
   /**
@@ -921,31 +904,31 @@ class UrbackupServer {
    */
   async getClients({ groupName, includeRemoved = true } = {}) {
     const clients = [];
+
     const login = await this.#login();
-
-    if (login === true) {
-      const statusResponse = await this.#fetchJson("status");
-
-      if (Array.isArray(statusResponse?.status)) {
-        for (const client of statusResponse.status) {
-          if (typeof groupName === "string" && groupName !== client.groupname) {
-            continue;
-          }
-
-          if (includeRemoved === false && client.delete_pending === "1") {
-            continue;
-          }
-
-          clients.push(client);
-        }
-
-        return clients;
-      } else {
-        throw new Error(this.#messages.missingClientData);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const statusResponse = await this.#fetchJson("status");
+
+    if (Array.isArray(statusResponse?.status)) {
+      for (const client of statusResponse.status) {
+        if (typeof groupName === "string" && groupName !== client.groupname) {
+          continue;
+        }
+
+        if (includeRemoved === false && client.delete_pending === "1") {
+          continue;
+        }
+
+        clients.push(client);
+      }
+
+      return clients;
+    }
+
+    throw new Error(this.#messages.missingClientData);
   }
 
   /**
@@ -987,23 +970,22 @@ class UrbackupServer {
     const clients = await this.getClients({ groupName, includeRemoved });
     const onlineClients = [];
 
-    clients.forEach((client) => {
-      if (client.online === true) {
-        if (includeBlank === true) {
-          onlineClients.push(client);
-        } else {
-          if (
-            this.#isBlankClient({
-              client,
-              includeFileBackups: true,
-              includeImageBackups: true,
-            }) === false
-          ) {
-            onlineClients.push(client);
-          }
-        }
+    for (const client of clients) {
+      if (client.online !== true) {
+        continue;
       }
-    });
+
+      if (
+        includeBlank === true ||
+        this.#isBlankClient({
+          client,
+          includeFileBackups: true,
+          includeImageBackups: true,
+        }) === false
+      ) {
+        onlineClients.push(client);
+      }
+    }
 
     return onlineClients;
   }
@@ -1031,23 +1013,22 @@ class UrbackupServer {
     const clients = await this.getClients({ groupName, includeRemoved });
     const offlineClients = [];
 
-    clients.forEach((client) => {
-      if (client.online === false) {
-        if (includeBlank === true) {
-          offlineClients.push(client);
-        } else {
-          if (
-            this.#isBlankClient({
-              client,
-              includeFileBackups: true,
-              includeImageBackups: true,
-            }) === false
-          ) {
-            offlineClients.push(client);
-          }
-        }
+    for (const client of clients) {
+      if (client.online === true) {
+        continue;
       }
-    });
+
+      if (
+        includeBlank === true ||
+        this.#isBlankClient({
+          client,
+          includeFileBackups: true,
+          includeImageBackups: true,
+        }) === false
+      ) {
+        offlineClients.push(client);
+      }
+    }
 
     return offlineClients;
   }
@@ -1097,7 +1078,7 @@ class UrbackupServer {
     const clients = await this.getClients({ groupName, includeRemoved });
     const blankClients = [];
 
-    clients.forEach((client) => {
+    for (const client of clients) {
       if (
         this.#isBlankClient({
           client,
@@ -1107,7 +1088,7 @@ class UrbackupServer {
       ) {
         blankClients.push(client);
       }
-    });
+    }
 
     return blankClients;
   }
@@ -1155,17 +1136,17 @@ class UrbackupServer {
         if (includeBlank === true) {
           failedClients.push(client);
           continue;
-        } else {
-          if (
-            this.#isBlankClient({
-              client,
-              includeFileBackups,
-              includeImageBackups,
-            }) === false
-          ) {
-            failedClients.push(client);
-            // continue;
-          }
+        }
+
+        if (
+          this.#isBlankClient({
+            client,
+            includeFileBackups,
+            includeImageBackups,
+          }) === false
+        ) {
+          failedClients.push(client);
+          // continue;
         }
       }
     }
@@ -1241,12 +1222,12 @@ class UrbackupServer {
   async getOutdatedClients({ groupName, includeRemoved = true } = {}) {
     const clients = await this.getClients({ groupName, includeRemoved });
 
-    const outdatedClients = clients.filter((client) => {
-      return this.#compareVersion(
+    const outdatedClients = clients.filter((client) =>
+      this.#compareVersion(
         client.client_version_string,
         this.#constants.latestClientVersion,
-      );
-    });
+      ),
+    );
 
     return outdatedClients;
   }
@@ -1267,15 +1248,15 @@ class UrbackupServer {
       includeRemoved,
       includeBlank: true,
     });
-    const seenIPs = new Set();
+    const seenIpAddresses = new Set();
     const conflictingClients = new Set();
 
     for (const client of onlineClients) {
       if (client.ip.length > 0 && client.ip !== "-") {
-        if (seenIPs.has(client.ip)) {
+        if (seenIpAddresses.has(client.ip)) {
           conflictingClients.add(client);
         } else {
-          seenIPs.add(client.ip);
+          seenIpAddresses.add(client.ip);
         }
       }
     }
@@ -1305,9 +1286,10 @@ class UrbackupServer {
     const unseenClients = [];
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
+    // biome-ignore lint/style/noMagicNumbers: n/a
     const currentEpochTime = Math.round(Date.now() / 1000.0);
 
-    clients.forEach((client) => {
+    for (const client of clients) {
       const timestampDifference = Math.round(
         (currentEpochTime - (client?.lastseen ?? 0)) / 60,
       );
@@ -1315,19 +1297,17 @@ class UrbackupServer {
       if (timestampDifference >= timeThreshold) {
         if (includeBlank === true) {
           unseenClients.push(client);
-        } else {
-          if (
-            this.#isBlankClient({
-              client,
-              includeFileBackups: true,
-              includeImageBackups: true,
-            }) === false
-          ) {
-            unseenClients.push(client);
-          }
+        } else if (
+          this.#isBlankClient({
+            client,
+            includeFileBackups: true,
+            includeImageBackups: true,
+          }) === false
+        ) {
+          unseenClients.push(client);
         }
       }
-    });
+    }
 
     return unseenClients;
   }
@@ -1360,9 +1340,10 @@ class UrbackupServer {
     const staleClients = [];
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
+    // biome-ignore lint/style/noMagicNumbers: n/a
     const currentEpochTime = Math.round(Date.now() / 1000.0);
 
-    clients.forEach((client) => {
+    for (const client of clients) {
       if (
         this.#isStaleClient({
           client,
@@ -1374,19 +1355,17 @@ class UrbackupServer {
       ) {
         if (includeBlank === true) {
           staleClients.push(client);
-        } else {
-          if (
-            this.#isBlankClient({
-              client,
-              includeFileBackups,
-              includeImageBackups,
-            }) === false
-          ) {
-            staleClients.push(client);
-          }
+        } else if (
+          this.#isBlankClient({
+            client,
+            includeFileBackups,
+            includeImageBackups,
+          }) === false
+        ) {
+          staleClients.push(client);
         }
       }
-    });
+    }
 
     return staleClients;
   }
@@ -1410,20 +1389,19 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const addClientResponse = await this.#fetchJson("add_client", {
-        clientname: clientName,
-      });
-
-      if (addClientResponse?.ok === true) {
-        return addClientResponse.added_new_client === true;
-      } else {
-        throw new Error(this.#messages.missingClientData);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const addClientResponse = await this.#fetchJson("add_client", {
+      clientname: clientName,
+    });
+
+    if (addClientResponse?.ok === true) {
+      return addClientResponse.added_new_client === true;
+    }
+
+    throw new Error(this.#messages.missingClientData);
   }
 
   /**
@@ -1452,37 +1430,38 @@ class UrbackupServer {
     }
 
     const fallbackReturnValue = false;
+
     const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-
-      if (typeof clientId === "undefined") {
-        mappedClientId = await this.#getClientIdentifier(clientName, "id");
-        if (mappedClientId === null) {
-          return fallbackReturnValue;
-        }
-      }
-
-      const apiCallParameters = { remove_client: clientId ?? mappedClientId };
-      if (stopRemove === true) {
-        apiCallParameters.stop_remove_client = true;
-      }
-
-      const statusResponse = await this.#fetchJson("status", apiCallParameters);
-
-      if (Array.isArray(statusResponse?.status)) {
-        return (
-          statusResponse.status.find(
-            (client) => client.id === (clientId ?? mappedClientId),
-          )?.delete_pending === (stopRemove ? "0" : "1")
-        );
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let mappedClientId;
+
+    if (typeof clientId === "undefined") {
+      mappedClientId = await this.#getClientIdentifier(clientName, "id");
+      if (mappedClientId === null) {
+        return fallbackReturnValue;
+      }
+    }
+
+    // biome-ignore lint/style/useNamingConvention: upstream convention
+    const apiCallParameters = { remove_client: clientId ?? mappedClientId };
+    if (stopRemove === true) {
+      apiCallParameters.stop_remove_client = true;
+    }
+
+    const statusResponse = await this.#fetchJson("status", apiCallParameters);
+
+    if (Array.isArray(statusResponse?.status)) {
+      return (
+        statusResponse.status.find(
+          (client) => client.id === (clientId ?? mappedClientId),
+        )?.delete_pending === (stopRemove ? "0" : "1")
+      );
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -1538,18 +1517,17 @@ class UrbackupServer {
    */
   async getClientHints() {
     const login = await this.#login();
-
-    if (login === true) {
-      const statusResponse = await this.#fetchJson("status");
-
-      if (Array.isArray(statusResponse?.extra_clients)) {
-        return statusResponse.extra_clients;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const statusResponse = await this.#fetchJson("status");
+
+    if (Array.isArray(statusResponse?.extra_clients)) {
+      return statusResponse.extra_clients;
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -1568,22 +1546,21 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const statusResponse = await this.#fetchJson("status", {
-        hostname: address,
-      });
-
-      if (Array.isArray(statusResponse?.extra_clients)) {
-        return statusResponse.extra_clients.some(
-          (extraClient) => extraClient.hostname === address,
-        );
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const statusResponse = await this.#fetchJson("status", {
+      hostname: address,
+    });
+
+    if (Array.isArray(statusResponse?.extra_clients)) {
+      return statusResponse.extra_clients.some(
+        (extraClient) => extraClient.hostname === address,
+      );
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -1601,42 +1578,42 @@ class UrbackupServer {
     }
 
     let operationStatus = false;
+
     const login = await this.#login();
-
-    if (login === true) {
-      const extraClients = await this.getClientHints();
-
-      if (Array.isArray(extraClients)) {
-        const matchingClient = extraClients.find(
-          (extraClient) => extraClient.hostname === address,
-        );
-
-        if (typeof matchingClient !== "undefined") {
-          const statusResponse = await this.#fetchJson("status", {
-            hostname: matchingClient.id,
-            remove: true,
-          });
-
-          if (Array.isArray(statusResponse?.extra_clients)) {
-            if (
-              typeof statusResponse.extra_clients.find(
-                (extraClient) => extraClient.hostname === address,
-              ) === "undefined"
-            ) {
-              operationStatus = true;
-            }
-          } else {
-            throw new Error(this.#messages.missingValues);
-          }
-        }
-
-        return operationStatus;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const extraClients = await this.getClientHints();
+
+    if (Array.isArray(extraClients)) {
+      const matchingClient = extraClients.find(
+        (extraClient) => extraClient.hostname === address,
+      );
+
+      if (typeof matchingClient !== "undefined") {
+        const statusResponse = await this.#fetchJson("status", {
+          hostname: matchingClient.id,
+          remove: true,
+        });
+
+        if (Array.isArray(statusResponse?.extra_clients)) {
+          if (
+            typeof statusResponse.extra_clients.find(
+              (extraClient) => extraClient.hostname === address,
+            ) === "undefined"
+          ) {
+            operationStatus = true;
+          }
+        } else {
+          throw new Error(this.#messages.missingValues);
+        }
+      }
+
+      return operationStatus;
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -1666,51 +1643,47 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const clientIds = [];
-      const allClients = await this.getClients({ includeRemoved: true });
-
-      if (allClients.some((client) => typeof client.id === "undefined")) {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      if (typeof clientId === "undefined") {
-        for (const client of allClients) {
-          if (typeof clientName === "undefined") {
-            clientIds.push(client.id);
-          } else {
-            if (client.name === clientName) {
-              clientIds.push(client.id);
-              break;
-            }
-          }
-        }
-      } else {
-        // NOTE: Need to make sure that given clientId really exists because 'clientsettings' API call
-        // returns settings even when called with an invalid ID
-        if (allClients.some((client) => client.id === clientId)) {
-          clientIds.push(clientId);
-        }
-      }
-
-      for (const id of clientIds) {
-        const settingsResponse = await this.#fetchJson("settings", {
-          sa: "clientsettings",
-          t_clientid: id,
-        });
-
-        if (typeof settingsResponse?.settings === "object") {
-          clientSettings.push(settingsResponse.settings);
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      }
-
-      return clientSettings;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const clientIds = [];
+    const allClients = await this.getClients({ includeRemoved: true });
+
+    if (allClients.some((client) => typeof client.id === "undefined")) {
+      throw new Error(this.#messages.missingValues);
+    }
+
+    if (typeof clientId === "undefined") {
+      for (const client of allClients) {
+        if (typeof clientName === "undefined") {
+          clientIds.push(client.id);
+        } else if (client.name === clientName) {
+          clientIds.push(client.id);
+          break;
+        }
+      }
+    } else if (allClients.some((client) => client.id === clientId)) {
+      // NOTE: Need to make sure that given clientId really exists because 'clientsettings' API call
+      // returns settings even when called with an invalid ID
+      clientIds.push(clientId);
+    }
+
+    for (const id of clientIds) {
+      const settingsResponse = await this.#fetchJson("settings", {
+        sa: "clientsettings",
+        // biome-ignore lint/style/useNamingConvention: upstream convention
+        t_clientid: id,
+      });
+
+      if (typeof settingsResponse?.settings === "object") {
+        clientSettings.push(settingsResponse.settings);
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+    }
+
+    return clientSettings;
   }
 
   /**
@@ -1743,40 +1716,39 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const clientSettings = await this.getClientSettings(
-        typeof clientId === "undefined"
-          ? { clientName: clientName }
-          : { clientId: clientId },
-      );
-
-      if (Array.isArray(clientSettings) && clientSettings.length > 0) {
-        if (Object.keys(clientSettings[0]).includes(key)) {
-          clientSettings[0][key] = newValue;
-          clientSettings[0].overwrite = true;
-          clientSettings[0].sa = "clientsettings_save";
-          clientSettings[0].t_clientid = clientSettings[0].clientid;
-
-          const saveSettingsResponse = await this.#fetchJson(
-            "settings",
-            clientSettings[0],
-          );
-
-          if (typeof saveSettingsResponse?.saved_ok === "boolean") {
-            operationStatus = saveSettingsResponse.saved_ok === true;
-          } else {
-            throw new Error(this.#messages.missingValues);
-          }
-        }
-
-        return operationStatus;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const clientSettings = await this.getClientSettings(
+      typeof clientId === "undefined"
+        ? { clientName: clientName }
+        : { clientId: clientId },
+    );
+
+    if (Array.isArray(clientSettings) && clientSettings.length > 0) {
+      if (Object.keys(clientSettings[0]).includes(key)) {
+        clientSettings[0][key] = newValue;
+        clientSettings[0].overwrite = true;
+        clientSettings[0].sa = "clientsettings_save";
+        clientSettings[0].t_clientid = clientSettings[0].clientid;
+
+        const saveSettingsResponse = await this.#fetchJson(
+          "settings",
+          clientSettings[0],
+        );
+
+        if (typeof saveSettingsResponse?.saved_ok === "boolean") {
+          operationStatus = saveSettingsResponse.saved_ok === true;
+        } else {
+          throw new Error(this.#messages.missingValues);
+        }
+      }
+
+      return operationStatus;
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -1801,34 +1773,33 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const fallbackReturnValue = null;
-
-      const clientSettings = await this.getClientSettings(
-        typeof clientId === "number" ? { clientId } : { clientName },
-      );
-
-      if (!Array.isArray(clientSettings)) {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      if (clientSettings.length === 0) {
-        return fallbackReturnValue;
-      }
-
-      const groupId = clientSettings[0]?.memberof;
-      const group = {
-        id: groupId,
-        name: await this.#getGroupIdentifier(groupId, "name"),
-      };
-
-      return typeof group.id === "number" && typeof group.name === "string"
-        ? group
-        : fallbackReturnValue;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const fallbackReturnValue = null;
+
+    const clientSettings = await this.getClientSettings(
+      typeof clientId === "number" ? { clientId } : { clientName },
+    );
+
+    if (!Array.isArray(clientSettings)) {
+      throw new Error(this.#messages.missingValues);
+    }
+
+    if (clientSettings.length === 0) {
+      return fallbackReturnValue;
+    }
+
+    const groupId = clientSettings[0]?.memberof;
+    const group = {
+      id: groupId,
+      name: await this.#getGroupIdentifier(groupId, "name"),
+    };
+
+    return typeof group.id === "number" && typeof group.name === "string"
+      ? group
+      : fallbackReturnValue;
   }
 
   /**
@@ -1855,43 +1826,43 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      let operationStatus = false;
-      let mappedClientId;
-
-      if (typeof clientId !== "number") {
-        if (typeof clientName === "string") {
-          mappedClientId = await this.#getClientIdentifier(clientName, "id");
-        }
-
-        if (typeof mappedClientId !== "number") {
-          return operationStatus;
-        }
-      }
-
-      if ((await this.#getGroupIdentifier(groupId, "name")) === null) {
-        return operationStatus;
-      }
-
-      const payload = {
-        sa: "clientsettings_save",
-        t_clientid: clientId ?? mappedClientId,
-        memberof: groupId,
-      };
-
-      const saveSettingsResponse = await this.#fetchJson("settings", payload);
-
-      if (typeof saveSettingsResponse?.saved_ok === "boolean") {
-        operationStatus = saveSettingsResponse.saved_ok === true;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-
-      return operationStatus;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let operationStatus = false;
+    let mappedClientId;
+
+    if (typeof clientId !== "number") {
+      if (typeof clientName === "string") {
+        mappedClientId = await this.#getClientIdentifier(clientName, "id");
+      }
+
+      if (typeof mappedClientId !== "number") {
+        return operationStatus;
+      }
+    }
+
+    if ((await this.#getGroupIdentifier(groupId, "name")) === null) {
+      return operationStatus;
+    }
+
+    const payload = {
+      sa: "clientsettings_save",
+      // biome-ignore lint/style/useNamingConvention: upstream convention
+      t_clientid: clientId ?? mappedClientId,
+      memberof: groupId,
+    };
+
+    const saveSettingsResponse = await this.#fetchJson("settings", payload);
+
+    if (typeof saveSettingsResponse?.saved_ok === "boolean") {
+      operationStatus = saveSettingsResponse.saved_ok === true;
+    } else {
+      throw new Error(this.#messages.missingValues);
+    }
+
+    return operationStatus;
   }
 
   /**
@@ -1917,28 +1888,28 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const clientSettings = await this.getClientSettings(
-        typeof clientId === "undefined"
-          ? { clientName: clientName }
-          : { clientId: clientId },
-      );
-
-      if (Array.isArray(clientSettings)) {
-        if (clientSettings.length > 0) {
-          if (typeof clientSettings[0]?.internet_authkey?.value === "string") {
-            authKey = clientSettings[0].internet_authkey.value.toString();
-          }
-        }
-
-        return authKey;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const clientSettings = await this.getClientSettings(
+      typeof clientId === "undefined"
+        ? { clientName: clientName }
+        : { clientId: clientId },
+    );
+
+    if (Array.isArray(clientSettings)) {
+      if (
+        clientSettings.length > 0 &&
+        typeof clientSettings[0]?.internet_authkey?.value === "string"
+      ) {
+        authKey = clientSettings[0].internet_authkey.value.toString();
+      }
+
+      return authKey;
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -1967,44 +1938,42 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const statusResponse = await this.#fetchJson("status");
-
-      if (Array.isArray(statusResponse?.status)) {
-        if (
-          typeof clientId === "undefined" &&
-          typeof clientName === "undefined"
-        ) {
-          if (includeRemoved !== true) {
-            return statusResponse.status.filter(
-              (client) => client.delete_pending !== "1",
-            );
-          } else {
-            return statusResponse.status;
-          }
-        } else {
-          const clientStatus = statusResponse.status.find((client) =>
-            typeof clientId === "number"
-              ? client.id === clientId
-              : client.name === clientName,
-          );
-
-          if (typeof clientStatus !== "undefined") {
-            return includeRemoved !== true &&
-              clientStatus.delete_pending === "1"
-              ? fallbackReturnValue
-              : [clientStatus];
-          } else {
-            return fallbackReturnValue;
-          }
-        }
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const statusResponse = await this.#fetchJson("status");
+
+    if (Array.isArray(statusResponse?.status)) {
+      if (
+        typeof clientId === "undefined" &&
+        typeof clientName === "undefined"
+      ) {
+        if (includeRemoved !== true) {
+          return statusResponse.status.filter(
+            (client) => client.delete_pending !== "1",
+          );
+        } else {
+          return statusResponse.status;
+        }
+      } else {
+        const clientStatus = statusResponse.status.find((client) =>
+          typeof clientId === "number"
+            ? client.id === clientId
+            : client.name === clientName,
+        );
+
+        if (typeof clientStatus !== "undefined") {
+          return includeRemoved !== true && clientStatus.delete_pending === "1"
+            ? fallbackReturnValue
+            : [clientStatus];
+        } else {
+          return fallbackReturnValue;
+        }
+      }
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -2025,42 +1994,38 @@ class UrbackupServer {
     const fallbackReturnValue = [];
 
     const login = await this.#login();
-
-    if (login === true) {
-      const usageResponse = await this.#fetchJson("usage");
-
-      if (Array.isArray(usageResponse?.usage)) {
-        if (
-          typeof clientId === "undefined" &&
-          typeof clientName === "undefined"
-        ) {
-          return usageResponse.usage;
-        } else {
-          let mappedClientName;
-          if (typeof clientId === "number") {
-            // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
-            mappedClientName = await this.#getClientIdentifier(
-              clientId,
-              "name",
-            );
-            if (mappedClientName === null) {
-              return fallbackReturnValue;
-            }
-          }
-
-          const match = usageResponse.usage.find((client) =>
-            typeof clientId === "number"
-              ? client.name === mappedClientName
-              : client.name === clientName,
-          );
-          return match ? [match] : fallbackReturnValue;
-        }
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const usageResponse = await this.#fetchJson("usage");
+
+    if (Array.isArray(usageResponse?.usage)) {
+      if (
+        typeof clientId === "undefined" &&
+        typeof clientName === "undefined"
+      ) {
+        return usageResponse.usage;
+      } else {
+        let mappedClientName;
+        if (typeof clientId === "number") {
+          // NOTE: Usage response does not contain a property with client ID so translation to client name is needed
+          mappedClientName = await this.#getClientIdentifier(clientId, "name");
+          if (mappedClientName === null) {
+            return fallbackReturnValue;
+          }
+        }
+
+        const match = usageResponse.usage.find((client) =>
+          typeof clientId === "number"
+            ? client.name === mappedClientName
+            : client.name === clientName,
+        );
+        return match ? [match] : fallbackReturnValue;
+      }
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -2106,62 +2071,58 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const activitiesResponse = await this.#fetchJson("progress");
-
-      if (
-        Array.isArray(activitiesResponse?.progress) &&
-        Array.isArray(activitiesResponse?.lastacts)
-      ) {
-        if (includeCurrent === true) {
-          if (
-            typeof clientId === "undefined" &&
-            typeof clientName === "undefined"
-          ) {
-            if (includePaused === true) {
-              activities.current = activitiesResponse.progress;
-            } else {
-              activities.current = activitiesResponse.progress.filter(
-                (activity) => activity.paused !== true,
-              );
-            }
-          } else {
-            activities.current = activitiesResponse.progress.filter(
-              (activity) => {
-                return (
-                  (typeof clientId === "number"
-                    ? activity.clientid === clientId
-                    : activity.name === clientName) &&
-                  (includePaused === true ? true : activity.paused !== true)
-                );
-              },
-            );
-          }
-        }
-
-        if (includeLast === true) {
-          if (
-            typeof clientId === "undefined" &&
-            typeof clientName === "undefined"
-          ) {
-            activities.last = activitiesResponse.lastacts;
-          } else {
-            activities.last = activitiesResponse.lastacts.filter((activity) =>
-              typeof clientId === "number"
-                ? activity.clientid === clientId
-                : activity.name === clientName,
-            );
-          }
-        }
-
-        return activities;
-      } else {
-        throw new Error(this.#messages.missingValues);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const activitiesResponse = await this.#fetchJson("progress");
+
+    if (
+      Array.isArray(activitiesResponse?.progress) &&
+      Array.isArray(activitiesResponse?.lastacts)
+    ) {
+      if (includeCurrent === true) {
+        if (
+          typeof clientId === "undefined" &&
+          typeof clientName === "undefined"
+        ) {
+          if (includePaused === true) {
+            activities.current = activitiesResponse.progress;
+          } else {
+            activities.current = activitiesResponse.progress.filter(
+              (activity) => activity.paused !== true,
+            );
+          }
+        } else {
+          activities.current = activitiesResponse.progress.filter(
+            (activity) =>
+              (typeof clientId === "number"
+                ? activity.clientid === clientId
+                : activity.name === clientName) &&
+              (includePaused === true ? true : activity.paused !== true),
+          );
+        }
+      }
+
+      if (includeLast === true) {
+        if (
+          typeof clientId === "undefined" &&
+          typeof clientName === "undefined"
+        ) {
+          activities.last = activitiesResponse.lastacts;
+        } else {
+          activities.last = activitiesResponse.lastacts.filter((activity) =>
+            typeof clientId === "number"
+              ? activity.clientid === clientId
+              : activity.name === clientName,
+          );
+        }
+      }
+
+      return activities;
+    }
+
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -2247,11 +2208,11 @@ class UrbackupServer {
       includePaused: true,
     });
 
-    activities.current.forEach((activity) => {
+    for (const activity of activities) {
       if (activity.paused === true) {
         pausedActivities.push(activity);
       }
-    });
+    }
 
     return pausedActivities;
   }
@@ -2283,33 +2244,34 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-      if (typeof clientId === "undefined" && typeof clientName === "string") {
-        mappedClientId = await this.#getClientIdentifier(clientName, "id");
-      }
-
-      if (typeof clientId === "number" || typeof mappedClientId === "number") {
-        const activitiesResponse = await this.#fetchJson("progress", {
-          stop_clientid: clientId ?? mappedClientId,
-          stop_id: activityId,
-        });
-
-        if (
-          Array.isArray(activitiesResponse?.progress) &&
-          Array.isArray(activitiesResponse?.lastacts)
-        ) {
-          return true;
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      } else {
-        return false;
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let mappedClientId;
+    if (typeof clientId === "undefined" && typeof clientName === "string") {
+      mappedClientId = await this.#getClientIdentifier(clientName, "id");
+    }
+
+    if (typeof clientId === "number" || typeof mappedClientId === "number") {
+      const activitiesResponse = await this.#fetchJson("progress", {
+        // biome-ignore lint/style/useNamingConvention: upstream convention
+        stop_clientid: clientId ?? mappedClientId,
+        // biome-ignore lint/style/useNamingConvention: upstream convention
+        stop_id: activityId,
+      });
+
+      if (
+        Array.isArray(activitiesResponse?.progress) &&
+        Array.isArray(activitiesResponse?.lastacts)
+      ) {
+        return true;
+      }
+
+      throw new Error(this.#messages.missingValues);
+    }
+
+    return false;
   }
 
   /**
@@ -2349,45 +2311,44 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-
-      if (typeof clientId === "undefined" && typeof clientName === "string") {
-        mappedClientId = await this.#getClientIdentifier(clientName, "id");
-        if (mappedClientId === null) {
-          return backups;
-        }
-      }
-
-      if (typeof clientId === "number" || typeof mappedClientId === "number") {
-        const backupsResponse = await this.#fetchJson("backups", {
-          sa: "backups",
-          clientid: clientId ?? mappedClientId,
-        });
-
-        if (
-          Array.isArray(backupsResponse?.backup_images) &&
-          Array.isArray(backupsResponse?.backups)
-        ) {
-          if (includeFileBackups === true) {
-            backups.file = backupsResponse.backups;
-          }
-
-          if (includeImageBackups === true) {
-            backups.image = backupsResponse.backup_images;
-          }
-
-          return backups;
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      } else {
-        throw new Error(this.#messages.missingParameters);
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let mappedClientId;
+
+    if (typeof clientId === "undefined" && typeof clientName === "string") {
+      mappedClientId = await this.#getClientIdentifier(clientName, "id");
+      if (mappedClientId === null) {
+        return backups;
+      }
+    }
+
+    if (typeof clientId === "number" || typeof mappedClientId === "number") {
+      const backupsResponse = await this.#fetchJson("backups", {
+        sa: "backups",
+        clientid: clientId ?? mappedClientId,
+      });
+
+      if (
+        Array.isArray(backupsResponse?.backup_images) &&
+        Array.isArray(backupsResponse?.backups)
+      ) {
+        if (includeFileBackups === true) {
+          backups.file = backupsResponse.backups;
+        }
+
+        if (includeImageBackups === true) {
+          backups.image = backupsResponse.backup_images;
+        }
+
+        return backups;
+      }
+
+      throw new Error(this.#messages.missingValues);
+    }
+
+    throw new Error(this.#messages.missingParameters);
   }
 
   /**
@@ -2420,35 +2381,36 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-      if (typeof clientId === "undefined" && typeof clientName === "string") {
-        mappedClientId = await this.#getClientIdentifier(clientName, "id");
-      }
-
-      if (typeof clientId === "number" || typeof mappedClientId === "number") {
-        const backupResponse = await this.#fetchJson("start_backup", {
-          start_client: clientId ?? mappedClientId,
-          start_type: backupType,
-        });
-
-        if (
-          Array.isArray(backupResponse.result) &&
-          backupResponse.result.filter((element) =>
-            Object.keys(element).includes("start_ok"),
-          ).length !== 1
-        ) {
-          return !!backupResponse.result[0].start_ok;
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      } else {
-        return false;
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let mappedClientId;
+    if (typeof clientId === "undefined" && typeof clientName === "string") {
+      mappedClientId = await this.#getClientIdentifier(clientName, "id");
+    }
+
+    if (typeof clientId === "number" || typeof mappedClientId === "number") {
+      const backupResponse = await this.#fetchJson("start_backup", {
+        // biome-ignore lint/style/useNamingConvention: upstream convention
+        start_client: clientId ?? mappedClientId,
+        // biome-ignore lint/style/useNamingConvention: upstream convention
+        start_type: backupType,
+      });
+
+      if (
+        Array.isArray(backupResponse.result) &&
+        backupResponse.result.filter((element) =>
+          Object.keys(element).includes("start_ok"),
+        ).length !== 1
+      ) {
+        return Boolean(backupResponse.result[0].start_ok);
+      }
+
+      throw new Error(this.#messages.missingValues);
+    }
+
+    return false;
   }
 
   /**
@@ -2562,46 +2524,45 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      let mappedClientId;
-
-      if (typeof clientId === "undefined" && typeof clientName === "string") {
-        mappedClientId = await this.#getClientIdentifier(clientName, "id");
-      }
-
-      if (clientId === 0 || mappedClientId === null) {
-        // NOTE: Fail early to distinguish this case because 0 (zero) is a valid parameter value
-        // for 'livelog' call which should be used when both clientId and clientName are undefined
-        return livelog;
-      }
-
-      // NOTE: Use semaphore to prevent race condition with this.#lastLogId
-      const [_value, release] = await this.#semaphore.acquire();
-      try {
-        const logResponse = await this.#fetchJson("livelog", {
-          clientid: clientId ?? mappedClientId ?? 0,
-          lastid: !recentOnly ? 0 : this.#lastLogId.get(clientId),
-        });
-
-        if (Array.isArray(logResponse.logdata)) {
-          const lastId = logResponse.logdata.slice(-1)[0]?.id;
-          if (typeof lastId !== "undefined") {
-            this.#lastLogId.set(clientId, lastId);
-          }
-
-          livelog = logResponse.logdata;
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      } finally {
-        release();
-      }
-
-      return livelog;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let mappedClientId;
+
+    if (typeof clientId === "undefined" && typeof clientName === "string") {
+      mappedClientId = await this.#getClientIdentifier(clientName, "id");
+    }
+
+    if (clientId === 0 || mappedClientId === null) {
+      // NOTE: Fail early to distinguish this case because 0 (zero) is a valid parameter value
+      // for 'livelog' call which should be used when both clientId and clientName are undefined
+      return livelog;
+    }
+
+    // NOTE: Use semaphore to prevent race condition with this.#lastLogId
+    const [_value, release] = await this.#semaphore.acquire();
+    try {
+      const logResponse = await this.#fetchJson("livelog", {
+        clientid: clientId ?? mappedClientId ?? 0,
+        lastid: recentOnly ? this.#lastLogId.get(clientId) : 0,
+      });
+
+      if (Array.isArray(logResponse.logdata)) {
+        const lastId = logResponse.logdata.at(-1)?.id;
+        if (typeof lastId !== "undefined") {
+          this.#lastLogId.set(clientId, lastId);
+        }
+
+        livelog = logResponse.logdata;
+      } else {
+        throw new Error(this.#messages.missingValues);
+      }
+    } finally {
+      release();
+    }
+
+    return livelog;
   }
 
   /**
@@ -2619,23 +2580,22 @@ class UrbackupServer {
 
     if (typeof category === "string" && validCategories.includes(category)) {
       const login = await this.#login();
-
-      if (login === true) {
-        const settingsResponse = await this.#fetchJson("settings", {
-          sa: category,
-        });
-
-        if (typeof settingsResponse?.settings === "object") {
-          return settingsResponse.settings;
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      } else {
+      if (login !== true) {
         throw new Error(this.#messages.failedLoginUnknown);
       }
-    } else {
-      throw new Error(this.#messages.invalidCategory);
+
+      const settingsResponse = await this.#fetchJson("settings", {
+        sa: category,
+      });
+
+      if (typeof settingsResponse?.settings === "object") {
+        return settingsResponse.settings;
+      }
+
+      throw new Error(this.#messages.missingValues);
     }
+
+    throw new Error(this.#messages.failedLoginUnknown);
   }
 
   /**
@@ -2691,30 +2651,26 @@ class UrbackupServer {
     }
 
     const login = await this.#login();
-
-    if (login === true) {
-      const settings = await this.getGeneralSettings();
-
-      if (Object.keys(settings).includes(key)) {
-        settings[key] = newValue;
-        settings.sa = "general_save";
-
-        const saveSettingsResponse = await this.#fetchJson(
-          "settings",
-          settings,
-        );
-
-        if (typeof saveSettingsResponse?.saved_ok === "boolean") {
-          return saveSettingsResponse.saved_ok;
-        } else {
-          throw new Error(this.#messages.missingValues);
-        }
-      } else {
-        return false;
-      }
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const settings = await this.getGeneralSettings();
+
+    if (Object.keys(settings).includes(key)) {
+      settings[key] = newValue;
+      settings.sa = "general_save";
+
+      const saveSettingsResponse = await this.#fetchJson("settings", settings);
+
+      if (typeof saveSettingsResponse?.saved_ok === "boolean") {
+        return saveSettingsResponse.saved_ok;
+      }
+
+      throw new Error(this.#messages.missingValues);
+    }
+
+    return false;
   }
 
   /**
@@ -2727,13 +2683,12 @@ class UrbackupServer {
    */
   async getRawStatus() {
     const login = await this.#login();
-
-    if (login === true) {
-      const statusResponse = await this.#fetchJson("status");
-      return statusResponse;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const statusResponse = await this.#fetchJson("status");
+    return statusResponse;
   }
 
   /**
@@ -2746,13 +2701,12 @@ class UrbackupServer {
    */
   async getRawUsage() {
     const login = await this.#login();
-
-    if (login === true) {
-      const usageResponse = await this.#fetchJson("usage");
-      return usageResponse;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const usageResponse = await this.#fetchJson("usage");
+    return usageResponse;
   }
 
   /**
@@ -2765,13 +2719,12 @@ class UrbackupServer {
    */
   async getRawProgress() {
     const login = await this.#login();
-
-    if (login === true) {
-      const progressResponse = await this.#fetchJson("progress");
-      return progressResponse;
-    } else {
+    if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const progressResponse = await this.#fetchJson("progress");
+    return progressResponse;
   }
 }
 
