@@ -552,7 +552,7 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
-    const serverVersion = { number: 0, string: "" };
+    const serverVersion = { number: null, string: null };
 
     const statusResponse = await this.#fetchJson("status");
 
@@ -640,7 +640,9 @@ class UrbackupServer {
       typeof userName !== "string" ||
       userName.length === 0 ||
       typeof password !== "string" ||
-      password.length === 0
+      password.length === 0 ||
+      (typeof isAdmin !== "undefined" && typeof isAdmin !== "boolean") ||
+      (typeof rights !== "undefined" && !Array.isArray(rights))
     ) {
       throw new Error(this.#messages.missingParameters);
     }
@@ -714,8 +716,8 @@ class UrbackupServer {
   /**
    * Retrieves the rights of a specific user.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined. Required if `clientName` is undefined.
-   * @param {string} [params.userName=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session. Required if `clientId` is undefined.
+   * @param {string} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined.
+   * @param {string} [params.userName=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session.
    * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or `null` if the user is not found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get user rights of the current session user</caption>
@@ -726,6 +728,15 @@ class UrbackupServer {
    * server.getUserRights({ userName: 'john_doe' }).then(data => console.log(data));
    */
   async getUserRights({ userId, userName = this.#username } = {}) {
+    if (
+      (typeof userId !== "undefined" && typeof userId !== "string") ||
+      (typeof userId === "string" && userId.length === 0) ||
+      (typeof userName !== "undefined" && typeof userName !== "string")
+      // NOTE: allow empty user name for anonymous mode
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
@@ -779,14 +790,14 @@ class UrbackupServer {
    * server.addGroup({ groupName: 'prod' }).then(data => console.log(data));
    */
   async addGroup({ groupName } = {}) {
-    if (typeof groupName === "undefined") {
+    if (typeof groupName !== "string") {
       throw new Error(this.#messages.missingParameters);
     }
 
     // NOTE: Fail early due to a possible UrBackup bug (server does not allow adding multiple groups with the same name,
     // but allows empty string which is the same as default group name)
-    if (groupName === "") {
-      return false;
+    if (groupName.length === 0) {
+      throw new Error(this.#messages.missingParameters);
     }
 
     const login = await this.#login();
@@ -819,12 +830,14 @@ class UrbackupServer {
    * server.removeGroup({ groupName: 'prod' }).then(data => console.log(data));
    */
   async removeGroup({ groupId, groupName } = {}) {
-    if (typeof groupId === "undefined" && typeof groupName === "undefined") {
+    if (
+      (typeof groupId === "undefined" && typeof groupName === "undefined") ||
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId <= 0) ||
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof groupName === "string" && groupName.length === 0)
+    ) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    if (groupId === 0 || groupName === "") {
-      return false;
     }
 
     const login = await this.#login();
@@ -870,7 +883,12 @@ class UrbackupServer {
    * server.getGroupMembers({ groupName: 'office' }).then(data => console.log(data));
    */
   async getGroupMembers({ groupId, groupName } = {}) {
-    if (typeof groupId === "undefined" && typeof groupName === "undefined") {
+    if (
+      (typeof groupId === "undefined" && typeof groupName === "undefined") ||
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
+      (typeof groupName !== "undefined" && typeof groupName !== "string")
+    ) {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -906,13 +924,20 @@ class UrbackupServer {
    * server.getClients({ groupName: 'office' }).then(data => console.log(data));
    */
   async getClients({ groupName, includeRemoved = true } = {}) {
-    const clients = [];
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
 
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
+    const clients = [];
     const statusResponse = await this.#fetchJson("status");
 
     if (Array.isArray(statusResponse?.status)) {
@@ -946,6 +971,10 @@ class UrbackupServer {
    * server.getRemovedClients({ groupName: 'sales' }).then(data => console.log(data));
    */
   async getRemovedClients({ groupName } = {}) {
+    if (typeof groupName !== "undefined" && typeof groupName !== "string") {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     return await this.getClients({ groupName, includeRemoved: true }).then(
       (removedClients) =>
         removedClients.filter((client) => client.delete_pending === "1"),
@@ -970,6 +999,15 @@ class UrbackupServer {
     includeRemoved = true,
     includeBlank = true,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeBlank !== "undefined" && typeof includeBlank !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const onlineClients = [];
 
@@ -1013,6 +1051,15 @@ class UrbackupServer {
     includeRemoved = true,
     includeBlank = true,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeBlank !== "undefined" && typeof includeBlank !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const offlineClients = [];
 
@@ -1047,6 +1094,14 @@ class UrbackupServer {
    * server.getActiveClients().then(data => console.log(data));
    */
   async getActiveClients({ groupName, includeRemoved = true } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     return await this.getClients({ groupName, includeRemoved }).then(
       (activeClients) => activeClients.filter((client) => client.status !== 0),
     );
@@ -1078,6 +1133,18 @@ class UrbackupServer {
     includeFileBackups = true,
     includeImageBackups = true,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeFileBackups !== "undefined" &&
+        typeof includeFileBackups !== "boolean") ||
+      (typeof includeImageBackups !== "undefined" &&
+        typeof includeImageBackups !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const blankClients = [];
 
@@ -1124,6 +1191,22 @@ class UrbackupServer {
     includeImageBackups = true,
     failOnFileIssues = false,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeBlank !== "undefined" &&
+        typeof includeBlank !== "boolean") ||
+      (typeof includeFileBackups !== "undefined" &&
+        typeof includeFileBackups !== "boolean") ||
+      (typeof includeImageBackups !== "undefined" &&
+        typeof includeImageBackups !== "boolean") ||
+      (typeof failOnFileIssues !== "undefined" &&
+        typeof failOnFileIssues !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const failedClients = [];
 
@@ -1184,6 +1267,20 @@ class UrbackupServer {
     includeImageBackups = true,
     failOnFileIssues = false,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeFileBackups !== "undefined" &&
+        typeof includeFileBackups !== "boolean") ||
+      (typeof includeImageBackups !== "undefined" &&
+        typeof includeImageBackups !== "boolean") ||
+      (typeof failOnFileIssues !== "undefined" &&
+        typeof failOnFileIssues !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const okClients = [];
 
@@ -1223,6 +1320,14 @@ class UrbackupServer {
    * server.getOutdatedClients({ includeRemoved: false }).then(data => console.log(data));
    */
   async getOutdatedClients({ groupName, includeRemoved = true } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
 
     const outdatedClients = clients.filter((client) =>
@@ -1247,6 +1352,13 @@ class UrbackupServer {
    * server.getConflictingClients({ includeRemoved: false }).then(data => console.log(data));
    */
   async getConflictingClients({ includeRemoved = true } = {}) {
+    if (
+      typeof includeRemoved !== "undefined" &&
+      typeof includeRemoved !== "boolean"
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const onlineClients = await this.getOnlineClients({
       includeRemoved,
       includeBlank: true,
@@ -1285,6 +1397,19 @@ class UrbackupServer {
     includeBlank = true,
     timeThreshold = 1440,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeBlank !== "undefined" &&
+        typeof includeBlank !== "boolean") ||
+      (typeof timeThreshold !== "undefined" &&
+        typeof timeThreshold !== "number") ||
+      (typeof timeThreshold === "number" && timeThreshold < 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const unseenClients = [];
 
@@ -1339,6 +1464,23 @@ class UrbackupServer {
     includeImageBackups = true,
     timeThreshold = 1440,
   } = {}) {
+    if (
+      (typeof groupName !== "undefined" && typeof groupName !== "string") ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean") ||
+      (typeof includeBlank !== "undefined" &&
+        typeof includeBlank !== "boolean") ||
+      (typeof includeFileBackups !== "undefined" &&
+        typeof includeFileBackups !== "boolean") ||
+      (typeof includeImageBackups !== "undefined" &&
+        typeof includeImageBackups !== "boolean") ||
+      (typeof timeThreshold !== "undefined" &&
+        typeof timeThreshold !== "number") ||
+      (typeof timeThreshold === "number" && timeThreshold < 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const clients = await this.getClients({ groupName, includeRemoved });
     const staleClients = [];
 
@@ -1383,12 +1525,8 @@ class UrbackupServer {
    * server.addClient({ clientName: 'laptop2' }).then(data => console.log(data));
    */
   async addClient({ clientName } = {}) {
-    if (typeof clientName === "undefined") {
+    if (typeof clientName !== "string" || clientName.length === 0) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    if (clientName === "") {
-      return false;
     }
 
     const login = await this.#login();
@@ -1423,13 +1561,13 @@ class UrbackupServer {
   async #removeClientCommon({ clientId, clientName, stopRemove } = {}) {
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
-      typeof stopRemove === "undefined"
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      typeof stopRemove !== "boolean"
     ) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    if (clientName === "") {
-      return false;
     }
 
     const fallbackReturnValue = false;
@@ -1482,6 +1620,16 @@ class UrbackupServer {
    * server.removeClient({ clientName: 'laptop2' }).then(data => console.log(data));
    */
   async removeClient({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const operationStatus = await this.#removeClientCommon({
       clientId,
       clientName,
@@ -1503,6 +1651,16 @@ class UrbackupServer {
    * server.cancelRemoveClient({ clientName: 'laptop2' }).then(data => console.log(data));
    */
   async cancelRemoveClient({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const operationStatus = await this.#removeClientCommon({
       clientId,
       clientName,
@@ -1544,7 +1702,7 @@ class UrbackupServer {
    * server.addClientHint({ address: '192.168.100.200' }).then(data => console.log(data));
    */
   async addClientHint({ address } = {}) {
-    if (typeof address === "undefined" || address === "") {
+    if (typeof address !== "string" || address.length === 0) {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -1576,7 +1734,7 @@ class UrbackupServer {
    * server.removeClientHint({ address: '192.168.100.200' }).then(data => console.log(data));
    */
   async removeClientHint({ address } = {}) {
-    if (typeof address === "undefined" || address === "") {
+    if (typeof address !== "string" || address.length === 0) {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -1635,14 +1793,13 @@ class UrbackupServer {
    * server.getClientSettings({ clientId: 3 }).then(data => console.log(data));
    */
   async getClientSettings({ clientId, clientName } = {}) {
-    if (typeof clientId !== "undefined" && typeof clientId !== "number") {
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    const clientSettings = [];
-
-    if (clientName === "") {
-      return clientSettings;
     }
 
     const login = await this.#login();
@@ -1650,6 +1807,7 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
+    const clientSettings = [];
     const clientIds = [];
     const allClients = await this.getClients({ includeRemoved: true });
 
@@ -1708,22 +1866,23 @@ class UrbackupServer {
   async setClientSettings({ clientId, clientName, key, newValue } = {}) {
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
-      typeof key === "undefined" ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof key !== "undefined" && typeof key !== "string") ||
+      (typeof key === "string" && key.length === 0) ||
       typeof newValue === "undefined"
     ) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    let operationStatus = false;
-
-    if (clientName === "") {
-      return operationStatus;
     }
 
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let operationStatus = false;
 
     const clientSettings = await this.getClientSettings(
       typeof clientId === "undefined"
@@ -1770,9 +1929,11 @@ class UrbackupServer {
    */
   async getClientGroup({ clientId, clientName } = {}) {
     if (
-      (typeof clientId !== "number" && typeof clientId !== "undefined") ||
-      (typeof clientName !== "string" && typeof clientName !== "undefined") ||
-      (typeof clientId !== "number" && typeof clientName !== "string")
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
     ) {
       throw new Error(this.#messages.missingParameters);
     }
@@ -1822,10 +1983,13 @@ class UrbackupServer {
    */
   async setClientGroup({ clientId, clientName, groupId } = {}) {
     if (
-      (typeof clientId !== "number" && typeof clientId !== "undefined") ||
-      (typeof clientName !== "string" && typeof clientName !== "undefined") ||
-      (typeof clientId !== "number" && typeof clientName !== "string") ||
-      typeof groupId !== "number"
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      typeof groupId !== "number" ||
+      groupId < 0
     ) {
       throw new Error(this.#messages.missingParameters);
     }
@@ -1882,14 +2046,14 @@ class UrbackupServer {
    * server.getClientAuthkey({ clientId: 3 }).then(data => console.log(data));
    */
   async getClientAuthkey({ clientId, clientName } = {}) {
-    if (typeof clientId === "undefined" && typeof clientName === "undefined") {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    let authKey = "";
-
-    if (clientName === "") {
-      return authKey;
     }
 
     const login = await this.#login();
@@ -1902,6 +2066,8 @@ class UrbackupServer {
         ? { clientName: clientName }
         : { clientId: clientId },
     );
+
+    let authKey = "";
 
     if (Array.isArray(clientSettings)) {
       if (
@@ -1936,10 +2102,15 @@ class UrbackupServer {
    * server.getStatus({ clientId: 3 }).then(data => console.log(data));
    */
   async getStatus({ clientId, clientName, includeRemoved = true } = {}) {
-    const fallbackReturnValue = [];
-
-    if (clientName === "") {
-      return fallbackReturnValue;
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
     }
 
     const login = await this.#login();
@@ -1947,6 +2118,7 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
+    const fallbackReturnValue = [];
     const statusResponse = await this.#fetchJson("status");
 
     if (Array.isArray(statusResponse?.status)) {
@@ -1996,13 +2168,21 @@ class UrbackupServer {
    * server.getUsage({ clientId: 3 }).then(data => console.log(data));
    */
   async getUsage({ clientId, clientName } = {}) {
-    const fallbackReturnValue = [];
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
 
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
+    const fallbackReturnValue = [];
     const usageResponse = await this.#fetchJson("usage");
 
     if (Array.isArray(usageResponse?.usage)) {
@@ -2066,11 +2246,22 @@ class UrbackupServer {
     includeLast = true,
     includePaused = true,
   } = {}) {
-    const activities = { current: [], last: [] };
-
-    if (clientName === "") {
-      return activities;
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof includeCurrent !== "undefined" &&
+        typeof includeCurrent !== "boolean") ||
+      (typeof includeLast !== "undefined" &&
+        typeof includeLast !== "boolean") ||
+      (typeof includePaused !== "undefined" &&
+        typeof includePaused !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
     }
+
+    const activities = { current: [], last: [] };
 
     if (includeCurrent !== true && includeLast !== true) {
       return activities;
@@ -2154,6 +2345,17 @@ class UrbackupServer {
     clientName,
     includePaused = true,
   } = {}) {
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof includePaused !== "undefined" &&
+        typeof includePaused !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const activities = await this.getActivities({
       clientId,
       clientName,
@@ -2180,6 +2382,15 @@ class UrbackupServer {
    * server.getLastActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getLastActivities({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const activities = await this.getActivities({
       clientId,
       clientName,
@@ -2205,7 +2416,15 @@ class UrbackupServer {
    * server.getPausedActivities({ clientId: 3 }).then(data => console.log(data));
    */
   async getPausedActivities({ clientId, clientName } = {}) {
-    const pausedActivities = [];
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const activities = await this.getActivities({
       clientId,
       clientName,
@@ -2239,7 +2458,11 @@ class UrbackupServer {
   async stopActivity({ clientId, clientName, activityId } = {}) {
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
-      typeof activityId === "undefined" ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      typeof activityId !== "number" ||
       activityId <= 0
     ) {
       throw new Error(this.#messages.missingParameters);
@@ -2305,14 +2528,20 @@ class UrbackupServer {
   } = {}) {
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
-      (includeFileBackups !== true && includeImageBackups !== true)
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof includeFileBackups !== "undefined" &&
+        typeof includeFileBackups !== "boolean") ||
+      (typeof includeImageBackups !== "undefined" &&
+        typeof includeImageBackups !== "boolean")
     ) {
       throw new Error(this.#messages.missingParameters);
     }
 
     const backups = { file: [], image: [] };
-
-    if (clientName === "") {
+    if (includeFileBackups === false && includeImageBackups === false) {
       return backups;
     }
 
@@ -2377,13 +2606,14 @@ class UrbackupServer {
 
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      typeof backupType !== "string" ||
       !backupTypes.includes(backupType)
     ) {
       throw new Error(this.#messages.missingParameters);
-    }
-
-    if (clientName === "") {
-      return false;
     }
 
     const login = await this.#login();
@@ -2432,6 +2662,16 @@ class UrbackupServer {
    * server.startFullFileBackup({ clientId: 3 }).then(data => console.log(data));
    */
   async startFullFileBackup({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
@@ -2453,6 +2693,16 @@ class UrbackupServer {
    * server.startIncrementalFileBackup({ clientId: 3 }).then(data => console.log(data));
    */
   async startIncrementalFileBackup({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
@@ -2474,6 +2724,16 @@ class UrbackupServer {
    * server.startFullImageBackup({ clientId: 3 }).then(data => console.log(data));
    */
   async startFullImageBackup({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
@@ -2495,6 +2755,16 @@ class UrbackupServer {
    * server.startIncrementalImageBackup({ clientId: 3 }).then(data => console.log(data));
    */
   async startIncrementalImageBackup({ clientId, clientName } = {}) {
+    if (
+      (typeof clientId === "undefined" && typeof clientName === "undefined") ||
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0)
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
     const operationStatus = await this.#startBackupCommon({
       clientId: clientId,
       clientName: clientName,
@@ -2523,10 +2793,14 @@ class UrbackupServer {
    * server.getLiveLog({ clientName: 'laptop1', recentOnly: true }).then(data => console.log(data));
    */
   async getLiveLog({ clientId, clientName, recentOnly = false } = {}) {
-    let livelog = [];
-
-    if (clientName === "") {
-      return livelog;
+    if (
+      (typeof clientId !== "undefined" && typeof clientId !== "number") ||
+      (typeof clientId === "number" && clientId < 0) ||
+      (typeof clientName !== "undefined" && typeof clientName !== "string") ||
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof recentOnly !== "undefined" && typeof recentOnly !== "boolean")
+    ) {
+      throw new Error(this.#messages.missingParameters);
     }
 
     const login = await this.#login();
@@ -2534,6 +2808,7 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
+    let livelog = [];
     let mappedClientId;
 
     if (typeof clientId === "undefined" && typeof clientName === "string") {
@@ -2652,7 +2927,11 @@ class UrbackupServer {
    * server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
    */
   async setGeneralSettings({ key, newValue } = {}) {
-    if (typeof key === "undefined" || typeof newValue === "undefined") {
+    if (
+      typeof key !== "string" ||
+      key.length === 0 ||
+      typeof newValue === "undefined"
+    ) {
       throw new Error(this.#messages.missingParameters);
     }
 
