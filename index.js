@@ -2433,7 +2433,9 @@ class UrbackupServer {
       includePaused: true,
     });
 
-    for (const activity of activities) {
+    const pausedActivities = [];
+
+    for (const activity of activities.current) {
       if (activity.paused === true) {
         pausedActivities.push(activity);
       }
