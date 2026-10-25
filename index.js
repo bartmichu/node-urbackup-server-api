@@ -618,26 +618,26 @@ class UrbackupServer {
   /**
    * Adds a new user with the specified username, password, and rights.
    * @param {object} params - An object containing parameters.
-   * @param {string} params.userName - The username for the new user.
+   * @param {string} params.username - The username for the new user.
    * @param {string} params.password - The password for the new user.
    * @param {boolean} [params.isAdmin=false] - Whether the new user should have admin rights (all domains, all rights). Defaults to false.
    * @param {Array<object>} [params.rights] - Array of user permissions. Ignored if `isAdmin` is true. Defaults to the default user rights.
    * @returns {Promise<boolean>} A promise that resolves to `true` if the user was added successfully, or `false` otherwise.
    * @throws {Error} If required parameters are missing, the login fails, or the API response is missing expected values.
    * @example <caption>Add a regular user with 'status(all)' rights</caption>
-   * server.addUser({ userName: 'newUser', password: 'secret', rights: [{ domain: "status", right: "all" }] }).then(result => console.log(result));
+   * server.addUser({ username: 'newUser', password: 'secret', rights: [{ domain: "status", right: "all" }] }).then(result => console.log(result));
    * @example <caption>Add an admin user</caption>
-   * server.addUser({ userName: 'newAdminUser', password: 'secret', isAdmin: true }).then(result => console.log(result));
+   * server.addUser({ username: 'newAdminUser', password: 'secret', isAdmin: true }).then(result => console.log(result));
    */
   async addUser({
-    userName,
+    username,
     password,
     isAdmin = false,
     rights = this.#constants.defaultUserRights,
   } = {}) {
     if (
-      typeof userName !== "string" ||
-      userName.length === 0 ||
+      typeof username !== "string" ||
+      username.length === 0 ||
       typeof password !== "string" ||
       password.length === 0 ||
       (typeof isAdmin !== "undefined" && typeof isAdmin !== "boolean") ||
@@ -657,7 +657,7 @@ class UrbackupServer {
 
     const response = await this.#fetchJson("settings", {
       sa: "useradd",
-      name: userName,
+      name: username,
       pwmd5: this.#hashPasswordMd5(salt, password),
       salt: salt,
       rights: this.#encodeUserRights(
@@ -717,8 +717,8 @@ class UrbackupServer {
   /**
    * Retrieves the rights of a specific user.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {number} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined.
-   * @param {string} [params.userName=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session.
+   * @param {number} [params.userId] - The user's ID. Takes precedence if both `userId` and `username` are defined.
+   * @param {string} [params.username=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session.
    * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or `null` if the user is not found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get user rights of the current session user</caption>
@@ -726,13 +726,13 @@ class UrbackupServer {
    * @example <caption>Get user rights by user ID</caption>
    * server.getUserRights({ userId: 12345 }).then(data => console.log(data));
    * @example <caption>Get user rights by user name</caption>
-   * server.getUserRights({ userName: 'john_doe' }).then(data => console.log(data));
+   * server.getUserRights({ username: 'john_doe' }).then(data => console.log(data));
    */
-  async getUserRights({ userId, userName = this.#username } = {}) {
+  async getUserRights({ userId, username = this.#username } = {}) {
     if (
       (typeof userId !== "undefined" && typeof userId !== "number") ||
       (typeof userId === "number" && userId < 0) ||
-      (typeof userName !== "undefined" && typeof userName !== "string")
+      (typeof username !== "undefined" && typeof username !== "string")
       // NOTE: allow empty user name for anonymous mode
     ) {
       throw new Error(this.#messages.missingParameters);
@@ -751,8 +751,8 @@ class UrbackupServer {
       userRights = allUsers.find(
         (user) => user.id === userId.toString(10),
       )?.rights;
-    } else if (typeof userName === "string") {
-      userRights = allUsers.find((user) => user.name === userName)?.rights;
+    } else if (typeof username === "string") {
+      userRights = allUsers.find((user) => user.name === username)?.rights;
     } else {
       return fallbackReturnValue;
     }
