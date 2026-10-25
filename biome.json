@@ -23,7 +23,8 @@
         "noContinue": "off"
       },
       "complexity": {
-        "noExcessiveLinesPerFunction": "off"
+        "noExcessiveLinesPerFunction": "off",
+        "noExcessiveCognitiveComplexity": "off"
       },
       "correctness": {
         "noNodejsModules": "off",
