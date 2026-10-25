@@ -2044,10 +2044,10 @@ class UrbackupServer {
    * @returns {Promise<string>} Client's authentication key. Returns an empty string if no matching clients are found.
    * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
    * @example <caption>Get authentication key for a specific client</caption>
-   * server.getClientAuthkey({ clientName: 'laptop1' }).then(data => console.log(data));
-   * server.getClientAuthkey({ clientId: 3 }).then(data => console.log(data));
+   * server.getClientAuthenticationKey({ clientName: 'laptop1' }).then(data => console.log(data));
+   * server.getClientAuthenticationKey({ clientId: 3 }).then(data => console.log(data));
    */
-  async getClientAuthkey({ clientId, clientName } = {}) {
+  async getClientAuthenticationKey({ clientId, clientName } = {}) {
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
       (typeof clientId !== "undefined" && typeof clientId !== "number") ||
