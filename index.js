@@ -2565,31 +2565,27 @@ class UrbackupServer {
       }
     }
 
-    if (typeof clientId === "number" || typeof mappedClientId === "number") {
-      const backupsResponse = await this.#fetchJson("backups", {
-        sa: "backups",
-        clientid: clientId ?? mappedClientId,
-      });
+    const backupsResponse = await this.#fetchJson("backups", {
+      sa: "backups",
+      clientid: clientId ?? mappedClientId,
+    });
 
-      if (
-        Array.isArray(backupsResponse?.backup_images) &&
-        Array.isArray(backupsResponse?.backups)
-      ) {
-        if (includeFileBackups === true) {
-          backups.file = backupsResponse.backups;
-        }
-
-        if (includeImageBackups === true) {
-          backups.image = backupsResponse.backup_images;
-        }
-
-        return backups;
+    if (
+      Array.isArray(backupsResponse?.backup_images) &&
+      Array.isArray(backupsResponse?.backups)
+    ) {
+      if (includeFileBackups === true) {
+        backups.file = backupsResponse.backups;
       }
 
-      throw new Error(this.#messages.missingValues);
+      if (includeImageBackups === true) {
+        backups.image = backupsResponse.backup_images;
+      }
+
+      return backups;
     }
 
-    throw new Error(this.#messages.missingParameters);
+    throw new Error(this.#messages.missingValues);
   }
 
   /**
@@ -2649,6 +2645,7 @@ class UrbackupServer {
         return Boolean(backupResponse.result[0].start_ok);
       }
 
+      // TODO: fix bug
       throw new Error(this.#messages.missingValues);
     }
 
