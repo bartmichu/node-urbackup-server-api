@@ -2069,17 +2069,17 @@ class UrbackupServer {
         : { clientId: clientId },
     );
 
-    let authKey = "";
+    let authenticationKey = "";
 
     if (Array.isArray(clientSettings)) {
       if (
         clientSettings.length > 0 &&
         typeof clientSettings[0]?.internet_authkey?.value === "string"
       ) {
-        authKey = clientSettings[0].internet_authkey.value.toString();
+        authenticationKey = clientSettings[0].internet_authkey.value.toString();
       }
 
-      return authKey;
+      return authenticationKey;
     }
 
     throw new Error(this.#messages.missingValues);
