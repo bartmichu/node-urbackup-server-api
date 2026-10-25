@@ -2488,10 +2488,6 @@ class UrbackupServer {
       throw new Error(this.#messages.missingParameters);
     }
 
-    if (clientName === "") {
-      return false;
-    }
-
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
@@ -2510,11 +2506,12 @@ class UrbackupServer {
         stop_id: activityId,
       });
 
-      if (
-        Array.isArray(activitiesResponse?.progress) &&
-        Array.isArray(activitiesResponse?.lastacts)
-      ) {
-        return true;
+      if (Array.isArray(activitiesResponse?.progress)) {
+        return activitiesResponse.progress.some(
+          (activity) =>
+            activity.id === activityId &&
+            activity.clientid === (clientId ?? mappedClientId),
+        );
       }
 
       throw new Error(this.#messages.missingValues);
