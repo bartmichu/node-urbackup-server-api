@@ -1416,7 +1416,7 @@ class UrbackupServer {
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
     // biome-ignore lint/style/noMagicNumbers: n/a
-    const currentEpochTime = Math.round(Date.now() / 1000.0);
+    const currentEpochTime = Math.trunc(Date.now() / 1000);
 
     for (const client of clients) {
       const timestampDifference = Math.round(
@@ -1487,7 +1487,7 @@ class UrbackupServer {
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
     // biome-ignore lint/style/noMagicNumbers: n/a
-    const currentEpochTime = Math.round(Date.now() / 1000.0);
+    const currentEpochTime = Math.trunc(Date.now() / 1000);
 
     for (const client of clients) {
       if (
