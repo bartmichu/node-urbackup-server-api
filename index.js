@@ -665,6 +665,7 @@ class UrbackupServer {
       ),
     });
 
+    // NOTE: "alread_exists" is intentional, upstream typo
     if ("add_ok" in response || "alread_exists" in response) {
       return response.add_ok === true;
     }
