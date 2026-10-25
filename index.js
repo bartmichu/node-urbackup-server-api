@@ -108,8 +108,7 @@ class UrbackupServer {
       method: "POST",
       headers: {
         accept: "application/json",
-        // TODO: change user agent
-        "user-agent": "urbstat",
+        "user-agent": "node-urbackup-server-api",
         "content-type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams(bodyParams).toString(),
