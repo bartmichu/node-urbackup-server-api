@@ -2640,14 +2640,12 @@ class UrbackupServer {
 
       if (
         Array.isArray(backupResponse.result) &&
-        backupResponse.result.filter((element) =>
-          Object.keys(element).includes("start_ok"),
-        ).length !== 1
+        Object.hasOwn(backupResponse.result[0], "start_ok") &&
+        typeof backupResponse.result[0].start_ok === "boolean"
       ) {
         return Boolean(backupResponse.result[0].start_ok);
       }
 
-      // TODO: fix bug
       throw new Error(this.#messages.missingValues);
     }
 
