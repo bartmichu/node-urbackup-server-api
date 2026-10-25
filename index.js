@@ -1596,6 +1596,17 @@ class UrbackupServer {
       apiCallParameters.stop_remove_client = true;
     }
 
+    if (stopRemove === true) {
+      const removedClients = await this.getRemovedClients();
+      if (
+        removedClients.find(
+          (client) => client.id === (clientId ?? mappedClientId),
+        )?.delete_pending !== "1"
+      ) {
+        return fallbackReturnValue;
+      }
+    }
+
     const statusResponse = await this.#fetchJson("status", apiCallParameters);
 
     if (Array.isArray(statusResponse?.status)) {
@@ -1639,6 +1650,7 @@ class UrbackupServer {
       clientName,
       stopRemove: false,
     });
+
     return operationStatus;
   }
 
@@ -1670,6 +1682,7 @@ class UrbackupServer {
       clientName,
       stopRemove: true,
     });
+
     return operationStatus;
   }
 
