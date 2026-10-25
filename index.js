@@ -2463,7 +2463,7 @@ class UrbackupServer {
   }
 
   /**
-   * Stops one selected activity.
+   * Stops one selected client activity.
    * A list of current activities can be obtained with the `getActivities` method.
    * @param {object} params - An object containing parameters.
    * @param {number} params.clientId - The client's ID. Takes precedence if both `clientId` and `clientName` are defined. Required if `clientName` is undefined.
@@ -2472,10 +2472,10 @@ class UrbackupServer {
    * @returns {Promise<boolean>} A promise that resolves to `true` if the activity was stopped successfully, or `false` otherwise.
    * @throws {Error} If there are missing or invalid parameters, if the API response is missing values, or if login fails.
    * @example <caption>Stop activity</caption>
-   * server.stopActivity({ clientName: 'laptop1', activityId: 42 }).then(data => console.log(data));
-   * server.stopActivity({ clientId: 3, activityId: 42 }).then(data => console.log(data));
+   * server.stopClientActivity({ clientName: 'laptop1', activityId: 42 }).then(data => console.log(data));
+   * server.stopClientActivity({ clientId: 3, activityId: 42 }).then(data => console.log(data));
    */
-  async stopActivity({ clientId, clientName, activityId } = {}) {
+  async stopClientActivity({ clientId, clientName, activityId } = {}) {
     if (
       (typeof clientId === "undefined" && typeof clientName === "undefined") ||
       (typeof clientId !== "undefined" && typeof clientId !== "number") ||
