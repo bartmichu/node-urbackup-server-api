@@ -2,6 +2,14 @@
 
 ## Breaking Changes
 
+- 0.100.0
+
+  - Renamed `getClientAuthkey()` to `getClientAuthenticationKey()`.
+  - Extended type checking may now throw an error in some corner cases when parameters have invalid values; safe in any other case.
+  - The `userId` parameter type in `getUserRights()` was changed from String to Number for consistency with the rest of the library.
+  - The `userName` parameter in the `addUser()` and `getUserRights()` methods was renamed to `username` for consistency with the rest of the library.
+  - Renamed `stopActivity()` to `stopClientActivity()`.
+
 - 0.90.0
 
   - Use the Node.js Fetch API instead of the node-fetch module. Older Node.js versions may require the `--experimental-fetch` flag.
@@ -29,8 +37,16 @@
 
 - 0.100.0
 
+  - Breaking change: renamed `getClientAuthkey()` to `getClientAuthenticationKey()`.
+  - Breaking change: extended type checking may now throw an error in some corner cases when parameters have invalid values; safe in any other case.
+  - Breaking change: the `userId` parameter type in `getUserRights()` was changed from String to Number for consistency with the rest of the library.
+  - Breaking change: the `userName` parameter in the `addUser()` and `getUserRights()` methods was renamed to `username` for consistency with the rest of the library.
+  - Breaking change: renamed `stopActivity()` to `stopClientActivity()`.
+  - Fixed bugs in `getClientGroup()`, `setClientGroup()`, `getPausedActivities()`, `#startBackupCommon` (affecting `startFullFileBackup`, `startIncrementalFileBackup`, `startFullImageBackup`, `startIncrementalImageBackup`).
   - Migrated to Biome for code formatting and linting.
-  - Fixed the `getClientGroup()` and `setClientGroup()` methods.
+  - Updated the user-agent value to `node-urbackup-server-api`.
+  - Improved the `removeClient()` method: it now checks whether the specified client is pending deletion before requesting `stop_remove_client`, and returns `false` if it is not.
+  - Improved the `stopActivity()` method: it now checks whether the specified activity exists, and returns `false` if it does not.
 
 - 0.92.0
 

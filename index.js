@@ -621,7 +621,7 @@ class UrbackupServer {
    * @param {string} params.username - The username for the new user.
    * @param {string} params.password - The password for the new user.
    * @param {boolean} [params.isAdmin=false] - Whether the new user should have admin rights (all domains, all rights). Defaults to false.
-   * @param {Array<object>} [params.rights] - Array of user permissions. Ignored if `isAdmin` is true. Defaults to the default user rights.
+   * @param {Array<object>} [params.rights] - Array of user permissions. Ignored if `isAdmin` is true. Defaults to no rights.
    * @returns {Promise<boolean>} A promise that resolves to `true` if the user was added successfully, or `false` otherwise.
    * @throws {Error} If required parameters are missing, the login fails, or the API response is missing expected values.
    * @example <caption>Add a regular user with 'status(all)' rights</caption>
