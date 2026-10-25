@@ -1592,11 +1592,10 @@ class UrbackupServer {
 
     // biome-ignore lint/style/useNamingConvention: upstream convention
     const apiCallParameters = { remove_client: clientId ?? mappedClientId };
-    if (stopRemove === true) {
-      apiCallParameters.stop_remove_client = true;
-    }
 
     if (stopRemove === true) {
+      apiCallParameters.stop_remove_client = true;
+
       const removedClients = await this.getRemovedClients();
       if (
         removedClients.find(
