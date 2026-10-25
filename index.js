@@ -717,21 +717,21 @@ class UrbackupServer {
   /**
    * Retrieves the rights of a specific user.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined.
+   * @param {number} [params.userId] - The user's ID. Takes precedence if both `userId` and `userName` are defined.
    * @param {string} [params.userName=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session.
    * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or `null` if the user is not found.
    * @throws {Error} If the login fails or the API response is missing expected values.
    * @example <caption>Get user rights of the current session user</caption>
    * server.getUserRights().then(data => console.log(data));
    * @example <caption>Get user rights by user ID</caption>
-   * server.getUserRights({ userId: '12345' }).then(data => console.log(data));
+   * server.getUserRights({ userId: 12345 }).then(data => console.log(data));
    * @example <caption>Get user rights by user name</caption>
    * server.getUserRights({ userName: 'john_doe' }).then(data => console.log(data));
    */
   async getUserRights({ userId, userName = this.#username } = {}) {
     if (
-      (typeof userId !== "undefined" && typeof userId !== "string") ||
-      (typeof userId === "string" && userId.length === 0) ||
+      (typeof userId !== "undefined" && typeof userId !== "number") ||
+      (typeof userId === "number" && userId < 0) ||
       (typeof userName !== "undefined" && typeof userName !== "string")
       // NOTE: allow empty user name for anonymous mode
     ) {
@@ -747,8 +747,10 @@ class UrbackupServer {
     const allUsers = await this.getUsers();
 
     let userRights;
-    if (typeof userId === "string") {
-      userRights = allUsers.find((user) => user.id === userId)?.rights;
+    if (typeof userId === "number") {
+      userRights = allUsers.find(
+        (user) => user.id === userId.toString(10),
+      )?.rights;
     } else if (typeof userName === "string") {
       userRights = allUsers.find((user) => user.name === userName)?.rights;
     } else {
