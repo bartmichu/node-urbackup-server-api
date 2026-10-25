@@ -704,6 +704,7 @@ class UrbackupServer {
         sa: "removeuser",
         userid: userId.toString(10),
       });
+
       operationStatus =
         typeof response.users.find(
           (user) => user.id === userId.toString(10),
@@ -893,6 +894,7 @@ class UrbackupServer {
     }
 
     const fallbackReturnValue = [];
+
     let mappedGroupName;
     if (typeof groupId !== "undefined") {
       mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
@@ -2363,6 +2365,7 @@ class UrbackupServer {
       includeLast: false,
       includePaused,
     });
+
     return activities.current;
   }
 
@@ -2398,6 +2401,7 @@ class UrbackupServer {
       includeLast: true,
       includePaused: false,
     });
+
     return activities.last;
   }
 
@@ -2679,6 +2683,7 @@ class UrbackupServer {
       clientName: clientName,
       backupType: "full_file",
     });
+
     return operationStatus;
   }
 
@@ -2710,6 +2715,7 @@ class UrbackupServer {
       clientName: clientName,
       backupType: "incr_file",
     });
+
     return operationStatus;
   }
 
@@ -2741,6 +2747,7 @@ class UrbackupServer {
       clientName: clientName,
       backupType: "full_image",
     });
+
     return operationStatus;
   }
 
@@ -2772,6 +2779,7 @@ class UrbackupServer {
       clientName: clientName,
       backupType: "incr_image",
     });
+
     return operationStatus;
   }
 
