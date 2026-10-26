@@ -709,7 +709,10 @@ class UrbackupServer {
         : user.name === username,
     );
 
-    if (typeof userToRemove !== "undefined") {
+    if (
+      typeof userToRemove !== "undefined" &&
+      userToRemove.name !== this.#username
+    ) {
       const response = await this.#fetchJson("settings", {
         sa: "removeuser",
         userid: userToRemove.id,
