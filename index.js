@@ -2493,6 +2493,7 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
+    const fallbackReturnValue = false;
     let mappedClientId;
     if (typeof clientId === "undefined" && typeof clientName === "string") {
       mappedClientId = await this.#getClientIdentifier(clientName, "id");
@@ -2517,7 +2518,7 @@ class UrbackupServer {
       throw new Error(this.#messages.missingValues);
     }
 
-    return false;
+    return fallbackReturnValue;
   }
 
   /**
