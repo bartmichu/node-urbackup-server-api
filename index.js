@@ -674,16 +674,23 @@ class UrbackupServer {
   }
 
   /**
-   * Removes a user by their user ID.
+   * Removes a user.
    * @param {object} params - An object containing parameters.
-   * @param {number} params.userId - The ID of the user to be removed.
+   * @param {number} params.userId - The ID of the user to be removed. Takes precedence if both `userId` and `username` are defined. Required if `username` is undefined.
+   * @param {string} params.username - The username of the user to be removed. Must be different than empty string. Ignored if both `userId` and `username` are defined. Required if `userId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to `true` if the user was successfully removed, or `false` otherwise.
    * @throws {Error} If the `userId` parameter is missing or invalid, or if the login fails.
    * @example <caption>Remove a user by their ID</caption>
    * server.removeUser({ userId: 123 }).then(status => console.log(status));
    */
-  async removeUser({ userId } = {}) {
-    if (typeof userId !== "number" || userId <= 0) {
+  async removeUser({ userId, username } = {}) {
+    if (
+      (typeof userId === "undefined" && typeof username === "undefined") ||
+      (typeof userId !== "undefined" && typeof userId !== "number") ||
+      (typeof userId === "number" && userId <= 0) ||
+      (typeof username !== "undefined" && typeof username !== "string") ||
+      (typeof username === "string" && username.length === 0)
+    ) {
       throw new Error(this.#messages.missingParameters);
     }
 
@@ -696,19 +703,21 @@ class UrbackupServer {
 
     const users = await this.getUsers();
 
-    if (
-      typeof users.find((user) => user.id === userId.toString(10)) !==
-      "undefined"
-    ) {
+    const userToRemove = users.find((user) =>
+      typeof userId === "number"
+        ? user.id === userId.toString(10)
+        : user.name === username,
+    );
+
+    if (typeof userToRemove !== "undefined") {
       const response = await this.#fetchJson("settings", {
         sa: "removeuser",
-        userid: userId.toString(10),
+        userid: userToRemove.id,
       });
 
       operationStatus =
-        typeof response.users.find(
-          (user) => user.id === userId.toString(10),
-        ) === "undefined";
+        typeof response.users.find((user) => user.id === userToRemove.id) ===
+        "undefined";
     }
 
     return operationStatus;
