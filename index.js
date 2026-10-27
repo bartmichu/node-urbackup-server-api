@@ -26,6 +26,8 @@ class UrbackupServer {
       "Fetch request failed: response status is not in the range 200-299.",
     failedLogin: "Login failed: invalid username or password.",
     failedLoginUnknown: "Login failed: unknown reason.",
+    httpWarning:
+      "SECURITY WARNING: Communicating over unencrypted HTTP outside of localhost. Credentials and session tokens can be intercepted.",
     invalidCategory: "Syntax error: invalid category name.",
     invalidProtocol: "Syntax error: URL protocol must be http or https.",
     missingClientData:
@@ -64,9 +66,21 @@ class UrbackupServer {
     password = "",
   } = {}) {
     const parsedUrl = new URL(url);
+
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
       throw new Error(this.#messages.invalidProtocol);
     }
+
+    if (
+      parsedUrl.protocol === "http:" &&
+      parsedUrl.hostname !== "127.0.0.1" &&
+      parsedUrl.hostname !== "localhost" &&
+      parsedUrl.hostname !== "::1"
+    ) {
+      // biome-ignore lint/suspicious/noConsole: false positive
+      console.warn(this.#messages.httpWarning);
+    }
+
     this.#url = parsedUrl;
     this.#url.pathname = "x";
     this.#username = typeof username === "string" ? username : "";
