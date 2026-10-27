@@ -633,6 +633,35 @@ class UrbackupServer {
   }
 
   /**
+   * Retrieves the user associated with the current session.
+   * @returns {Promise<object>} A promise that resolves to an object representing the user.
+   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @example <caption>Get current session user</caption>
+   * server.getCurrentUser().then(data => console.log(data));
+   */
+  async getCurrentUser() {
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+    const usersResponse = await this.#fetchJson("settings", {
+      sa: "listusers",
+    });
+
+    if (Array.isArray(usersResponse?.users)) {
+      const currentUser = usersResponse.users.find(
+        (user) => user.name === this.#username,
+      );
+
+      if (typeof currentUser !== "undefined") {
+        return currentUser;
+      }
+    }
+
+    throw new Error(this.#messages.missingUserData);
+  }
+
+  /**
    * Adds a new user with the specified username, password, and rights.
    * @param {object} params - An object containing parameters.
    * @param {string} params.username - The username for the new user.
