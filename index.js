@@ -27,6 +27,7 @@ class UrbackupServer {
     failedLogin: "Login failed: invalid username or password.",
     failedLoginUnknown: "Login failed: unknown reason.",
     invalidCategory: "Syntax error: invalid category name.",
+    invalidProtocol: "Syntax error: URL protocol must be http or https.",
     missingClientData:
       "API response error: missing client data. Make sure the UrBackup user has appropriate rights.",
     missingGroupData:
@@ -64,7 +65,7 @@ class UrbackupServer {
   } = {}) {
     const parsedUrl = new URL(url);
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-      throw new Error("Syntax error: URL protocol must be http: or https:.");
+      throw new Error(this.#messages.invalidProtocol);
     }
     this.#url = parsedUrl;
     this.#url.pathname = "x";
@@ -464,10 +465,12 @@ class UrbackupServer {
       );
     }
 
-    const fallbackReturnValue = null;
     const clients = await this.getClients({ includeRemoved: true });
 
+    const fallbackReturnValue = null;
+
     let result;
+
     if (outputIdentifierType === "id") {
       result = clients.find((client) => client.name === inputIdentifier)?.id;
     } else if (outputIdentifierType === "name") {
@@ -551,9 +554,9 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
-    const serverVersion = { number: null, string: null };
-
     const statusResponse = await this.#fetchJson("status");
+
+    const serverVersion = { number: null, string: null };
 
     if (typeof statusResponse?.curr_version_num === "number") {
       serverVersion.number = statusResponse.curr_version_num;
@@ -675,8 +678,9 @@ class UrbackupServer {
 
   /**
    * Removes a user.
+   * Prevents removing the user that is currently making the API call, and checks whether the user to be removed exists.
    * @param {object} params - An object containing parameters.
-   * @param {number} params.userId - The ID of the user to be removed. Takes precedence if both `userId` and `username` are defined. Required if `username` is undefined.
+   * @param {number} params.userId - The ID of the user to be removed. Must be greater than 0. Takes precedence if both `userId` and `username` are defined. Required if `username` is undefined.
    * @param {string} params.username - The username of the user to be removed. Must be different than empty string. Ignored if both `userId` and `username` are defined. Required if `userId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to `true` if the user was successfully removed, or `false` otherwise.
    * @throws {Error} If the `userId` parameter is missing or invalid, or if the login fails.
@@ -910,6 +914,7 @@ class UrbackupServer {
     const fallbackReturnValue = [];
 
     let mappedGroupName;
+
     if (typeof groupId !== "undefined") {
       mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
       if (mappedGroupName === null) {
@@ -954,6 +959,7 @@ class UrbackupServer {
     }
 
     const clients = [];
+
     const statusResponse = await this.#fetchJson("status");
 
     if (Array.isArray(statusResponse?.status)) {
@@ -1025,6 +1031,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const onlineClients = [];
 
     for (const client of clients) {
@@ -1077,6 +1084,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const offlineClients = [];
 
     for (const client of clients) {
@@ -1162,6 +1170,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const blankClients = [];
 
     for (const client of clients) {
@@ -1224,6 +1233,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const failedClients = [];
 
     for (const client of clients) {
@@ -1298,6 +1308,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const okClients = [];
 
     for (const client of clients) {
@@ -1379,7 +1390,9 @@ class UrbackupServer {
       includeRemoved,
       includeBlank: true,
     });
+
     const seenIpAddresses = new Set();
+
     const conflictingClients = new Set();
 
     for (const client of onlineClients) {
@@ -1427,6 +1440,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const unseenClients = [];
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
@@ -1498,6 +1512,7 @@ class UrbackupServer {
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
+
     const staleClients = [];
 
     // NOTE: Conversion is needed as UrBackup uses seconds for timestamps whereas Javascript uses milliseconds.
@@ -1586,12 +1601,12 @@ class UrbackupServer {
       throw new Error(this.#messages.missingParameters);
     }
 
-    const fallbackReturnValue = false;
-
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    const fallbackReturnValue = false;
 
     let mappedClientId;
 
@@ -1609,6 +1624,7 @@ class UrbackupServer {
       apiCallParameters.stop_remove_client = true;
 
       const removedClients = await this.getRemovedClients();
+
       if (
         removedClients.find(
           (client) => client.id === (clientId ?? mappedClientId),
@@ -1766,12 +1782,12 @@ class UrbackupServer {
       throw new Error(this.#messages.missingParameters);
     }
 
-    let operationStatus = false;
-
     const login = await this.#login();
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
+
+    let operationStatus = false;
 
     const extraClients = await this.getClientHints();
 
@@ -1836,7 +1852,9 @@ class UrbackupServer {
     }
 
     const clientSettings = [];
+
     const clientIds = [];
+
     const allClients = await this.getClients({ includeRemoved: true });
 
     if (allClients.some((client) => typeof client.id === "undefined")) {
@@ -1986,6 +2004,7 @@ class UrbackupServer {
     }
 
     const groupId = clientSettings[0]?.memberof;
+
     const group = {
       id: groupId,
       name: await this.#getGroupIdentifier(groupId, "name"),
@@ -2028,6 +2047,7 @@ class UrbackupServer {
     }
 
     let operationStatus = false;
+
     let mappedClientId;
 
     if (typeof clientId !== "number") {
@@ -2147,6 +2167,7 @@ class UrbackupServer {
     }
 
     const fallbackReturnValue = [];
+
     const statusResponse = await this.#fetchJson("status");
 
     if (Array.isArray(statusResponse?.status)) {
@@ -2211,6 +2232,7 @@ class UrbackupServer {
     }
 
     const fallbackReturnValue = [];
+
     const usageResponse = await this.#fetchJson("usage");
 
     if (Array.isArray(usageResponse?.usage)) {
@@ -2506,7 +2528,9 @@ class UrbackupServer {
     }
 
     const fallbackReturnValue = false;
+
     let mappedClientId;
+
     if (typeof clientId === "undefined" && typeof clientName === "string") {
       mappedClientId = await this.#getClientIdentifier(clientName, "id");
     }
@@ -2648,6 +2672,7 @@ class UrbackupServer {
     }
 
     let mappedClientId;
+
     if (typeof clientId === "undefined" && typeof clientName === "string") {
       mappedClientId = await this.#getClientIdentifier(clientName, "id");
     }
@@ -2838,6 +2863,7 @@ class UrbackupServer {
     }
 
     let livelog = [];
+
     let mappedClientId;
 
     if (typeof clientId === "undefined" && typeof clientName === "string") {
@@ -2852,6 +2878,7 @@ class UrbackupServer {
 
     // NOTE: Use semaphore to prevent race condition with this.#lastLogId
     const [_value, release] = await this.#semaphore.acquire();
+
     try {
       const logResponse = await this.#fetchJson("livelog", {
         clientid: clientId ?? mappedClientId ?? 0,
@@ -2917,6 +2944,7 @@ class UrbackupServer {
    */
   async getGeneralSettings() {
     const generalSettings = await this.#getServerSettings("general");
+
     return generalSettings;
   }
 
@@ -2929,6 +2957,7 @@ class UrbackupServer {
    */
   async getMailSettings() {
     const mailSettings = await this.#getServerSettings("mail");
+
     return mailSettings;
   }
 
@@ -2941,6 +2970,7 @@ class UrbackupServer {
    */
   async getLdapSettings() {
     const ldapSettings = await this.#getServerSettings("ldap");
+
     return ldapSettings;
   }
 
@@ -3003,6 +3033,7 @@ class UrbackupServer {
     }
 
     const statusResponse = await this.#fetchJson("status");
+
     return statusResponse;
   }
 
@@ -3022,6 +3053,7 @@ class UrbackupServer {
     }
 
     const usageResponse = await this.#fetchJson("usage");
+
     return usageResponse;
   }
 
@@ -3041,6 +3073,7 @@ class UrbackupServer {
     }
 
     const progressResponse = await this.#fetchJson("progress");
+
     return progressResponse;
   }
 }
