@@ -45,8 +45,14 @@
   - Fixed bugs in `getClientGroup()`, `setClientGroup()`, `getPausedActivities()`, `#startBackupCommon` (affecting `startFullFileBackup`, `startIncrementalFileBackup`, `startFullImageBackup`, `startIncrementalImageBackup`).
   - Migrated to Biome for code formatting and linting.
   - Updated the user-agent value to `node-urbackup-server-api`.
-  - Improved the `removeClient()` method: it now checks whether the specified client is pending deletion before requesting `stop_remove_client`, and returns `false` if it is not.
+  - Added `getCurrentUser()` method.
+  - Added `setUserRights()` method.
+  - Added `setUserPassword()` method.
+  - The `removeClient()` method now checks whether the specified client is pending deletion before requesting `stop_remove_client`, and returns `false` if it is not.
   - Improved the `stopActivity()` method: it now checks whether the specified activity exists, and returns `false` if it does not.
+  - The `removeUser()` method now checks whether the specified user exists before deletion, and returns `false` if it does not.
+  - The `removeUser()` method now supports the username parameter.
+  - The `removeUser()` method now prevents removing the user that is currently making the API call.
 
 - 0.92.0
 
