@@ -21,6 +21,8 @@ class UrbackupServer {
     defaultUserRights: [],
   };
   #messages = {
+    apiRessponseError:
+      "API response error or missing properties. Make sure the UrBackup user has appropriate rights.",
     failedAnonymousLogin: "Anonymous login failed.",
     failedFetch:
       "Fetch request failed: response status is not in the range 200-299.",
@@ -37,8 +39,6 @@ class UrbackupServer {
     missingParameters: "Syntax error: missing or invalid parameters.",
     missingServerIdentity:
       "API response error: missing server identity. Make sure the UrBackup user has appropriate rights.",
-    missingUserData:
-      "API response error: missing user data. Make sure the UrBackup user has appropriate rights.",
     missingValues:
       "API response error: some values are missing. Make sure the UrBackup user has appropriate rights.",
     syntaxClientId: "Syntax error: clientId must be a number.",
@@ -621,15 +621,15 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
-    const usersResponse = await this.#fetchJson("settings", {
+    const response = await this.#fetchJson("settings", {
       sa: "listusers",
     });
 
-    if (Array.isArray(usersResponse?.users)) {
-      return usersResponse.users;
+    if (Array.isArray(response?.users)) {
+      return response.users;
     }
 
-    throw new Error(this.#messages.missingUserData);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -644,21 +644,19 @@ class UrbackupServer {
     if (login !== true) {
       throw new Error(this.#messages.failedLoginUnknown);
     }
-    const usersResponse = await this.#fetchJson("settings", {
+    const response = await this.#fetchJson("settings", {
       sa: "listusers",
     });
 
-    if (Array.isArray(usersResponse?.users)) {
-      const currentUser = usersResponse.users.find(
-        (user) => user.name === this.#username,
-      );
+    const currentUser = response.users?.find(
+      (user) => user.name === this.#username,
+    );
 
-      if (typeof currentUser !== "undefined") {
-        return currentUser;
-      }
+    if (typeof currentUser !== "undefined") {
+      return currentUser;
     }
 
-    throw new Error(this.#messages.missingUserData);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -667,9 +665,9 @@ class UrbackupServer {
    * @param {string} params.username - The username for the new user.
    * @param {string} params.password - The password for the new user.
    * @param {boolean} [params.isAdmin=false] - Whether the new user should have admin rights (all domains, all rights). Defaults to false.
-   * @param {Array<object>} [params.rights] - Array of user permissions. Ignored if `isAdmin` is true. Defaults to no rights.
+   * @param {Array<object>} [params.rights] - Array of user rights. Ignored if `isAdmin` is true. Defaults to no rights.
    * @returns {Promise<boolean>} A promise that resolves to `true` if the user was added successfully, or `false` otherwise.
-   * @throws {Error} If required parameters are missing, the login fails, or the API response is missing expected values.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Add a regular user with 'status(all)' rights</caption>
    * server.addUser({ username: 'newUser', password: 'secret', rights: [{ domain: "status", right: "all" }] }).then(result => console.log(result));
    * @example <caption>Add an admin user</caption>
@@ -711,12 +709,16 @@ class UrbackupServer {
       ),
     });
 
-    // NOTE: "alread_exists" is intentional, upstream typo
-    if ("add_ok" in response || "alread_exists" in response) {
+    // NOTE: "alread_exists" is an upstream typo
+    if (
+      ("add_ok" in response || "alread_exists" in response) &&
+      typeof response.users?.find((user) => user.name === username) !==
+        "undefined"
+    ) {
       return response.add_ok === true;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -726,7 +728,7 @@ class UrbackupServer {
    * @param {number} params.userId - The ID of the user to be removed. Must be greater than 0. Takes precedence if both `userId` and `username` are defined. Required if `username` is undefined.
    * @param {string} params.username - The username of the user to be removed. Must be different than empty string. Ignored if both `userId` and `username` are defined. Required if `userId` is undefined.
    * @returns {Promise<boolean>} A promise that resolves to `true` if the user was successfully removed, or `false` otherwise.
-   * @throws {Error} If the `userId` parameter is missing or invalid, or if the login fails.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Remove a user by their ID</caption>
    * server.removeUser({ userId: 123 }).then(status => console.log(status));
    */
@@ -746,8 +748,6 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
-    let operationStatus = false;
-
     const users = await this.getUsers();
 
     const userToRemove = users.find((user) =>
@@ -755,6 +755,8 @@ class UrbackupServer {
         ? user.id === userId.toString(10)
         : user.name === username,
     );
+
+    let operationStatus = false;
 
     if (
       typeof userToRemove !== "undefined" &&
@@ -765,9 +767,77 @@ class UrbackupServer {
         userid: userToRemove.id,
       });
 
-      operationStatus =
-        typeof response.users.find((user) => user.id === userToRemove.id) ===
-        "undefined";
+      operationStatus = response.removeuser === true;
+
+      if (
+        operationStatus === true &&
+        typeof response.users?.find((user) => user.id === userToRemove.id) !==
+          "undefined"
+      ) {
+        throw new Error(this.#messages.apiRessponseError);
+      }
+    }
+
+    return operationStatus;
+  }
+
+  /**
+   * Sets the password for a specific user.
+   * @param {object} params - An object containing parameters.
+   * @param {string} params.userId - The user's ID. Takes precedence if both `userId` and `username` are defined. Required if `username` is undefined.
+   * @param {string} params.username - The user's name. Ignored if `userId` is defined. Required if `userId` is undefined.
+   * @param {string} params.password - The new password for the user.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the user password was successfully updated, or `false` otherwise.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
+   * @example <caption>Set user password for user ID</caption>
+   * server.setUserPassword({ userId: '12345', password: 'newSecurePassword' }).then(data => console.log(data));
+   * @example <caption>Set user password by user name</caption>
+   * server.setUserPassword({ username: 'john_doe', password: 'newSecurePassword' }).then(data => console.log(data));
+   */
+  async setUserPassword({ userId, username, newPassword } = {}) {
+    if (
+      (typeof userId === "undefined" && typeof username === "undefined") ||
+      (typeof userId !== "undefined" && typeof userId !== "number") ||
+      (typeof userId === "number" && userId < 0) ||
+      (typeof username !== "undefined" && typeof username !== "string") ||
+      (typeof username === "string" && username.length === 0) ||
+      typeof newPassword !== "string" ||
+      newPassword.length === 0
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+
+    const users = await this.getUsers();
+
+    const userToChange = users.find((user) =>
+      typeof userId === "number"
+        ? user.id === userId.toString(10)
+        : user.name === username,
+    );
+
+    let operationStatus = false;
+
+    if (typeof userToChange !== "undefined") {
+      // NOTE: Server expects an alphanumeric string (no special characters), hence an additional method is needed
+      const stringLength = 50;
+      const salt = this.#generateRandomString(stringLength);
+
+      const response = await this.#fetchJson("settings", {
+        sa: "changepw",
+        userid: userToChange.id,
+        pwmd5: this.#hashPasswordMd5(salt, newPassword),
+        salt: salt,
+      });
+
+      if (typeof response.change_ok === "undefined") {
+        throw new Error(this.#messages.apiRessponseError);
+      }
+      operationStatus = response.change_ok === true;
     }
 
     return operationStatus;
@@ -779,7 +849,7 @@ class UrbackupServer {
    * @param {number} [params.userId] - The user's ID. Takes precedence if both `userId` and `username` are defined.
    * @param {string} [params.username=this.#username] - The user's name. Ignored if `userId` is defined. Defaults to the username of the current session.
    * @returns {Promise<Array|null>} A promise that resolves to an array of user rights, or `null` if the user is not found.
-   * @throws {Error} If the login fails or the API response is missing expected values.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get user rights of the current session user</caption>
    * server.getUserRights().then(data => console.log(data));
    * @example <caption>Get user rights by user ID</caption>
@@ -802,10 +872,12 @@ class UrbackupServer {
       throw new Error(this.#messages.failedLoginUnknown);
     }
 
-    const fallbackReturnValue = null;
     const allUsers = await this.getUsers();
 
+    const fallbackReturnValue = null;
+
     let userRights;
+
     if (typeof userId === "number") {
       userRights = allUsers.find(
         (user) => user.id === userId.toString(10),
@@ -817,6 +889,89 @@ class UrbackupServer {
     }
 
     return Array.isArray(userRights) ? userRights : fallbackReturnValue;
+  }
+
+  /**
+   * Sets the rights of a specific user.
+   * Overrides current rights by default, or appends new rights if specified.
+   * @param {object} params - An object containing parameters.
+   * @param {string} params.userId - The user's ID. Takes precedence if both `userId` and `username` are defined. Required if `username` is undefined.
+   * @param {string} params.username - The user's name. Ignored if `userId` is defined. Required if `userId` is undefined.
+   * @param {boolean} [params.append=false] - Whether to append new rights instead of overwriting current ones. Defaults to `false`.
+   * @param {Array<object>} params.rights - Array of user rights.
+   * @returns {Promise<boolean>} A promise that resolves to `true` if the user rights were successfully updated, or `false` otherwise.
+   * @throws {Error} If parameters are missing or invalid, or if the login fails.
+   * @example <caption>Set user rights by user name</caption>
+   * server.setUserRights({ userId: 'superadmin', rights: [{ domain: 'all', right: 'all' }] }).then(data => console.log(data));
+   * @example <caption>Append user rights by user ID</caption>
+   * server.setUserRights({ userId: '12345', append: true, rights: [{domain: "all", right: "progress"}, {domain: "all", right: "lastacts"}] }).then(data => console.log(data));
+   */
+  async setUserRights({
+    userId,
+    username,
+    append = false,
+    rights = this.#constants.defaultUserRights,
+  } = {}) {
+    if (
+      (typeof userId === "undefined" && typeof username === "undefined") ||
+      (typeof userId !== "undefined" && typeof userId !== "number") ||
+      (typeof userId === "number" && userId < 0) ||
+      (typeof username !== "undefined" && typeof username !== "string") ||
+      (typeof username === "string" && username.length === 0) ||
+      (typeof append !== "undefined" && typeof append !== "boolean") ||
+      (typeof rights !== "undefined" && !Array.isArray(rights))
+    ) {
+      throw new Error(this.#messages.missingParameters);
+    }
+
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.failedLoginUnknown);
+    }
+
+    const users = await this.getUsers();
+
+    const userToChange = users.find((user) =>
+      typeof userId === "number"
+        ? user.id === userId.toString(10)
+        : user.name === username,
+    );
+
+    let operationStatus = false;
+
+    if (typeof userToChange !== "undefined") {
+      const currentRights = userToChange.rights;
+
+      let mergedRights = [];
+      if (append === true) {
+        mergedRights = Array.from(
+          new Map(
+            [...currentRights, ...rights].map((rightObject) => {
+              const normalizedKey = JSON.stringify(
+                Object.keys(rightObject)
+                  .sort((keyA, keyB) => keyA.localeCompare(keyB))
+                  .reduce((sortedObj, currentKey) => {
+                    sortedObj[currentKey] = rightObject[currentKey];
+                    return sortedObj;
+                  }, {}),
+              );
+
+              return [normalizedKey, rightObject];
+            }),
+          ).values(),
+        );
+      }
+
+      const response = await this.#fetchJson("settings", {
+        sa: "updaterights",
+        rights: this.#encodeUserRights(append === true ? mergedRights : rights),
+        userid: userToChange.id,
+      });
+
+      operationStatus = response.update_right === true;
+    }
+
+    return operationStatus;
   }
 
   /**
