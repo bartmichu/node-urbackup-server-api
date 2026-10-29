@@ -20,7 +20,8 @@
         "noExcessiveLinesPerFile": "off",
         "noTernary": "off",
         "useConsistentObjectDefinitions": "off",
-        "noContinue": "off"
+        "noContinue": "off",
+        "useThisInClassMethods": "off"
       },
       "complexity": {
         "noExcessiveLinesPerFunction": "off",
