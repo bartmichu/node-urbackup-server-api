@@ -1,4 +1,4 @@
-# node-urbackup-server-api
+# urbackup-server-api
 
 This module provides a Node.js interface for interacting with the UrBackup server's web API, whether the server is installed locally or accessed over a network. It aims to simplify the programmatic automation, control, and monitoring of UrBackup Server operations. Currently implemented methods:
 
