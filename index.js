@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import process from "node:process";
 import { URL, URLSearchParams } from "node:url";
 import { Semaphore } from "async-mutex";
 
@@ -21,30 +22,17 @@ class UrbackupServer {
     defaultUserRights: [],
   };
   #messages = {
+    anonymousLoginError: "Anonymous login failed.",
     apiRessponseError:
       "API response error or missing properties. Make sure the UrBackup user has appropriate rights.",
-    failedAnonymousLogin: "Anonymous login failed.",
-    failedFetch:
+    fetchError:
       "Fetch request failed: response status is not in the range 200-299.",
-    failedLogin: "Login failed: invalid username or password.",
-    failedLoginUnknown: "Login failed: unknown reason.",
     httpWarning:
       "SECURITY WARNING: Communicating over unencrypted HTTP outside of localhost. Credentials and session tokens can be intercepted.",
-    invalidCategory: "Syntax error: invalid category name.",
-    invalidProtocol: "Syntax error: URL protocol must be http or https.",
-    missingClientData:
-      "API response error: missing client data. Make sure the UrBackup user has appropriate rights.",
-    missingGroupData:
-      "API response error: missing group data. Make sure the UrBackup user has appropriate rights.",
-    missingParameters: "Syntax error: missing or invalid parameters.",
-    missingServerIdentity:
-      "API response error: missing server identity. Make sure the UrBackup user has appropriate rights.",
-    missingValues:
-      "API response error: some values are missing. Make sure the UrBackup user has appropriate rights.",
-    syntaxClientId: "Syntax error: clientId must be a number.",
-    syntaxClientName: "Syntax error: clientName must be a string.",
-    syntaxGroupId: "Syntax error: groupId must be a number.",
-    syntaxGroupName: "Syntax error: groupName must be a string.",
+    loginError: "Login failed: invalid username or password.",
+    loginUnknownError: "Login failed: unknown reason.",
+    protocolError: "Syntax error: URL protocol must be http or https.",
+    syntaxError: "Syntax error: missing or invalid parameters.",
   };
 
   /**
@@ -66,10 +54,18 @@ class UrbackupServer {
     username = "",
     password = "",
   } = {}) {
+    if (
+      (typeof url !== "undefined" && typeof url !== "string") ||
+      (typeof username !== "undefined" && typeof username !== "string") ||
+      (typeof password !== "undefined" && typeof password !== "string")
+    ) {
+      throw new Error(this.#messages.syntaxError);
+    }
+
     const parsedUrl = new URL(url);
 
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-      throw new Error(this.#messages.invalidProtocol);
+      throw new Error(this.#messages.protocolError);
     }
 
     if (
@@ -78,8 +74,7 @@ class UrbackupServer {
       parsedUrl.hostname !== "localhost" &&
       parsedUrl.hostname !== "::1"
     ) {
-      // biome-ignore lint/suspicious/noConsole: false positive
-      console.warn(this.#messages.httpWarning);
+      process.emitWarning(this.#messages.httpWarning, { code: "HTTP_WARNING" });
     }
 
     this.#url = parsedUrl;
@@ -135,7 +130,7 @@ class UrbackupServer {
       return await response.json();
     }
 
-    throw new Error(this.#messages.failedFetch);
+    throw new Error(this.#messages.fetchError);
   }
 
   /**
@@ -371,29 +366,30 @@ class UrbackupServer {
    * @param {object} params.client - The client object to evaluate.
    * @param {boolean} params.includeFileBackups - Whether to include file backups in the stale evaluation.
    * @param {boolean} params.includeImageBackups - Whether to include image backups in the stale evaluation.
-   * @param {number} params.time - The current timestamp (in seconds).
+   * @param {number} params.timestamp - The current timestamp (in seconds).
    * @param {number} params.timeThreshold - The time threshold (in minutes) used to determine staleness.
    * @returns {boolean} Returns `true` if the client is considered "stale" (either for file or image backups), or `false` otherwise.
    * @private
    * @example
-   * this.#isStaleClient({ client, includeFileBackups: true, includeImageBackups: true, time, timeThreshold });
+   * this.#isStaleClient({ client, includeFileBackups: true, includeImageBackups: true, timestamp, timeThreshold });
    */
   #isStaleClient({
     client,
     includeFileBackups,
     includeImageBackups,
-    time,
+    timestamp,
     timeThreshold,
   } = {}) {
     const isStaleFileBackup =
       includeFileBackups === true &&
       client.file_disabled !== true &&
-      Math.round((time - (client.lastbackup ?? 0)) / 60) >= timeThreshold;
+      Math.trunc((timestamp - (client.lastbackup ?? 0)) / 60) >= timeThreshold;
 
     const isStaleImageBackup =
       includeImageBackups === true &&
       client.image_disabled !== true &&
-      Math.round((time - (client.lastbackup_image ?? 0)) / 60) >= timeThreshold;
+      Math.trunc((timestamp - (client.lastbackup_image ?? 0)) / 60) >=
+        timeThreshold;
 
     return isStaleFileBackup === true || isStaleImageBackup === true;
   }
@@ -426,7 +422,7 @@ class UrbackupServer {
         }
 
         this.#clearLoginStatus();
-        throw new Error(this.#messages.failedAnonymousLogin);
+        throw new Error(this.#messages.anonymousLoginError);
       }
 
       const saltResponse = await this.#fetchJson("salt", {
@@ -453,7 +449,7 @@ class UrbackupServer {
 
       // NOTE: Invalid username
       this.#clearLoginStatus();
-      throw new Error(this.#messages.failedLogin);
+      throw new Error(this.#messages.loginError);
     } finally {
       release();
     }
@@ -473,14 +469,12 @@ class UrbackupServer {
    */
   async #getClientIdentifier(inputIdentifier, outputIdentifierType) {
     if (
+      typeof inputIdentifier === "undefined" ||
+      typeof outputIdentifierType !== "string" ||
       (outputIdentifierType === "id" && typeof inputIdentifier !== "string") ||
       (outputIdentifierType === "name" && typeof inputIdentifier !== "number")
     ) {
-      throw new Error(
-        outputIdentifierType === "id"
-          ? this.#messages.syntaxClientName
-          : this.#messages.syntaxClientId,
-      );
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ includeRemoved: true });
@@ -512,14 +506,12 @@ class UrbackupServer {
    */
   async #getGroupIdentifier(inputIdentifier, outputIdentifierType) {
     if (
+      typeof inputIdentifier === "undefined" ||
+      typeof outputIdentifierType !== "string" ||
       (outputIdentifierType === "id" && typeof inputIdentifier !== "string") ||
       (outputIdentifierType === "name" && typeof inputIdentifier !== "number")
     ) {
-      throw new Error(
-        outputIdentifierType === "id"
-          ? this.#messages.syntaxGroupName
-          : this.#messages.syntaxGroupId,
-      );
+      throw new Error(this.#messages.syntaxError);
     }
 
     const groups = await this.getGroups();
@@ -546,16 +538,16 @@ class UrbackupServer {
   async getServerIdentity() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const statusResponse = await this.#fetchJson("status");
+    const response = await this.#fetchJson("status");
 
-    if (typeof statusResponse?.server_identity === "string") {
-      return statusResponse.server_identity;
+    if (typeof response?.server_identity === "string") {
+      return response.server_identity;
     }
 
-    throw new Error(this.#messages.missingServerIdentity);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -570,23 +562,23 @@ class UrbackupServer {
   async getServerVersion() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const statusResponse = await this.#fetchJson("status");
+    const response = await this.#fetchJson("status");
 
     const serverVersion = { number: null, string: null };
 
-    if (typeof statusResponse?.curr_version_num === "number") {
-      serverVersion.number = statusResponse.curr_version_num;
+    if (typeof response?.curr_version_num === "number") {
+      serverVersion.number = response.curr_version_num;
     } else {
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
-    if (typeof statusResponse?.curr_version_str === "string") {
-      serverVersion.string = statusResponse.curr_version_str;
+    if (typeof response?.curr_version_str === "string") {
+      serverVersion.string = response.curr_version_str;
     } else {
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     return serverVersion;
@@ -602,7 +594,7 @@ class UrbackupServer {
   async isServerOutdated() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const serverVersion = await this.getServerVersion();
@@ -623,7 +615,7 @@ class UrbackupServer {
   async getUsers() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const response = await this.#fetchJson("settings", {
@@ -647,7 +639,7 @@ class UrbackupServer {
   async getCurrentUser() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
     const response = await this.#fetchJson("settings", {
       sa: "listusers",
@@ -692,12 +684,12 @@ class UrbackupServer {
       (typeof isAdmin !== "undefined" && typeof isAdmin !== "boolean") ||
       (typeof rights !== "undefined" && !Array.isArray(rights))
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     // NOTE: Server expects an alphanumeric string (no special characters), hence an additional method is needed
@@ -745,12 +737,12 @@ class UrbackupServer {
       (typeof username !== "undefined" && typeof username !== "string") ||
       (typeof username === "string" && username.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const users = await this.getUsers();
@@ -809,12 +801,12 @@ class UrbackupServer {
       typeof newPassword !== "string" ||
       newPassword.length === 0
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const users = await this.getUsers();
@@ -869,12 +861,12 @@ class UrbackupServer {
       (typeof username !== "undefined" && typeof username !== "string")
       // NOTE: allow empty user name for anonymous mode
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const allUsers = await this.getUsers();
@@ -926,12 +918,12 @@ class UrbackupServer {
       (typeof append !== "undefined" && typeof append !== "boolean") ||
       (typeof rights !== "undefined" && !Array.isArray(rights))
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const users = await this.getUsers();
@@ -990,16 +982,16 @@ class UrbackupServer {
   async getGroups() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const settingsResponse = await this.#fetchJson("settings");
+    const response = await this.#fetchJson("settings");
 
-    if (Array.isArray(settingsResponse?.navitems?.groups)) {
-      return settingsResponse.navitems.groups;
+    if (Array.isArray(response?.navitems?.groups)) {
+      return response.navitems.groups;
     }
 
-    throw new Error(this.#messages.missingGroupData);
+    throw new Error(this.#messages.syntaxError);
   }
 
   /**
@@ -1013,18 +1005,18 @@ class UrbackupServer {
    */
   async addGroup({ groupName } = {}) {
     if (typeof groupName !== "string") {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     // NOTE: Fail early due to a possible UrBackup bug (server does not allow adding multiple groups with the same name,
     // but allows empty string which is the same as default group name)
     if (groupName.length === 0) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const response = await this.#fetchJson("settings", {
@@ -1036,7 +1028,7 @@ class UrbackupServer {
       return response?.add_ok === true;
     }
 
-    throw new Error(this.#messages.missingGroupData);
+    throw new Error(this.#messages.syntaxError);
   }
 
   /**
@@ -1059,12 +1051,12 @@ class UrbackupServer {
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof groupName === "string" && groupName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let mappedGroupId;
@@ -1111,7 +1103,7 @@ class UrbackupServer {
       (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const fallbackReturnValue = [];
@@ -1153,20 +1145,20 @@ class UrbackupServer {
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const clients = [];
 
-    const statusResponse = await this.#fetchJson("status");
+    const response = await this.#fetchJson("status");
 
-    if (Array.isArray(statusResponse?.status)) {
-      for (const client of statusResponse.status) {
+    if (Array.isArray(response?.status)) {
+      for (const client of response.status) {
         if (typeof groupName === "string" && groupName !== client.groupname) {
           continue;
         }
@@ -1181,7 +1173,7 @@ class UrbackupServer {
       return clients;
     }
 
-    throw new Error(this.#messages.missingClientData);
+    throw new Error(this.#messages.syntaxError);
   }
 
   /**
@@ -1197,7 +1189,7 @@ class UrbackupServer {
    */
   async getRemovedClients({ groupName } = {}) {
     if (typeof groupName !== "undefined" && typeof groupName !== "string") {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     return await this.getClients({ groupName, includeRemoved: true }).then(
@@ -1230,7 +1222,7 @@ class UrbackupServer {
         typeof includeRemoved !== "boolean") ||
       (typeof includeBlank !== "undefined" && typeof includeBlank !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1283,7 +1275,7 @@ class UrbackupServer {
         typeof includeRemoved !== "boolean") ||
       (typeof includeBlank !== "undefined" && typeof includeBlank !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1326,7 +1318,7 @@ class UrbackupServer {
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     return await this.getClients({ groupName, includeRemoved }).then(
@@ -1369,7 +1361,7 @@ class UrbackupServer {
       (typeof includeImageBackups !== "undefined" &&
         typeof includeImageBackups !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1432,7 +1424,7 @@ class UrbackupServer {
       (typeof failOnFileIssues !== "undefined" &&
         typeof failOnFileIssues !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1507,7 +1499,7 @@ class UrbackupServer {
       (typeof failOnFileIssues !== "undefined" &&
         typeof failOnFileIssues !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1555,7 +1547,7 @@ class UrbackupServer {
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1586,7 +1578,7 @@ class UrbackupServer {
       typeof includeRemoved !== "undefined" &&
       typeof includeRemoved !== "boolean"
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const onlineClients = await this.getOnlineClients({
@@ -1639,7 +1631,7 @@ class UrbackupServer {
         typeof timeThreshold !== "number") ||
       (typeof timeThreshold === "number" && timeThreshold < 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1651,7 +1643,7 @@ class UrbackupServer {
     const currentEpochTime = Math.trunc(Date.now() / 1000);
 
     for (const client of clients) {
-      const timestampDifference = Math.round(
+      const timestampDifference = Math.trunc(
         (currentEpochTime - (client?.lastseen ?? 0)) / 60,
       );
 
@@ -1711,7 +1703,7 @@ class UrbackupServer {
         typeof timeThreshold !== "number") ||
       (typeof timeThreshold === "number" && timeThreshold < 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const clients = await this.getClients({ groupName, includeRemoved });
@@ -1728,7 +1720,7 @@ class UrbackupServer {
           client,
           includeFileBackups,
           includeImageBackups,
-          time: currentEpochTime,
+          timestamp: currentEpochTime,
           timeThreshold,
         }) === true
       ) {
@@ -1760,23 +1752,23 @@ class UrbackupServer {
    */
   async addClient({ clientName } = {}) {
     if (typeof clientName !== "string" || clientName.length === 0) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const addClientResponse = await this.#fetchJson("add_client", {
+    const response = await this.#fetchJson("add_client", {
       clientname: clientName,
     });
 
-    if (addClientResponse?.ok === true) {
-      return addClientResponse.added_new_client === true;
+    if (response?.ok === true) {
+      return response.added_new_client === true;
     }
 
-    throw new Error(this.#messages.missingClientData);
+    throw new Error(this.#messages.syntaxError);
   }
 
   /**
@@ -1801,12 +1793,12 @@ class UrbackupServer {
       (typeof clientName === "string" && clientName.length === 0) ||
       typeof stopRemove !== "boolean"
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const fallbackReturnValue = false;
@@ -1837,17 +1829,17 @@ class UrbackupServer {
       }
     }
 
-    const statusResponse = await this.#fetchJson("status", apiCallParameters);
+    const response = await this.#fetchJson("status", apiCallParameters);
 
-    if (Array.isArray(statusResponse?.status)) {
+    if (Array.isArray(response?.status)) {
       return (
-        statusResponse.status.find(
+        response.status.find(
           (client) => client.id === (clientId ?? mappedClientId),
         )?.delete_pending === (stopRemove ? "0" : "1")
       );
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -1872,7 +1864,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const operationStatus = await this.#removeClientCommon({
@@ -1904,7 +1896,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const operationStatus = await this.#removeClientCommon({
@@ -1926,16 +1918,16 @@ class UrbackupServer {
   async getClientHints() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const statusResponse = await this.#fetchJson("status");
+    const response = await this.#fetchJson("status");
 
-    if (Array.isArray(statusResponse?.extra_clients)) {
-      return statusResponse.extra_clients;
+    if (Array.isArray(response?.extra_clients)) {
+      return response.extra_clients;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -1950,25 +1942,25 @@ class UrbackupServer {
    */
   async addClientHint({ address } = {}) {
     if (typeof address !== "string" || address.length === 0) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const statusResponse = await this.#fetchJson("status", {
+    const response = await this.#fetchJson("status", {
       hostname: address,
     });
 
-    if (Array.isArray(statusResponse?.extra_clients)) {
-      return statusResponse.extra_clients.some(
+    if (Array.isArray(response?.extra_clients)) {
+      return response.extra_clients.some(
         (extraClient) => extraClient.hostname === address,
       );
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -1982,12 +1974,12 @@ class UrbackupServer {
    */
   async removeClientHint({ address } = {}) {
     if (typeof address !== "string" || address.length === 0) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let operationStatus = false;
@@ -2000,28 +1992,28 @@ class UrbackupServer {
       );
 
       if (typeof matchingClient !== "undefined") {
-        const statusResponse = await this.#fetchJson("status", {
+        const response = await this.#fetchJson("status", {
           hostname: matchingClient.id,
           remove: true,
         });
 
-        if (Array.isArray(statusResponse?.extra_clients)) {
+        if (Array.isArray(response?.extra_clients)) {
           if (
-            typeof statusResponse.extra_clients.find(
+            typeof response.extra_clients.find(
               (extraClient) => extraClient.hostname === address,
             ) === "undefined"
           ) {
             operationStatus = true;
           }
         } else {
-          throw new Error(this.#messages.missingValues);
+          throw new Error(this.#messages.apiRessponseError);
         }
       }
 
       return operationStatus;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2046,12 +2038,12 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const clientSettings = [];
@@ -2061,7 +2053,7 @@ class UrbackupServer {
     const allClients = await this.getClients({ includeRemoved: true });
 
     if (allClients.some((client) => typeof client.id === "undefined")) {
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     if (typeof clientId === "undefined") {
@@ -2080,17 +2072,17 @@ class UrbackupServer {
     }
 
     const clientSettingsPromises = clientIds.map(async (id) => {
-      const settingsResponse = await this.#fetchJson("settings", {
+      const response = await this.#fetchJson("settings", {
         sa: "clientsettings",
         // biome-ignore lint/style/useNamingConvention: upstream convention
         t_clientid: id,
       });
 
-      if (typeof settingsResponse?.settings === "object") {
-        return settingsResponse.settings;
+      if (typeof response?.settings === "object") {
+        return response.settings;
       }
 
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     });
 
     clientSettings.push(...(await Promise.all(clientSettingsPromises)));
@@ -2123,12 +2115,12 @@ class UrbackupServer {
       (typeof key === "string" && key.length === 0) ||
       typeof newValue === "undefined"
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let operationStatus = false;
@@ -2146,22 +2138,19 @@ class UrbackupServer {
         clientSettings[0].sa = "clientsettings_save";
         clientSettings[0].t_clientid = clientSettings[0].clientid;
 
-        const saveSettingsResponse = await this.#fetchJson(
-          "settings",
-          clientSettings[0],
-        );
+        const response = await this.#fetchJson("settings", clientSettings[0]);
 
-        if (typeof saveSettingsResponse?.saved_ok === "boolean") {
-          operationStatus = saveSettingsResponse.saved_ok === true;
+        if (typeof response?.saved_ok === "boolean") {
+          operationStatus = response.saved_ok === true;
         } else {
-          throw new Error(this.#messages.missingValues);
+          throw new Error(this.#messages.apiRessponseError);
         }
       }
 
       return operationStatus;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2184,12 +2173,12 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const fallbackReturnValue = null;
@@ -2199,7 +2188,7 @@ class UrbackupServer {
     );
 
     if (!Array.isArray(clientSettings)) {
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     if (clientSettings.length === 0) {
@@ -2241,12 +2230,12 @@ class UrbackupServer {
       typeof groupId !== "number" ||
       groupId < 0
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let operationStatus = false;
@@ -2274,12 +2263,12 @@ class UrbackupServer {
       memberof: groupId,
     };
 
-    const saveSettingsResponse = await this.#fetchJson("settings", payload);
+    const response = await this.#fetchJson("settings", payload);
 
-    if (typeof saveSettingsResponse?.saved_ok === "boolean") {
-      operationStatus = saveSettingsResponse.saved_ok === true;
+    if (typeof response?.saved_ok === "boolean") {
+      operationStatus = response.saved_ok === true;
     } else {
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     return operationStatus;
@@ -2304,12 +2293,12 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const clientSettings = await this.getClientSettings(
@@ -2331,7 +2320,7 @@ class UrbackupServer {
       return authenticationKey;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2361,33 +2350,33 @@ class UrbackupServer {
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const fallbackReturnValue = [];
 
-    const statusResponse = await this.#fetchJson("status");
+    const response = await this.#fetchJson("status");
 
-    if (Array.isArray(statusResponse?.status)) {
+    if (Array.isArray(response?.status)) {
       if (
         typeof clientId === "undefined" &&
         typeof clientName === "undefined"
       ) {
         if (includeRemoved === true) {
-          return statusResponse.status;
+          return response.status;
         }
 
-        return statusResponse.status.filter(
+        return response.status.filter(
           (client) => client.delete_pending !== "1",
         );
       }
 
-      const clientStatus = statusResponse.status.find((client) =>
+      const clientStatus = response.status.find((client) =>
         typeof clientId === "number"
           ? client.id === clientId
           : client.name === clientName,
@@ -2402,7 +2391,7 @@ class UrbackupServer {
         : [clientStatus];
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2426,24 +2415,24 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const fallbackReturnValue = [];
 
-    const usageResponse = await this.#fetchJson("usage");
+    const response = await this.#fetchJson("usage");
 
-    if (Array.isArray(usageResponse?.usage)) {
+    if (Array.isArray(response?.usage)) {
       if (
         typeof clientId === "undefined" &&
         typeof clientName === "undefined"
       ) {
-        return usageResponse.usage;
+        return response.usage;
       }
 
       let mappedClientName;
@@ -2455,7 +2444,7 @@ class UrbackupServer {
         }
       }
 
-      const match = usageResponse.usage.find((client) =>
+      const match = response.usage.find((client) =>
         typeof clientId === "number"
           ? client.name === mappedClientName
           : client.name === clientName,
@@ -2464,7 +2453,7 @@ class UrbackupServer {
       return match ? [match] : fallbackReturnValue;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2511,7 +2500,7 @@ class UrbackupServer {
       (typeof includePaused !== "undefined" &&
         typeof includePaused !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const activities = { current: [], last: [] };
@@ -2522,14 +2511,14 @@ class UrbackupServer {
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const activitiesResponse = await this.#fetchJson("progress");
+    const response = await this.#fetchJson("progress");
 
     if (
-      Array.isArray(activitiesResponse?.progress) &&
-      Array.isArray(activitiesResponse?.lastacts)
+      Array.isArray(response?.progress) &&
+      Array.isArray(response?.lastacts)
     ) {
       if (includeCurrent === true) {
         if (
@@ -2537,14 +2526,14 @@ class UrbackupServer {
           typeof clientName === "undefined"
         ) {
           if (includePaused === true) {
-            activities.current = activitiesResponse.progress;
+            activities.current = response.progress;
           } else {
-            activities.current = activitiesResponse.progress.filter(
+            activities.current = response.progress.filter(
               (activity) => activity.paused !== true,
             );
           }
         } else {
-          activities.current = activitiesResponse.progress.filter(
+          activities.current = response.progress.filter(
             (activity) =>
               (typeof clientId === "number"
                 ? activity.clientid === clientId
@@ -2559,9 +2548,9 @@ class UrbackupServer {
           typeof clientId === "undefined" &&
           typeof clientName === "undefined"
         ) {
-          activities.last = activitiesResponse.lastacts;
+          activities.last = response.lastacts;
         } else {
-          activities.last = activitiesResponse.lastacts.filter((activity) =>
+          activities.last = response.lastacts.filter((activity) =>
             typeof clientId === "number"
               ? activity.clientid === clientId
               : activity.name === clientName,
@@ -2572,7 +2561,7 @@ class UrbackupServer {
       return activities;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2606,7 +2595,7 @@ class UrbackupServer {
       (typeof includePaused !== "undefined" &&
         typeof includePaused !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const activities = await this.getActivities({
@@ -2642,7 +2631,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const activities = await this.getActivities({
@@ -2677,7 +2666,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const activities = await this.getActivities({
@@ -2722,12 +2711,12 @@ class UrbackupServer {
       typeof activityId !== "number" ||
       activityId <= 0
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const fallbackReturnValue = false;
@@ -2739,22 +2728,22 @@ class UrbackupServer {
     }
 
     if (typeof clientId === "number" || typeof mappedClientId === "number") {
-      const activitiesResponse = await this.#fetchJson("progress", {
+      const response = await this.#fetchJson("progress", {
         // biome-ignore lint/style/useNamingConvention: upstream convention
         stop_clientid: clientId ?? mappedClientId,
         // biome-ignore lint/style/useNamingConvention: upstream convention
         stop_id: activityId,
       });
 
-      if (Array.isArray(activitiesResponse?.progress)) {
-        return activitiesResponse.progress.some(
+      if (Array.isArray(response?.progress)) {
+        return response.progress.some(
           (activity) =>
             activity.id === activityId &&
             activity.clientid === (clientId ?? mappedClientId),
         );
       }
 
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     return fallbackReturnValue;
@@ -2794,7 +2783,7 @@ class UrbackupServer {
       (typeof includeImageBackups !== "undefined" &&
         typeof includeImageBackups !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const backups = { file: [], image: [] };
@@ -2804,7 +2793,7 @@ class UrbackupServer {
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let mappedClientId;
@@ -2816,27 +2805,27 @@ class UrbackupServer {
       }
     }
 
-    const backupsResponse = await this.#fetchJson("backups", {
+    const response = await this.#fetchJson("backups", {
       sa: "backups",
       clientid: clientId ?? mappedClientId,
     });
 
     if (
-      Array.isArray(backupsResponse?.backup_images) &&
-      Array.isArray(backupsResponse?.backups)
+      Array.isArray(response?.backup_images) &&
+      Array.isArray(response?.backups)
     ) {
       if (includeFileBackups === true) {
-        backups.file = backupsResponse.backups;
+        backups.file = response.backups;
       }
 
       if (includeImageBackups === true) {
-        backups.image = backupsResponse.backup_images;
+        backups.image = response.backup_images;
       }
 
       return backups;
     }
 
-    throw new Error(this.#messages.missingValues);
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
@@ -2866,12 +2855,12 @@ class UrbackupServer {
       typeof backupType !== "string" ||
       !backupTypes.includes(backupType)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let mappedClientId;
@@ -2881,7 +2870,7 @@ class UrbackupServer {
     }
 
     if (typeof clientId === "number" || typeof mappedClientId === "number") {
-      const backupResponse = await this.#fetchJson("start_backup", {
+      const response = await this.#fetchJson("start_backup", {
         // biome-ignore lint/style/useNamingConvention: upstream convention
         start_client: clientId ?? mappedClientId,
         // biome-ignore lint/style/useNamingConvention: upstream convention
@@ -2889,14 +2878,14 @@ class UrbackupServer {
       });
 
       if (
-        Array.isArray(backupResponse.result) &&
-        Object.hasOwn(backupResponse.result[0], "start_ok") &&
-        typeof backupResponse.result[0].start_ok === "boolean"
+        Array.isArray(response.result) &&
+        Object.hasOwn(response.result[0], "start_ok") &&
+        typeof response.result[0].start_ok === "boolean"
       ) {
-        return Boolean(backupResponse.result[0].start_ok);
+        return Boolean(response.result[0].start_ok);
       }
 
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     return false;
@@ -2922,7 +2911,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const operationStatus = await this.#startBackupCommon({
@@ -2954,7 +2943,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const operationStatus = await this.#startBackupCommon({
@@ -2986,7 +2975,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const operationStatus = await this.#startBackupCommon({
@@ -3018,7 +3007,7 @@ class UrbackupServer {
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
       (typeof clientName === "string" && clientName.length === 0)
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const operationStatus = await this.#startBackupCommon({
@@ -3057,12 +3046,12 @@ class UrbackupServer {
       (typeof clientName === "string" && clientName.length === 0) ||
       (typeof recentOnly !== "undefined" && typeof recentOnly !== "boolean")
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     let livelog = [];
@@ -3083,20 +3072,20 @@ class UrbackupServer {
     const [_value, release] = await this.#semaphore.acquire();
 
     try {
-      const logResponse = await this.#fetchJson("livelog", {
+      const response = await this.#fetchJson("livelog", {
         clientid: clientId ?? mappedClientId ?? 0,
         lastid: recentOnly ? this.#lastLogId.get(clientId) : 0,
       });
 
-      if (Array.isArray(logResponse.logdata)) {
-        const lastId = logResponse.logdata.at(-1)?.id;
+      if (Array.isArray(response.logdata)) {
+        const lastId = response.logdata.at(-1)?.id;
         if (typeof lastId !== "undefined") {
           this.#lastLogId.set(clientId, lastId);
         }
 
-        livelog = logResponse.logdata;
+        livelog = response.logdata;
       } else {
-        throw new Error(this.#messages.missingValues);
+        throw new Error(this.#messages.apiRessponseError);
       }
     } finally {
       release();
@@ -3121,21 +3110,21 @@ class UrbackupServer {
     if (typeof category === "string" && validCategories.includes(category)) {
       const login = await this.#login();
       if (login !== true) {
-        throw new Error(this.#messages.failedLoginUnknown);
+        throw new Error(this.#messages.loginUnknownError);
       }
 
-      const settingsResponse = await this.#fetchJson("settings", {
+      const response = await this.#fetchJson("settings", {
         sa: category,
       });
 
-      if (typeof settingsResponse?.settings === "object") {
-        return settingsResponse.settings;
+      if (typeof response?.settings === "object") {
+        return response.settings;
       }
 
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
-    throw new Error(this.#messages.failedLoginUnknown);
+    throw new Error(this.#messages.loginUnknownError);
   }
 
   /**
@@ -3194,12 +3183,12 @@ class UrbackupServer {
       key.length === 0 ||
       typeof newValue === "undefined"
     ) {
-      throw new Error(this.#messages.missingParameters);
+      throw new Error(this.#messages.syntaxError);
     }
 
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
     const settings = await this.getGeneralSettings();
@@ -3208,13 +3197,13 @@ class UrbackupServer {
       settings[key] = newValue;
       settings.sa = "general_save";
 
-      const saveSettingsResponse = await this.#fetchJson("settings", settings);
+      const response = await this.#fetchJson("settings", settings);
 
-      if (typeof saveSettingsResponse?.saved_ok === "boolean") {
-        return saveSettingsResponse.saved_ok;
+      if (typeof response?.saved_ok === "boolean") {
+        return response.saved_ok;
       }
 
-      throw new Error(this.#messages.missingValues);
+      throw new Error(this.#messages.apiRessponseError);
     }
 
     return false;
@@ -3232,12 +3221,12 @@ class UrbackupServer {
   async getRawStatus() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const statusResponse = await this.#fetchJson("status");
+    const response = await this.#fetchJson("status");
 
-    return statusResponse;
+    return response;
   }
 
   /**
@@ -3252,12 +3241,12 @@ class UrbackupServer {
   async getRawUsage() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const usageResponse = await this.#fetchJson("usage");
+    const response = await this.#fetchJson("usage");
 
-    return usageResponse;
+    return response;
   }
 
   /**
@@ -3272,12 +3261,12 @@ class UrbackupServer {
   async getRawProgress() {
     const login = await this.#login();
     if (login !== true) {
-      throw new Error(this.#messages.failedLoginUnknown);
+      throw new Error(this.#messages.loginUnknownError);
     }
 
-    const progressResponse = await this.#fetchJson("progress");
+    const response = await this.#fetchJson("progress");
 
-    return progressResponse;
+    return response;
   }
 }
 
