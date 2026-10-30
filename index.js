@@ -3308,6 +3308,55 @@ class UrbackupServer {
   }
 
   /**
+   * Changes one specific element of mail settings.
+   * A list of settings can be obtained with the `getMailSettings` method.
+   * This method makes multiple API calls.
+   * @param {object} params - An object containing parameters.
+   * @param {string} params.key - The settings element to change.
+   * @param {string} params.newValue - The new value for the settings element.
+   * @param {string} [params.testEmailAddress] - Optional email address to send a test email to. Defaults to an empty string.
+   * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
+   * @example <caption>Change mail password and send test email</caption>
+   * server.setMailSettings({ key: 'mail_password', newValue: 'secret', testEmailAddress: "email@example.com" }).then(data => console.log(data));
+   */
+  async setMailSettings({ key, newValue, testEmailAddress = "" } = {}) {
+    if (
+      typeof key !== "string" ||
+      key.length === 0 ||
+      typeof newValue !== "string" ||
+      newValue.length === 0 ||
+      (typeof testEmailAddress !== "undefined" &&
+        typeof testEmailAddress !== "string")
+    ) {
+      throw new Error(this.#messages.syntaxError);
+    }
+
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.loginUnknownError);
+    }
+
+    const settings = await this.getMailSettings();
+
+    if (Object.keys(settings).includes(key)) {
+      settings[key] = newValue;
+      settings.sa = "mail_save";
+      settings.testmailaddr = testEmailAddress ?? "";
+
+      const response = await this.#fetchJson("settings", settings);
+
+      if (typeof response?.saved_ok === "boolean") {
+        return response.saved_ok;
+      }
+
+      throw new Error(this.#messages.apiRessponseError);
+    }
+
+    return false;
+  }
+
+  /**
    * Retrieves the raw response from the 'status' API call.
    * Property names and values are left unaltered.
    * UrBackup user rights domain: 'status'.
