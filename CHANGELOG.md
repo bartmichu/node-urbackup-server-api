@@ -35,6 +35,10 @@
 
 ## Notable Changes
 
+- 0.101.0
+
+  - Added `groupId` parameter in the `get[*]Clients` group of methods.
+
 - 0.100.0
 
   - Breaking change: renamed `getClientAuthkey()` to `getClientAuthenticationKey()`.

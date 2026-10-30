@@ -1087,10 +1087,10 @@ class UrbackupServer {
    * Retrieves a list of clients who are members of a given group.
    * This is only a convenience method that wraps the `getClients()` method.
    * @param {object} params - An object containing parameters.
-   * @param {number} params.groupId - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined.
+   * @param {number} params.groupId - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Required if `groupName` is undefined. Using `groupId` instead of `groupName` causes an additional API call.
    * @param {string} params.groupName - Group name. Ignored if both `groupId` and `groupName` are defined. Required if `groupId` is undefined.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
-   * @throws {Error} If both `groupId` and `groupName` are missing or invalid.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get members of default group</caption>
    * server.getGroupMembers({ groupId: 0 }).then(data => console.log(data));
    * @example <caption>Get all clients belonging to a specific group</caption>
@@ -1106,20 +1106,9 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const fallbackReturnValue = [];
-
-    let mappedGroupName;
-
-    if (typeof groupId !== "undefined") {
-      mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
-      if (mappedGroupName === null) {
-        return fallbackReturnValue;
-      }
-    }
-
-    const groupMembers = await this.getClients({
-      groupName: mappedGroupName ?? groupName,
-    });
+    const groupMembers = await this.getClients(
+      typeof groupId === "number" ? { groupId } : { groupName },
+    );
 
     return groupMembers;
   }
@@ -1128,7 +1117,8 @@ class UrbackupServer {
    * Retrieves a list of clients.
    * By default, this method matches all clients, including those marked for removal.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients matching the search criteria. Returns an empty array when no matching clients are found.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
@@ -1139,8 +1129,11 @@ class UrbackupServer {
    * @example <caption>Get all clients belonging to a specific group</caption>
    * server.getClients({ groupName: 'office' }).then(data => console.log(data));
    */
-  async getClients({ groupName, includeRemoved = true } = {}) {
+  async getClients({ groupId, groupName, includeRemoved = true } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
@@ -1155,53 +1148,76 @@ class UrbackupServer {
 
     const clients = [];
 
-    const response = await this.#fetchJson("status");
-
-    if (Array.isArray(response?.status)) {
-      for (const client of response.status) {
-        if (typeof groupName === "string" && groupName !== client.groupname) {
-          continue;
-        }
-
-        if (includeRemoved === false && client.delete_pending === "1") {
-          continue;
-        }
-
-        clients.push(client);
+    let mappedGroupName;
+    if (typeof groupId === "number") {
+      mappedGroupName = await this.#getGroupIdentifier(groupId, "name");
+      if (mappedGroupName === null) {
+        return clients;
       }
-
-      return clients;
     }
 
-    throw new Error(this.#messages.syntaxError);
+    if (mappedGroupName !== null) {
+      const response = await this.#fetchJson("status");
+
+      if (Array.isArray(response?.status)) {
+        for (const client of response.status) {
+          if (
+            (typeof groupId === "number" || typeof groupName === "string") &&
+            client.groupname !==
+              (typeof groupId === "number" ? mappedGroupName : groupName)
+          ) {
+            continue;
+          }
+
+          if (includeRemoved === false && client.delete_pending === "1") {
+            continue;
+          }
+
+          clients.push(client);
+        }
+      } else {
+        throw new Error(this.#messages.syntaxError);
+      }
+    }
+
+    return clients;
   }
 
   /**
    * Retrieves a list of clients marked for removal.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get clients marked for removal</caption>
    * server.getRemovedClients().then(data => console.log(data));
    * @example <caption>Get clients marked for removal in a specific group</caption>
    * server.getRemovedClients({ groupName: 'sales' }).then(data => console.log(data));
    */
-  async getRemovedClients({ groupName } = {}) {
-    if (typeof groupName !== "undefined" && typeof groupName !== "string") {
+  async getRemovedClients({ groupId, groupName } = {}) {
+    if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
+      (typeof groupName !== "undefined" && typeof groupName !== "string")
+    ) {
       throw new Error(this.#messages.syntaxError);
     }
 
-    return await this.getClients({ groupName, includeRemoved: true }).then(
-      (removedClients) =>
-        removedClients.filter((client) => client.delete_pending === "1"),
+    return await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved: true,
+    }).then((removedClients) =>
+      removedClients.filter((client) => client.delete_pending === "1"),
     );
   }
 
   /**
    * Retrieves a list of online clients.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to `true`.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
@@ -1212,11 +1228,15 @@ class UrbackupServer {
    * server.getOnlineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
   async getOnlineClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeBlank = true,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1225,7 +1245,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const onlineClients = [];
 
@@ -1252,7 +1276,8 @@ class UrbackupServer {
   /**
    * Retrieves a list of offline clients.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to `true`.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
@@ -1265,11 +1290,15 @@ class UrbackupServer {
    * server.getOfflineClients({ groupName: 'servers' }).then(data => console.log(data));
    */
   async getOfflineClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeBlank = true,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1278,7 +1307,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const offlineClients = [];
 
@@ -1305,15 +1338,19 @@ class UrbackupServer {
   /**
    * Retrieves a list of active clients.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get all active clients</caption>
    * server.getActiveClients().then(data => console.log(data));
    */
-  async getActiveClients({ groupName, includeRemoved = true } = {}) {
+  async getActiveClients({ groupId, groupName, includeRemoved = true } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
@@ -1321,7 +1358,7 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    return await this.getClients({ groupName, includeRemoved }).then(
+    return await this.getClients({ groupId, groupName, includeRemoved }).then(
       (activeClients) => activeClients.filter((client) => client.status !== 0),
     );
   }
@@ -1331,7 +1368,8 @@ class UrbackupServer {
    * Matching empty clients considers whether file backups or image backups are enabled.
    * By default, it matches clients without both file and image backups.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to `true`.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to `true`.
@@ -1347,12 +1385,16 @@ class UrbackupServer {
    * server.getBlankClients({ includeFileBackups: false }).then(data => console.log(data));
    */
   async getBlankClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeFileBackups = true,
     includeImageBackups = true,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1364,7 +1406,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const blankClients = [];
 
@@ -1386,7 +1432,8 @@ class UrbackupServer {
   /**
    * Retrieves a list of failed clients, i.e., clients with failed backup status.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to `true`.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to `true`.
@@ -1404,6 +1451,7 @@ class UrbackupServer {
    * server.getFailedClients({ includeFileBackups: false }).then(data => console.log(data));
    */
   async getFailedClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeBlank = true,
@@ -1412,6 +1460,9 @@ class UrbackupServer {
     failOnFileIssues = false,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1427,7 +1478,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const failedClients = [];
 
@@ -1465,7 +1520,8 @@ class UrbackupServer {
    * Retrieves a list of OK clients, i.e., clients with OK backup status.
    * File backups finished with issues are treated as OK by default.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to `true`.
    * @param {boolean} [params.includeImageBackups=true] - Whether or not image backups should be taken into account when matching clients. Defaults to `true`.
@@ -1482,6 +1538,7 @@ class UrbackupServer {
    * server.getOkClients({ includeImageBackups: false, failOnFileIssues: true }).then(data => console.log(data));
    */
   async getOkClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeFileBackups = true,
@@ -1489,6 +1546,9 @@ class UrbackupServer {
     failOnFileIssues = false,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1502,7 +1562,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const okClients = [];
 
@@ -1530,7 +1594,8 @@ class UrbackupServer {
   /**
    * Retrieves a list of clients using an outdated version.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing clients. Returns an empty array when no matching clients are found.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
@@ -1541,8 +1606,11 @@ class UrbackupServer {
    * @example <caption>Get outdated clients, exclude clients marked for removal</caption>
    * server.getOutdatedClients({ includeRemoved: false }).then(data => console.log(data));
    */
-  async getOutdatedClients({ groupName, includeRemoved = true } = {}) {
+  async getOutdatedClients({ groupId, groupName, includeRemoved = true } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean")
@@ -1550,7 +1618,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const outdatedClients = clients.filter((client) =>
       this.#compareVersion(
@@ -1606,7 +1678,8 @@ class UrbackupServer {
   /**
    * Retrieves a list of clients who have not been seen for a specified period of time. Defaults to 24 hours.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to `true`.
    * @param {number} [params.timeThreshold=1440] - A time threshold, measured in minutes, after which a client is considered unseen. Defaults to 1440 minutes (24 hours).
@@ -1616,12 +1689,16 @@ class UrbackupServer {
    * server.getUnseenClients({ timeThreshold: 2880 }).then(data => console.log(data));
    */
   async getUnseenClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeBlank = true,
     timeThreshold = 1440,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1634,7 +1711,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const unseenClients = [];
 
@@ -1670,7 +1751,8 @@ class UrbackupServer {
    * This method fetches all clients within a specified group and filters those that are stale based on their last backup times.
    * Optionally, it can exclude blank clients (clients with no backups) from the results.
    * @param {object} [params] - An optional object containing parameters.
-   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups.
+   * @param {number} [params.groupId] - Group ID. Takes precedence if both `groupId` and `groupName` are defined. Defaults to `undefined`, which matches all groups if `groupName` is also `undefined`. Using `groupId` instead of `groupName` causes an additional API call.
+   * @param {string} [params.groupName] - Group name. Defaults to `undefined`, which matches all groups if `groupId` is also `undefined`.   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @param {boolean} [params.includeBlank=true] - Whether or not blank clients should be taken into account when matching clients. Defaults to `true`.
    * @param {boolean} [params.includeFileBackups=true] - Whether or not file backups should be taken into account when matching clients. Defaults to `true`.
@@ -1682,6 +1764,7 @@ class UrbackupServer {
    * server.getStaleClients({ includeBlank: false, includeImageBackups: false, timeThreshold: 1440 }).then(data => console.log(data));
    */
   async getStaleClients({
+    groupId,
     groupName,
     includeRemoved = true,
     includeBlank = true,
@@ -1690,6 +1773,9 @@ class UrbackupServer {
     timeThreshold = 1440,
   } = {}) {
     if (
+      // NOTE: allow groupId === 0 and groupName === ""
+      (typeof groupId !== "undefined" && typeof groupId !== "number") ||
+      (typeof groupId === "number" && groupId < 0) ||
       (typeof groupName !== "undefined" && typeof groupName !== "string") ||
       (typeof includeRemoved !== "undefined" &&
         typeof includeRemoved !== "boolean") ||
@@ -1706,7 +1792,11 @@ class UrbackupServer {
       throw new Error(this.#messages.syntaxError);
     }
 
-    const clients = await this.getClients({ groupName, includeRemoved });
+    const clients = await this.getClients({
+      groupId,
+      groupName,
+      includeRemoved,
+    });
 
     const staleClients = [];
 
