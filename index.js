@@ -2108,25 +2108,32 @@ class UrbackupServer {
 
   /**
    * Retrieves client settings.
-   * Matches all clients by default, but `clientId` or `clientName` can be used to request settings for one particular client.
-   * Clients marked for removal are not excluded from the results.
+   * Matches all clients by default (including clients marked for removal), but `clientId` or `clientName` can be used to request settings for one particular client.
+   * This method makes multiple API calls.
    * @param {object} [params] - An optional object containing parameters.
    * @param {number} [params.clientId] - Client's ID. Takes precedence if both `clientId` and `clientName` are defined. Defaults to `undefined`, which matches all clients if `clientName` is also undefined.
    * @param {string} [params.clientName] - Client's name. Ignored if both `clientId` and `clientName` are defined. Defaults to `undefined`, which matches all clients if `clientId` is also undefined.
+   * @param {boolean} [params.includeRemoved=true] - Whether or not clients pending deletion should be included. Defaults to `true`.
    * @returns {Promise<Array<object>>} A promise that resolves to an array of objects representing client settings. Returns an empty array if no matching client is found.
-   * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get settings for all clients</caption>
    * server.getClientSettings().then(data => console.log(data));
    * @example <caption>Get settings for a specific client only</caption>
    * server.getClientSettings({ clientName: 'laptop1' }).then(data => console.log(data));
    * server.getClientSettings({ clientId: 3 }).then(data => console.log(data));
    */
-  async getClientSettings({ clientId, clientName } = {}) {
+  async getClientSettings({
+    clientId,
+    clientName,
+    includeRemoved = true,
+  } = {}) {
     if (
       (typeof clientId !== "undefined" && typeof clientId !== "number") ||
       (typeof clientId === "number" && clientId < 0) ||
       (typeof clientName !== "undefined" && typeof clientName !== "string") ||
-      (typeof clientName === "string" && clientName.length === 0)
+      (typeof clientName === "string" && clientName.length === 0) ||
+      (typeof includeRemoved !== "undefined" &&
+        typeof includeRemoved !== "boolean")
     ) {
       throw new Error(this.#messages.syntaxError);
     }
@@ -2140,7 +2147,9 @@ class UrbackupServer {
 
     const clientIds = [];
 
-    const allClients = await this.getClients({ includeRemoved: true });
+    const allClients = await this.getClients({
+      includeRemoved: includeRemoved,
+    });
 
     if (allClients.some((client) => typeof client.id === "undefined")) {
       throw new Error(this.#messages.apiRessponseError);
@@ -2189,7 +2198,7 @@ class UrbackupServer {
    * @param {string} params.key - Settings element to change.
    * @param {string|number|boolean} params.newValue - New value for settings element.
    * @returns {Promise<boolean>} A promise that resolves to `true` if successful, or `false` otherwise.
-   * @throws {Error} If parameters are missing or invalid, or if the API response is incorrect.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Set directories to backup to be optional by default</caption>
    * server.setClientSettings({ clientName: 'laptop1', key: 'backup_dirs_optional', newValue: true }).then(data => console.log(data));
    * server.setClientSettings({ clientId: 3, key: 'backup_dirs_optional', newValue: true }).then(data => console.log(data));
@@ -3189,38 +3198,37 @@ class UrbackupServer {
    * This method is intended for internal use only and should not be called outside the class.
    * @param {string} category - Name of the settings category.
    * @returns {Promise<object>} A promise that resolves to an object with the settings of the specified category.
-   * @throws {Error} If there is a syntax error, API response error, or login failure.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @private
    * @example
    * this.#getServerSettings('general').then(data => console.log(data));
    */
   async #getServerSettings(category) {
     const validCategories = ["general", "ldap", "mail"];
-
-    if (typeof category === "string" && validCategories.includes(category)) {
-      const login = await this.#login();
-      if (login !== true) {
-        throw new Error(this.#messages.loginUnknownError);
-      }
-
-      const response = await this.#fetchJson("settings", {
-        sa: category,
-      });
-
-      if (typeof response?.settings === "object") {
-        return response.settings;
-      }
-
-      throw new Error(this.#messages.apiRessponseError);
+    if (typeof category !== "string" || !validCategories.includes(category)) {
+      throw new Error(this.#messages.syntaxError);
     }
 
-    throw new Error(this.#messages.loginUnknownError);
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.loginUnknownError);
+    }
+
+    const response = await this.#fetchJson("settings", {
+      sa: category,
+    });
+
+    if (typeof response?.settings === "object") {
+      return response.settings;
+    }
+
+    throw new Error(this.#messages.apiRessponseError);
   }
 
   /**
    * Retrieves general settings.
    * @returns {Promise<object>} A promise that resolves to an object with general settings.
-   * @throws {Error} If there is an API response error or login failure.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get general settings</caption>
    * server.getGeneralSettings().then(data => console.log(data));
    */
@@ -3233,7 +3241,7 @@ class UrbackupServer {
   /**
    * Retrieves mail settings.
    * @returns {Promise<object>} A promise that resolves to an object with mail settings.
-   * @throws {Error} If there is an API response error or login failure.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get mail settings</caption>
    * server.getMailSettings().then(data => console.log(data));
    */
@@ -3246,7 +3254,7 @@ class UrbackupServer {
   /**
    * Retrieves LDAP settings.
    * @returns {Promise<object>} A promise that resolves to an object with LDAP settings.
-   * @throws {Error} If there is an API response error or login failure.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Get LDAP settings</caption>
    * server.getLdapSettings().then(data => console.log(data));
    */
@@ -3263,7 +3271,7 @@ class UrbackupServer {
    * @param {string} params.key - The settings element to change.
    * @param {string|number|boolean} params.newValue - The new value for the settings element.
    * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
-   * @throws {Error} If there is a syntax error, API response error, or login failure.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
    * @example <caption>Disable image backups</caption>
    * server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
    */
