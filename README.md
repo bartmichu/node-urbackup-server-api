@@ -1,6 +1,6 @@
 # urbackup-server-api
 
-This module provides a Node.js interface for interacting with the UrBackup server's web API, whether the server is installed locally or accessed over a network. It aims to simplify the programmatic automation, control, and monitoring of UrBackup Server operations. Currently implemented methods:
+This module provides a Node.js interface for interacting with the UrBackup server's web API, whether the server is installed locally or accessed over a network. It aims to simplify the programmatic automation, control, and monitoring of UrBackup Server operations.
 
 _Please note that this module is still in a pre-1.0.0 release. Some functionality is missing, and method signatures may change without notice. Always review the [CHANGELOG](https://github.com/bartmichu/node-urbackup-server-api/blob/main/CHANGELOG.md) before updating to understand any potential breaking changes._
 
@@ -63,11 +63,10 @@ const server = new UrbackupServer({
 
 ## Implemented methods
 
-Full documentation of all methods is included in the source file in the form of JSDoc comments.
+Full documentation of all methods with usage examples is included in the source file in the form of JSDoc comments.
 
-- getServerIdentity
-- getServerVersion
-- isServerOutdated
+Users management:
+
 - getUsers
 - getCurrentUser
 - addUser
@@ -75,10 +74,29 @@ Full documentation of all methods is included in the source file in the form of 
 - setUserPassword
 - getUserRights
 - setUserRights
+
+Server management:
+
+- getServerIdentity
+- getServerVersion
+- isServerOutdated
+- getGeneralSettings
+- setGeneralSettings
+- getMailSettings
+- setMailSettings
+- testMailSettings
+- getLdapSettings
+- setLdapSettings
+
+Groups management:
+
 - getGroups
 - addGroup
 - removeGroup
 - getGroupMembers
+
+Clients management:
+
 - getClients
 - getRemovedClients
 - getOnlineClients
@@ -102,6 +120,21 @@ Full documentation of all methods is included in the source file in the form of 
 - getClientGroup
 - setClientGroup
 - getClientAuthenticationKey
+
+Backups management:
+
+- getBackups
+- startFullFileBackup
+- startIncrementalFileBackup
+- startFullImageBackup
+- startIncrementalImageBackup
+
+Other:
+
+- getLiveLog
+- getRawStatus
+- getRawUsage
+- getRawProgress
 - getStatus
 - getUsage
 - getActivities
@@ -109,19 +142,6 @@ Full documentation of all methods is included in the source file in the form of 
 - getLastActivities
 - getPausedActivities
 - stopClientActivity
-- getBackups
-- startFullFileBackup
-- startIncrementalFileBackup
-- startFullImageBackup
-- startIncrementalImageBackup
-- getLiveLog
-- getGeneralSettings
-- getMailSettings
-- getLdapSettings
-- setGeneralSettings
-- getRawStatus
-- getRawUsage
-- getRawProgress
 
 ## Example implementation
 

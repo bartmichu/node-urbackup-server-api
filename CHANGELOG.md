@@ -38,6 +38,8 @@
 - 0.101.0
 
   - Added `groupId` parameter in the `get[*]Clients` group of methods.
+  - Added `includeRemoved` parameter in the `getClientSettings()` method.
+  - Added `setMailSettings()`, `testMailSettings()` and `setLdapSettings()` methods.
 
 - 0.100.0
 
