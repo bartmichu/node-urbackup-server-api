@@ -20,11 +20,24 @@ class UrbackupServer {
     latestServerVersion: "2.5.38",
     adminUserRights: [{ domain: "all", right: "all" }],
     defaultUserRights: [],
+    mailSettings: [
+      "mail_admin_addrs",
+      "mail_check_certificate",
+      "mail_from",
+      "mail_password",
+      "mail_servername",
+      "mail_serverport",
+      "mail_ssl_only",
+      "mail_use_smtps",
+      "mail_username",
+    ],
   };
   #messages = {
     anonymousLoginError: "Anonymous login failed.",
     apiRessponseError:
       "API response error or missing properties. Make sure the UrBackup user has appropriate rights.",
+    emailTestAborted:
+      "API call aborted: both the recipient address and the admin email address are missing.",
     fetchError:
       "Fetch request failed: response status is not in the range 200-299.",
     httpWarning:
@@ -3252,6 +3265,127 @@ class UrbackupServer {
   }
 
   /**
+   * Changes one or more elements of the mail settings.
+   * Invalid settings keys are silently dropped. A list of settings can be obtained with the `getMailSettings` method.
+   * You can use the `testMailSettings` method to test settings and send a test message.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {Record<string, string>} [params.settings={}] - An object containing key-value pairs of mail settings to update.
+   * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
+   * @example <caption>Change mail password</caption>
+   * server.setMailSettings({ settings: { 'mail_password': '123456'} }).then(data => console.log(data));
+   * @example <caption>Configure gmail</caption>
+   * server.setMailSettings({ settings: { 'mail_servername': 'smtp.gmail.com', 'mail_serverport': '587', 'mail_ssl_only': 'true', 'mail_check_certificate': 'true' }}).then(data => console.log(data));
+   */
+  async setMailSettings({ settings = {} }) {
+    if (
+      typeof settings !== "object" ||
+      settings === "null" ||
+      (typeof settings === "object" &&
+        Object.keys(settings).some((key) => typeof key !== "string")) ||
+      (typeof settings === "object" &&
+        Object.values(settings).some((value) => typeof value !== "string"))
+    ) {
+      throw new Error(this.#messages.syntaxError);
+    }
+
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.loginUnknownError);
+    }
+
+    const mailSettings = await this.getMailSettings();
+
+    let areSettingsUpdated = false;
+
+    for (const [key, value] of Object.entries(settings)) {
+      if (
+        this.#constants.mailSettings.includes(key) &&
+        Object.keys(mailSettings).includes(key) &&
+        mailSettings[key] !== value
+      ) {
+        mailSettings[key] = value;
+        areSettingsUpdated = true;
+      }
+    }
+
+    if (areSettingsUpdated === true) {
+      mailSettings.sa = "mail_save";
+      mailSettings.testmailaddr = "";
+
+      const response = await this.#fetchJson("settings", mailSettings);
+
+      if (typeof response?.saved_ok === "boolean") {
+        return response.saved_ok;
+      }
+
+      throw new Error(this.#messages.apiRessponseError);
+    }
+
+    return false;
+  }
+
+  /**
+   * Tests mail settings by sending a test message.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {string} [params.recipientAddress] - The recipient address of a test message. If `undefined`, the administrator address from the mail settings will be used.
+   * @returns {Promise<object>} A promise that resolves to an object with `success` and `message` properties. The `success` property is set to `true` if sending was successful, or `false` otherwise. The `message` property contains additional information, i.e., an error returned by the server when sending was unsuccessful.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
+   * @example <caption>Send a test message to administrator's address</caption>
+   * server.testMailSettings().then(data => console.log(data));
+   * @example <caption>Send a test message to specified address</caption>
+   * server.testMailSettings({ recipientAddress: "email@example.com" }).then(data => console.log(data));
+   */
+  async testMailSettings({ recipientAddress = "" } = {}) {
+    if (
+      typeof recipientAddress !== "undefined" &&
+      typeof recipientAddress !== "string"
+    ) {
+      throw new Error(this.#messages.syntaxError);
+    }
+
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.loginUnknownError);
+    }
+
+    const mailSettings = await this.getMailSettings();
+
+    const returnValue = { success: false, message: "" };
+
+    let effectiveAddress = "";
+
+    // biome-ignore lint/style/noMagicNumbers: minimum email address length
+    if (typeof recipientAddress === "string" && recipientAddress.length >= 3) {
+      effectiveAddress = recipientAddress;
+    } else if (
+      typeof mailSettings.mail_admin_addrs === "string" &&
+      // biome-ignore lint/style/noMagicNumbers: minimum email address length
+      mailSettings.mail_admin_addrs.length >= 3
+    ) {
+      effectiveAddress = mailSettings.mail_admin_addrs;
+    }
+
+    if (effectiveAddress.length > 0) {
+      mailSettings.sa = "mail_save";
+      mailSettings.testmailaddr = effectiveAddress;
+
+      const response = await this.#fetchJson("settings", mailSettings);
+
+      if (typeof response?.mail_test === "string") {
+        returnValue.success = response.mail_test === "ok";
+        returnValue.message = response.mail_test;
+      } else {
+        throw new Error(this.#messages.apiRessponseError);
+      }
+    } else {
+      returnValue.message = this.#messages.emailTestAborted;
+    }
+
+    return returnValue;
+  }
+
+  /**
    * Retrieves LDAP settings.
    * @returns {Promise<object>} A promise that resolves to an object with LDAP settings.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
@@ -3294,55 +3428,6 @@ class UrbackupServer {
     if (Object.keys(settings).includes(key)) {
       settings[key] = newValue;
       settings.sa = "general_save";
-
-      const response = await this.#fetchJson("settings", settings);
-
-      if (typeof response?.saved_ok === "boolean") {
-        return response.saved_ok;
-      }
-
-      throw new Error(this.#messages.apiRessponseError);
-    }
-
-    return false;
-  }
-
-  /**
-   * Changes one specific element of mail settings.
-   * A list of settings can be obtained with the `getMailSettings` method.
-   * This method makes multiple API calls.
-   * @param {object} params - An object containing parameters.
-   * @param {string} params.key - The settings element to change.
-   * @param {string} params.newValue - The new value for the settings element.
-   * @param {string} [params.testEmailAddress] - Optional email address to send a test email to. Defaults to an empty string.
-   * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
-   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
-   * @example <caption>Change mail password and send test email</caption>
-   * server.setMailSettings({ key: 'mail_password', newValue: 'secret', testEmailAddress: "email@example.com" }).then(data => console.log(data));
-   */
-  async setMailSettings({ key, newValue, testEmailAddress = "" } = {}) {
-    if (
-      typeof key !== "string" ||
-      key.length === 0 ||
-      typeof newValue !== "string" ||
-      newValue.length === 0 ||
-      (typeof testEmailAddress !== "undefined" &&
-        typeof testEmailAddress !== "string")
-    ) {
-      throw new Error(this.#messages.syntaxError);
-    }
-
-    const login = await this.#login();
-    if (login !== true) {
-      throw new Error(this.#messages.loginUnknownError);
-    }
-
-    const settings = await this.getMailSettings();
-
-    if (Object.keys(settings).includes(key)) {
-      settings[key] = newValue;
-      settings.sa = "mail_save";
-      settings.testmailaddr = testEmailAddress ?? "";
 
       const response = await this.#fetchJson("settings", settings);
 
