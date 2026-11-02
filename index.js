@@ -20,6 +20,18 @@ class UrbackupServer {
     latestServerVersion: "2.5.38",
     adminUserRights: [{ domain: "all", right: "all" }],
     defaultUserRights: [],
+    ldapSettings: [
+      "ldap_class_key_name",
+      "ldap_class_rights_map",
+      "ldap_group_class_query",
+      "ldap_group_key_name",
+      "ldap_group_rights_map",
+      "ldap_login_enabled",
+      "ldap_server_name",
+      "ldap_server_port",
+      "ldap_username_prefix",
+      "ldap_username_suffix",
+    ],
     mailSettings: [
       "mail_admin_addrs",
       "mail_check_certificate",
@@ -3252,6 +3264,49 @@ class UrbackupServer {
   }
 
   /**
+   * Changes one specific element of general settings.
+   * A list of settings can be obtained with the `getGeneralSettings` method.
+   * @param {object} params - An object containing parameters.
+   * @param {string} params.key - The settings element to change.
+   * @param {string|number|boolean} params.newValue - The new value for the settings element.
+   * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
+   * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
+   * @example <caption>Disable image backups</caption>
+   * server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
+   */
+  async setGeneralSettings({ key, newValue } = {}) {
+    if (
+      typeof key !== "string" ||
+      key.length === 0 ||
+      typeof newValue === "undefined"
+    ) {
+      throw new Error(this.#messages.syntaxError);
+    }
+
+    const login = await this.#login();
+    if (login !== true) {
+      throw new Error(this.#messages.loginUnknownError);
+    }
+
+    const settings = await this.getGeneralSettings();
+
+    if (Object.keys(settings).includes(key)) {
+      settings[key] = newValue;
+      settings.sa = "general_save";
+
+      const response = await this.#fetchJson("settings", settings);
+
+      if (typeof response?.saved_ok === "boolean") {
+        return response.saved_ok;
+      }
+
+      throw new Error(this.#messages.apiRessponseError);
+    }
+
+    return false;
+  }
+
+  /**
    * Retrieves mail settings.
    * @returns {Promise<object>} A promise that resolves to an object with mail settings.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
@@ -3399,21 +3454,23 @@ class UrbackupServer {
   }
 
   /**
-   * Changes one specific element of general settings.
-   * A list of settings can be obtained with the `getGeneralSettings` method.
-   * @param {object} params - An object containing parameters.
-   * @param {string} params.key - The settings element to change.
-   * @param {string|number|boolean} params.newValue - The new value for the settings element.
+   * Changes one or more elements of the LDAP settings.
+   * Invalid settings keys are silently dropped. A list of settings can be obtained with the `getLdapSettings` method.
+   * @param {object} [params] - An optional object containing parameters.
+   * @param {Record<string, string>} [params.settings={}] - An object containing key-value pairs of LDAP settings to update.
    * @returns {Promise<boolean>} A promise that resolves to `true` when the settings change is successful, or `false` otherwise.
    * @throws {Error} If missing or invalid parameters are passed, if the login fails, or if the API response is missing expected values.
-   * @example <caption>Disable image backups</caption>
-   * server.setGeneralSettings({ key: 'no_images', newValue: true }).then(data => console.log(data));
+   * @example <caption>Set server and port</caption>
+   * server.setLdapSettings({ settings: { ldap_server_name: "example.com", ldap_server_port: "3269" } }).then(data => console.log(data));
    */
-  async setGeneralSettings({ key, newValue } = {}) {
+  async setLdapSettings({ settings = {} }) {
     if (
-      typeof key !== "string" ||
-      key.length === 0 ||
-      typeof newValue === "undefined"
+      typeof settings !== "object" ||
+      settings === "null" ||
+      (typeof settings === "object" &&
+        Object.keys(settings).some((key) => typeof key !== "string")) ||
+      (typeof settings === "object" &&
+        Object.values(settings).some((value) => typeof value !== "string"))
     ) {
       throw new Error(this.#messages.syntaxError);
     }
@@ -3423,13 +3480,27 @@ class UrbackupServer {
       throw new Error(this.#messages.loginUnknownError);
     }
 
-    const settings = await this.getGeneralSettings();
+    const ldapSettings = await this.getLdapSettings();
 
-    if (Object.keys(settings).includes(key)) {
-      settings[key] = newValue;
-      settings.sa = "general_save";
+    let areSettingsUpdated = false;
 
-      const response = await this.#fetchJson("settings", settings);
+    for (const [key, value] of Object.entries(settings)) {
+      if (
+        this.#constants.ldapSettings.includes(key) &&
+        Object.keys(ldapSettings).includes(key) &&
+        ldapSettings[key] !== value
+      ) {
+        ldapSettings[key] = value;
+        areSettingsUpdated = true;
+      }
+    }
+
+    if (areSettingsUpdated === true) {
+      ldapSettings.sa = "ldap_save";
+      ldapSettings.test_username = "";
+      ldapSettings.test_password = "";
+
+      const response = await this.#fetchJson("settings", ldapSettings);
 
       if (typeof response?.saved_ok === "boolean") {
         return response.saved_ok;
